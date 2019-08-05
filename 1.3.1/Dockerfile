@@ -49,7 +49,8 @@ RUN python bootstrap.py \
     && bin/buildout \
     && ln -s $SENAITE_FILESTORAGE/ var/filestorage \
     && ln -s $SENAITE_BLOBSTORAGE/ var/blobstorage \
-    && chown -R senaite:senaite $SENAITE_HOME $SENAITE_DATA
+    && chown -R senaite:senaite $SENAITE_HOME $SENAITE_DATA \
+    && rm -rf $SENAITE_INSTANCE_HOME/downloads
 
 # Mount external volume
 VOLUME /data

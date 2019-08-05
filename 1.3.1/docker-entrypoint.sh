@@ -9,7 +9,7 @@ gosu senaite python /docker-initialize.py
 
 if [ -e "custom.cfg" ]; then
   if [ ! -e "bin/develop" ]; then
-    gosu senaite buildout -c custom.cfg
+    gosu senaite /home/senaite/senaitelims/bin/buildout -c custom.cfg
     gosu senaite python /docker-initialize.py
   fi
 fi
