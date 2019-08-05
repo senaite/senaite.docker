@@ -35,7 +35,7 @@ RUN wget -O Plone.tgz https://launchpad.net/plone/$PLONE_MAJOR/$PLONE_VERSION/+d
     && tar -xzf Plone.tgz \
     && cp -rv /Plone-$PLONE_VERSION-UnifiedInstaller/base_skeleton/* $SENAITE_INSTANCE_HOME \
     && cp -v /Plone-$PLONE_VERSION-UnifiedInstaller/buildout_templates/buildout.cfg $SENAITE_INSTANCE_HOME/buildout-base.cfg \
-    && cd $SENAITE_INSTANCE_HOME \
+    && cd $SENAITE_HOME \
     && tar -xjf /Plone-$PLONE_VERSION-UnifiedInstaller/packages/buildout-cache.tar.bz2
 
 # Change working directory
@@ -50,7 +50,7 @@ RUN python bootstrap.py \
     && ln -s $SENAITE_FILESTORAGE/ var/filestorage \
     && ln -s $SENAITE_BLOBSTORAGE/ var/blobstorage \
     && chown -R senaite:senaite $SENAITE_HOME $SENAITE_DATA \
-    && rm -rf $SENAITE_INSTANCE_HOME/downloads
+    && rm -rf $SENAITE_HOME/buildout-cache/downloads/dist
 
 # Mount external volume
 VOLUME /data
