@@ -19,7 +19,7 @@ NOTE: A [DockerHub](https://hub.docker.com/) account is needed.
 
 ## Usage
 
-Choose either single Plone instance or ZEO cluster.
+Choose either single SENAITE instance or ZEO cluster.
 
 **It is inadvisable to use following configurations for production.**
 
@@ -48,7 +48,7 @@ ZEO cluster are best suited for production setups, you will **need** a loadbalan
 Start ZEO server in the background
 
 ```console
-$ docker run -d --name=zeo senait zeo
+$ docker run -d --name=zeo senaite zeo
 ```
 
 Start 2 SENAITE clients (also in the background)
@@ -60,7 +60,7 @@ $ docker run -d --name=instance2 --link=zeo -e ZEO_ADDRESS=zeo:8080 -p 8082:8080
 
 ### Start SENAITE In Debug Mode
 
-You can also start Plone in debug mode (`fg`) by running
+You can also start SENAITE in debug mode (`fg`) by running
 
 ```console
 $ docker run -p 8080:8080 senaite fg
@@ -72,29 +72,31 @@ Debug mode may also be used with ZEO
 $ docker run --link=zeo -e ZEO_ADDRESS=zeo:8080 -p 8080:8080 senaite fg
 ```
 
-For more information on how to extend this image with your own custom settings, adding more add-ons, building it or mounting volumes, please refer to our [documentation](https://docs.plone.org/manage/docker/docs/index.html).
+For more information on how to extend this image with your own custom settings,
+adding more add-ons, building it or mounting volumes, please refer to the
+[plone.docker documentation](https://docs.plone.org/manage/docker/docs/index.html).
 
 
 ## Supported Environment Variables
 
-The Plone image uses several environment variable that allow to specify a more specific setup.
+The SENAITE image uses several environment variable that allow to specify a more specific setup.
 
 ### For Basic Usage
 
 * `ADDONS` - Customize SENAITE via Plone add-ons using this environment variable
 * `ZEO_ADDRESS` - This environment variable allows you to run Plone image as a ZEO client.
 
-Run Plone with ZEO and install two addons (PloneFormGen and collective.roster)
+Run SENAITE with ZEO and install the addon [senaite.storage](https://github.com/senaite/senaite.storage)
 
 ```console
 $ docker run --name=instance1 --link=zeo -e ZEO_ADDRESS=zeo:8080 -p 8080:8080 \
--e ADDONS="Products.PloneFormGen collective.roster" plone
+-e ADDONS="senaite.storage" senaite
 ```
 
 To use specific add-ons versions:
 
 ```console
- -e ADDONS="Products.PloneFormGen==1.8.5 collective.roster==2.3.1"
+ -e ADDONS="senaite.storage==1.0.0"
 ```
 
 ### For Advanced Usage
