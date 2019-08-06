@@ -36,7 +36,8 @@ RUN wget -O Plone.tgz https://launchpad.net/plone/$PLONE_MAJOR/$PLONE_VERSION/+d
     && cp -rv /Plone-$PLONE_VERSION-UnifiedInstaller/base_skeleton/* $SENAITE_INSTANCE_HOME \
     && cp -v /Plone-$PLONE_VERSION-UnifiedInstaller/buildout_templates/buildout.cfg $SENAITE_INSTANCE_HOME/buildout-base.cfg \
     && cd $SENAITE_HOME \
-    && tar -xjf /Plone-$PLONE_VERSION-UnifiedInstaller/packages/buildout-cache.tar.bz2
+    && tar -xjf /Plone-$PLONE_VERSION-UnifiedInstaller/packages/buildout-cache.tar.bz2 \
+    && rm -rf /Plone-$PLONE_VERSION-UnifiedInstaller /Plone.tgz
 
 # Change working directory
 WORKDIR $SENAITE_INSTANCE_HOME
