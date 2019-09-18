@@ -28,10 +28,13 @@ Choose either single SENAITE instance or ZEO cluster.
 
 Standalone instances are best suited for testing SENAITE and development.
 
-Download and start the latest SENAITE container, based on [Debian](https://www.debian.org/).
+Build and start the latest SENAITE container, based on [Debian](https://www.debian.org/).
 
-```console
-$ docker run -p 8080:8080 senaite
+```bash
+$ git clone https://github.com/deltablot/senaite.docker
+$ cd senaite.docker/1.3.1
+$ docker build -t senaite .
+$ docker run --rm --name senaite -p 8080:8080 senaite
 ```
 
 This image exposes the TCP Port `8080` via `EXPOSE 8080`, so standard container
@@ -47,13 +50,13 @@ ZEO cluster are best suited for production setups, you will **need** a loadbalan
 
 Start ZEO server in the background
 
-```console
+```bash
 $ docker run -d --name=zeo senaite zeo
 ```
 
 Start 2 SENAITE clients (also in the background)
 
-```console
+```bash
 $ docker run -d --name=instance1 --link=zeo -e ZEO_ADDRESS=zeo:8080 -p 8081:8080 senaite
 $ docker run -d --name=instance2 --link=zeo -e ZEO_ADDRESS=zeo:8080 -p 8082:8080 senaite
 ```
@@ -62,13 +65,13 @@ $ docker run -d --name=instance2 --link=zeo -e ZEO_ADDRESS=zeo:8080 -p 8082:8080
 
 You can also start SENAITE in debug mode (`fg`) by running
 
-```console
+```bash
 $ docker run -p 8080:8080 senaite fg
 ```
 
 Debug mode may also be used with ZEO
 
-```console
+```bash
 $ docker run --link=zeo -e ZEO_ADDRESS=zeo:8080 -p 8080:8080 senaite fg
 ```
 
@@ -88,14 +91,14 @@ The SENAITE image uses several environment variable that allow to specify a more
 
 Run SENAITE with ZEO and install the addon [senaite.storage](https://github.com/senaite/senaite.storage)
 
-```console
+```bash
 $ docker run --name=instance1 --link=zeo -e ZEO_ADDRESS=zeo:8080 -p 8080:8080 \
 -e ADDONS="senaite.storage" senaite
 ```
 
 To use specific add-ons versions:
 
-```console
+```bash
  -e ADDONS="senaite.storage==1.0.0"
 ```
 
