@@ -111,7 +111,12 @@ To use specific add-ons versions:
 * `ZEO_PACK_KEEP_OLD` - Can be set to false to disable the creation of *.fs.old files before the pack is run. Defaults to true.
 
 
-## Create a new version of a docker image
+## Development
+
+The following sections describe how to create and publish a new senaite docker
+image on docker hub.
+
+### Create a new version of a docker image
 
 Copy an existing version structure:
 
@@ -127,6 +132,8 @@ Successfully tagged senaite:v1.3.2
 
 Note that the the image will automatically tagged as `v1.3.2`.
 
+             
+### Run the container
 
 Start a container based on your new image:
 
@@ -147,8 +154,8 @@ We used a couple of common flags here:
 
   - `--name` lets us specify a name with which we can refer to our container in
              subset
-             
 ```
+
 $ docker container ls
 CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                             PORTS                    NAMES
 ecf514d717ba        senaite:v1.3.2      "/docker-entrypoint.…"   26 seconds ago      Up 24 seconds (health: starting)   0.0.0.0:9999->8080/tcp   s132
@@ -158,5 +165,27 @@ Go to http://localhost:9999 to install senaite.
 
 Stop the container with `docker container stop s132`.
 
+
+### Publish the container on Docker Hub
+
+Images must be namespaced correctly to share on Docker Hub. Specifically, images
+must be named like `<Docker Hub ID>/<Repository Name>:<tag>.` We can relabel our
+`senaite:1.3.2` image like this:
+
+```console
+$ docker image tag senaite:v1.3.2 ramonski/senaite:v1.3.2
+$ docker image tag senaite:v1.3.2 ramonski/senaite:latest
+```
+
+Finally, push the image to Docker Hub:
+
+```console
+docker image push ramonski/senaite:v1.3.2
+docker image push ramonski/senaite:latest
+```
+
+### Further information
+
 Please refer to this documentation for further information:
+
 https://docs.docker.com/get-started
