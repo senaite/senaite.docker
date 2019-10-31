@@ -4,7 +4,7 @@
 [Plone](https://plone.org) and the [Zope application server](https://www.zope.org).
 
 This repository is based [plone.docker](https://github.com/plone/plone.docker) –
-Thanks to the great work of @avoinea and the other contributors.
+Thanks to the great work of http://github.com/avoinea and the other contributors.
 
 ### Try SENAITE
 
@@ -109,3 +109,54 @@ To use specific add-ons versions:
 * `ZEO_STORAGE` - Set the storage number of the ZEO storage. Defaults to `1`.
 * `ZEO_CLIENT_CACHE_SIZE` - Set the size of the ZEO client cache. Defaults to `128MB`.
 * `ZEO_PACK_KEEP_OLD` - Can be set to false to disable the creation of *.fs.old files before the pack is run. Defaults to true.
+
+
+## Create a new version of a docker image
+
+Copy an existing version structure:
+
+```console
+$ cp -r 1.3.1 1.3.2
+$ cd 1.3.2
+$ docker build --tag=senaite:v1.3.2 .
+
+[...]
+Successfully built 7af3395db8f6
+Successfully tagged senaite:v1.3.2
+```
+
+Note that the the image will automatically tagged as `v1.3.2`.
+
+
+Start a container based on your new image:
+
+```
+docker container run --publish 9999:8080 --detach --name senaite senaite:v1.3.2
+```
+
+We used a couple of common flags here:
+
+  - `--publish` asks Docker to forward traffic incoming on the host’s port
+                9999, to the container’s port 8080 (containers have their own
+                private set of ports, so if we want to reach one from the
+                network, we have to forward traffic to it in this way;
+                otherwise, firewall rules will prevent all network traffic from
+                reaching your container, as a default security posture).
+
+  - `--detach` asks Docker to run this container in the background.
+
+  - `--name` lets us specify a name with which we can refer to our container in
+             subset
+             
+```
+$ docker container ls
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS                             PORTS                    NAMES
+ecf514d717ba        senaite:v1.3.2      "/docker-entrypoint.…"   26 seconds ago      Up 24 seconds (health: starting)   0.0.0.0:9999->8080/tcp   s132
+```
+
+Go to http://localhost:9999 to install senaite.
+
+Stop the container with `docker container stop s132`.
+
+Please refer to this documentation for further information:
+https://docs.docker.com/get-started
