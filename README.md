@@ -31,7 +31,7 @@ Standalone instances are best suited for testing SENAITE and development.
 Build and start the latest SENAITE container, based on [Debian](https://www.debian.org/).
 
 ```bash
-$ git clone https://github.com/deltablot/senaite.docker
+$ git clone https://github.com/senaite/senaite.docker
 $ cd senaite.docker/1.3.1
 $ docker build -t senaite .
 $ docker run --rm --name senaite -p 8080:8080 senaite
