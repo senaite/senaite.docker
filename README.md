@@ -32,7 +32,7 @@ Build and start the latest SENAITE container, based on [Debian](https://www.debi
 
 ```bash
 $ git clone https://github.com/senaite/senaite.docker
-$ cd senaite.docker/1.3.1
+$ cd senaite.docker/1.3.3
 $ docker build -t senaite .
 $ docker run --rm --name senaite -p 8080:8080 senaite
 ```
