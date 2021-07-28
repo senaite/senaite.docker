@@ -1,0 +1,11 @@
+version: "2"
+services:
+  senaite:
+    image: senaite
+    volumes:
+    - data:/data
+    ports:
+    - "8080:8080"
+
+volumes:
+  data:
