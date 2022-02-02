@@ -63,7 +63,7 @@ RUN rm -rf /$SENAITE_HOME/buildout-cache
 RUN rm -rf /var/lib/apt/lists/*
 
 # Mount external volume
-VOLUME /data
+# VOLUME /data
 
 # Copy startup scripts
 COPY docker-initialize.py docker-entrypoint.sh /
