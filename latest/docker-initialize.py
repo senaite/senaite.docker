@@ -226,7 +226,7 @@ CORS_TEMPLACE = """<configure
 
 BUILDOUT_TEMPLATE = """
 [buildout]
-extends = develop.cfg
+extends = buildout.cfg
 find-links += {findlinks}
 develop += {develop}
 eggs += {eggs}

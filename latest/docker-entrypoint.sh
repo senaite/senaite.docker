@@ -14,12 +14,10 @@ find /home/senaite -not -user senaite -exec chown senaite:senaite {} \+
 gosu senaite python /docker-initialize.py
 
 if [ -e "custom.cfg" ]; then
-  if [ ! -e "bin/develop" ]; then
-    buildout -c custom.cfg
-    find /data  -not -user senaite -exec chown senaite:senaite {} \+
-    find /home/senaite -not -user senaite -exec chown senaite:senaite {} \+
-    gosu senaite python /docker-initialize.py
-  fi
+  buildout -c custom.cfg
+  find /data  -not -user senaite -exec chown senaite:senaite {} \+
+  find /home/senaite -not -user senaite -exec chown senaite:senaite {} \+
+  gosu senaite python /docker-initialize.py
 fi
 
 # ZEO Server
