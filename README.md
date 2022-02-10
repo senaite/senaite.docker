@@ -12,6 +12,14 @@ Click the _Try in PWD_ button below to get 4 hours to try SENAITE LIMS:
 
 NOTE: A [DockerHub](https://hub.docker.com/) account is needed.
 
+A sandbox environment will be created after the "Start" button was pressed.
+This will take about 2-3 Minutes and the final screen will display a button
+with the port number `8080` displayed on it. This will open the SENAITE site
+in the webbrower.
+
+It might be that this site will not load immediately, because the server is
+still in startup process. Please wait and reload until the SENAITE site appears.
+
 **Authentication: `admin:admin`**
 
 [![Try in PWD](https://cdn.rawgit.com/play-with-docker/stacks/cff22438/assets/images/button.png)](http://play-with-docker.com?stack=https://raw.githubusercontent.com/senaite/senaite.docker/master/stack.yml)
@@ -112,6 +120,7 @@ To use specific add-ons versions:
 * `ZEO_STORAGE` - Set the storage number of the ZEO storage. Defaults to `1`.
 * `ZEO_CLIENT_CACHE_SIZE` - Set the size of the ZEO client cache. Defaults to `128MB`.
 * `ZEO_PACK_KEEP_OLD` - Can be set to false to disable the creation of *.fs.old files before the pack is run. Defaults to true.
+* `PASSWORD` - Set the password of the ZOPE admin user
 
 
 ## Development
