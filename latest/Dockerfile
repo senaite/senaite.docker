@@ -25,7 +25,7 @@ RUN useradd --system -m -d $SENAITE_HOME -U -u 500 $SENAITE_USER
 RUN mkdir -p $SENAITE_INSTANCE_HOME $SENAITE_FILESTORAGE $SENAITE_BLOBSTORAGE
 
 # Copy Buildout
-COPY requirements.txt buildout.cfg $SENAITE_INSTANCE_HOME
+COPY requirements.txt buildout.cfg $SENAITE_INSTANCE_HOME/
 
 # Copy the build dependencies and startup scripts
 COPY build_deps.txt run_deps.txt docker-initialize.py docker-entrypoint.sh /
