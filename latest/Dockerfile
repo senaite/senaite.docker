@@ -62,6 +62,7 @@ VOLUME /data
 
 # Expose instance port
 EXPOSE 8080
+EXPOSE 8089
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["start"]
