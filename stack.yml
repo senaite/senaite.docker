@@ -1,16 +1,7 @@
 version: "3"
 services:
   senaite:
-    image: ramonski/senaite:latest
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-      resources:
-        limits:
-          cpus: "1"
-          memory: 2G
+    image: senaite/senaite:2.x
+    restart: "unless-stopped"
     ports:
       - "8080:8080"
-    environment:
-      SITE: "senaite"
