@@ -1,5 +1,5 @@
 # Use an official Python runtime as a parent image
-FROM python:2.7-stretch
+FROM python:2.7-slim-buster
 
 # Set one or more individual labels
 LABEL maintainer="Ramon Bartl"
@@ -21,50 +21,47 @@ ENV PLONE_MAJOR=5.2 \
 # Create the senaite user
 RUN useradd --system -m -d $SENAITE_HOME -U -u 500 $SENAITE_USER
 
-# Create direcotries
+# Create directories
 RUN mkdir -p $SENAITE_INSTANCE_HOME $SENAITE_FILESTORAGE $SENAITE_BLOBSTORAGE
 
-# Copy the package config
-COPY packages.txt /
+# Copy Buildout
+COPY requirements.txt buildout.cfg $SENAITE_INSTANCE_HOME/
 
-# Install package dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends $(grep -vE "^\s*#" /packages.txt  | tr "\n" " ")
+# Copy the build dependencies and startup scripts
+COPY build_deps.txt run_deps.txt docker-initialize.py docker-entrypoint.sh /
 
-# Fetch unified installer
-RUN wget -O Plone.tgz https://launchpad.net/plone/$PLONE_MAJOR/$PLONE_VERSION/+download/$PLONE_UNIFIED_INSTALLER.tgz \
+# Note: we concatenate all commands to avoid multiple layer generation and reduce the image size
+RUN apt-get update \
+    # Install system packages
+    && apt-get install -y --no-install-recommends $(grep -vE "^\s*#" /build_deps.txt | tr "\n" " ") \
+    && apt-get install -y --no-install-recommends $(grep -vE "^\s*#" /run_deps.txt | tr "\n" " ") \
+    # Fetch unified installer
+    && wget -O Plone.tgz https://launchpad.net/plone/$PLONE_MAJOR/$PLONE_VERSION/+download/$PLONE_UNIFIED_INSTALLER.tgz \
     && echo "$PLONE_MD5 Plone.tgz" | md5sum -c - \
-    && tar -xzf Plone.tgz \
-    && cp -rv /$PLONE_UNIFIED_INSTALLER/base_skeleton/* $SENAITE_INSTANCE_HOME \
-    && cp -v /$PLONE_UNIFIED_INSTALLER/buildout_templates/buildout.cfg $SENAITE_INSTANCE_HOME/buildout-base.cfg \
-    && cd $SENAITE_HOME \
-    && rm -rf /$PLONE_UNIFIED_INSTALLER /Plone.tgz
+    && tar -xzf /Plone.tgz \
+    && cp -rv $PLONE_UNIFIED_INSTALLER/base_skeleton/* $SENAITE_INSTANCE_HOME \
+    && cp -v $PLONE_UNIFIED_INSTALLER/buildout_templates/buildout.cfg $SENAITE_INSTANCE_HOME/buildout-base.cfg \
+    && rm -rf $PLONE_UNIFIED_INSTALLER Plone.tgz \
+    # Buildout
+    && cd $SENAITE_INSTANCE_HOME \
+    && pip install -r requirements.txt \
+    && buildout \
+    && ln -s $SENAITE_FILESTORAGE/ var/filestorage \
+    && ln -s $SENAITE_BLOBSTORAGE/ var/blobstorage \
+    && chown -R senaite:senaite $SENAITE_HOME $SENAITE_DATA \
+    # Cleanup
+    && apt-get purge -y --auto-remove $(grep -vE "^\s*#" /build_deps.txt  | tr "\n" " ") \
+    && rm -rf /$SENAITE_HOME/buildout-cache \
+    && rm -rf /var/lib/apt/lists/*
 
 # Change working directory
 WORKDIR $SENAITE_INSTANCE_HOME
 
-# Copy Buildout
-COPY requirements.txt buildout.cfg ./
-
-# Buildout
-RUN pip install -r requirements.txt \
-    && buildout \
-    && ln -s $SENAITE_FILESTORAGE/ var/filestorage \
-    && ln -s $SENAITE_BLOBSTORAGE/ var/blobstorage \
-    && chown -R senaite:senaite $SENAITE_HOME $SENAITE_DATA
-
 # Mount external volume
 VOLUME /data
 
-# Copy startup scripts
-COPY docker-initialize.py docker-entrypoint.sh /
-
 # Expose instance port
 EXPOSE 8080
-
-# REMOVED: https://github.com/senaite/senaite.docker/issues/4
-# Add instance healthcheck
-# HEALTHCHECK --interval=1m --timeout=5s --start-period=1m \
-#   CMD nc -z -w5 127.0.0.1 8080 || exit 1
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["start"]

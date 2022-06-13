@@ -8,12 +8,12 @@ class Environment(object):
     """ Configure container via environment variables
     """
     def __init__(
-            self, env=os.environ,
-            zope_conf="/home/senaite/senaitelims/parts/instance/etc/zope.conf",
-            custom_conf="/home/senaite/senaitelims/custom.cfg",
-            zeopack_conf="/home/senaite/senaitelims/bin/zeopack",
-            zeoserver_conf="/home/senaite/senaitelims/parts/zeoserver/etc/zeo.conf",
-            cors_conf="/home/senaite/senaitelims/parts/instance/etc/package-includes/999-additional-overrides.zcml"
+        self, env=os.environ,
+        zope_conf="/home/senaite/senaitelims/parts/instance/etc/zope.conf",
+        custom_conf="/home/senaite/senaitelims/custom.cfg",
+        zeopack_conf="/home/senaite/senaitelims/bin/zeopack",
+        zeoserver_conf="/home/senaite/senaitelims/parts/zeoserver/etc/zeo.conf",
+        cors_conf="/home/senaite/senaitelims/parts/instance/etc/package-includes/999-additional-overrides.zcml"
     ):
         self.env = env
         self.zope_conf = zope_conf
@@ -226,7 +226,7 @@ CORS_TEMPLACE = """<configure
 
 BUILDOUT_TEMPLATE = """
 [buildout]
-extends = develop.cfg
+extends = buildout.cfg
 find-links += {findlinks}
 develop += {develop}
 eggs += {eggs}
