@@ -150,16 +150,19 @@ class Environment(object):
 
         sources = self.env.get("SOURCES", "").strip().split(",")
 
+        password = self.env.get("PASSWORD", "").strip()
+
         # If profiles not provided. Install ADDONS :default profiles
         if not profiles:
             for egg in eggs:
                 base = egg.split("=")[0]
                 profiles.append("%s:default" % base)
 
-        if not (eggs or zcml or develop or site):
+        if not (eggs or zcml or develop or site or password):
             return
 
         buildout = BUILDOUT_TEMPLATE.format(
+            password=password or "admin",
             findlinks="\n\t".join(findlinks),
             eggs="\n\t".join(eggs),
             zcml="\n\t".join(zcml),
@@ -229,6 +232,7 @@ CORS_TEMPLACE = """<configure
 BUILDOUT_TEMPLATE = """
 [buildout]
 extends = buildout.cfg
+user=admin:{password}
 find-links += {findlinks}
 develop += {develop}
 eggs += {eggs}

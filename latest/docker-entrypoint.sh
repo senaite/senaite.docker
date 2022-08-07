@@ -25,11 +25,6 @@ if [[ "$1" == "zeo"* ]]; then
   exec gosu senaite bin/$1 fg
 fi
 
-# Change the password
-if [[ -n "${PASSWORD}" ]]; then
-    gosu senaite bin/zope-passwd -p "${PASSWORD}"
-fi
-
 # Instance start
 if [[ $START == *"$1"* ]]; then
   exec gosu senaite bin/instance console
