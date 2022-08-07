@@ -156,8 +156,7 @@ class Environment(object):
                 base = egg.split("=")[0]
                 profiles.append("%s:default" % base)
 
-        enabled = bool(site)
-        if not (eggs or zcml or develop or enabled):
+        if not (eggs or zcml or develop or site):
             return
 
         buildout = BUILDOUT_TEMPLATE.format(
@@ -165,12 +164,15 @@ class Environment(object):
             eggs="\n\t".join(eggs),
             zcml="\n\t".join(zcml),
             develop="\n\t".join(develop),
-            profiles="\n\t".join(profiles),
             versions="\n".join(versions),
             sources="\n".join(sources),
-            site=site or "senaite",
-            enabled=enabled,
         )
+
+        if site:
+            buildout += PLONESITE_TEMPLATE.format(
+                site=site,
+                profiles="\n\t".join(profiles),
+            )
 
         # If we need to create a senaitesite and we have a zeo setup
         # configure collective.recipe.senaitesite properly
@@ -232,16 +234,19 @@ develop += {develop}
 eggs += {eggs}
 zcml += {zcml}
 
-[plonesite]
-enabled = {enabled}
-site-id = {site}
-profiles += {profiles}
-
 [versions]
 {versions}
 
 [sources]
 {sources}
+"""
+
+PLONESITE_TEMPLATE = """
+
+[plonesite]
+enabled = true
+site-id = {site}
+profiles += {profiles}
 """
 
 ZEO_INSTANCE_TEMPLATE = """
