@@ -112,6 +112,7 @@ To use specific add-ons versions:
 
 ### For Advanced Usage
 
+* `PLONE_SITE`, `SITE` - Relative URL of the SENAITE site. Setting this will trigger installation.
 * `PLONE_ZCML`, `ZCML` - Include custom Plone add-ons ZCML files (former `BUILDOUT_ZCML`)
 * `PLONE_DEVELOP`, `DEVELOP` - Develop new or existing Plone add-ons (former `BUILDOUT_DEVELOP`)
 * `ZEO_READ_ONLY` - Run Plone as a read-only ZEO client. Defaults to `off`.
