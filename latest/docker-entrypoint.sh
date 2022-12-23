@@ -25,7 +25,8 @@ function git_fixture {
 }
 
 # Fix mr.developer: fatal: detected dubious ownership in repository at ...
-# also see: https://github.com/actions/runner-images/issues/6775
+# https://github.com/actions/runner-images/issues/6775
+# https://github.com/senaite/senaite.docker/issues/17
 git_fixture
 
 if [ -e "custom.cfg" ]; then
