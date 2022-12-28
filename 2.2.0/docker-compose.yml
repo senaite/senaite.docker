@@ -3,13 +3,13 @@ version: "3.9"
 services:
 
   zeo:
-    image: senaite-latest
+    image: senaite/senaite:2.2.0
     command: zeo
     volumes:
       - ./data:/data
 
   instance1:
-    image: senaite-latest
+    image: senaite/senaite:2.2.0
     ports:
       - 8081:8080
     links:
@@ -23,7 +23,7 @@ services:
       ZEO_ADDRESS: "zeo:8080"
 
   instance2:
-    image: senaite-latest
+    image: senaite/senaite:2.2.0
     ports:
       - 8082:8080
     links:
