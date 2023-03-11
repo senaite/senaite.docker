@@ -17,6 +17,9 @@ This will take about 2-3 Minutes and the final screen will display a button
 with the port number `8080` displayed on it. This will open the SENAITE site
 in the webbrower.
 
+NOTE: If the link to port `8080` is not displayed on the site, you have to click
+      the **OPEN PORT** button and enter `8080` in there.
+
 It might be that this site will not load immediately, because the server is
 still in startup process. Please wait and reload until the SENAITE site appears.
 
