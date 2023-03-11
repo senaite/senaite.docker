@@ -203,7 +203,6 @@ docker image push senaite/senaite:v2.4.0
 After each new release, the PWD configuration needs to be adapted to the latest version.
 Open `stack.yml` and update the image versions to the new released version.
 
-
 ### Further information
 
 Please refer to this documentation for further information:
