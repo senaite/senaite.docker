@@ -45,8 +45,8 @@ $ docker build -t senaite .
 $ docker run --rm --name senaite -p 8080:8080 senaite
 ```
 
-This image exposes the TCP Port `8080` via `EXPOSE 8080`, so standard container
-linking will make it automatically available to the linked containers.
+The `-p 8080:8080` parameter will link port `8080` to the internal container
+port where SENAITE is listening.
 
 Now you can add a SENAITE Site at http://localhost:8080 - default user and
 password are **`admin/admin`**.
