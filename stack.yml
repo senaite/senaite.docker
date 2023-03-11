@@ -1,17 +1,7 @@
 version: "3"
 services:
-  zeo:
-    image: senaite/senaite:v2.4.0
-    command: zeo
-    volumes:
-      - ./data:/data
-
   instance:
     image: senaite/senaite:v2.4.0
     restart: "unless-stopped"
     ports:
       - "8080:8080"
-
-volumes:
-  data:
-    external: true
