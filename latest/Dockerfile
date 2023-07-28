@@ -8,9 +8,9 @@ LABEL senaite.core.version="latest"
 
 # Set environment variables
 ENV PLONE_MAJOR=5.2 \
-    PLONE_VERSION=5.2.11 \
-    PLONE_MD5=2f5affa9cff141c2f53f05c75b6e1625 \
-    PLONE_UNIFIED_INSTALLER=Plone-5.2.11-UnifiedInstaller-1.0 \
+    PLONE_VERSION=5.2.13 \
+    PLONE_MD5=12c037fae9413385149e8677f8457b84 \
+    PLONE_UNIFIED_INSTALLER=Plone-5.2.13-UnifiedInstaller-1.0 \
     SENAITE_HOME=/home/senaite \
     SENAITE_USER=senaite \
     SENAITE_INSTANCE_HOME=/home/senaite/senaitelims \
