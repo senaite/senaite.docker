@@ -1,0 +1,41 @@
+version: "3"
+
+services:
+
+  zeo:
+    image: senaite/senaite:v2.5.0
+    command: zeo
+    volumes:
+      - ./data:/data
+
+  instance1:
+    image: senaite/senaite:v2.5.0
+    ports:
+      - 8081:8080
+    links:
+      - zeo
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2048MB
+    environment:
+      ZEO_ADDRESS: "zeo:8080"
+
+  instance2:
+    image: senaite/senaite:v2.5.0
+    ports:
+      - 8082:8080
+    links:
+      - zeo
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 2048MB
+    environment:
+      ZEO_ADDRESS: "zeo:8080"
+
+volumes:
+  data:
+    external: true

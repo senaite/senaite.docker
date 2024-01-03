@@ -1,7 +1,7 @@
 version: "3"
 services:
   instance:
-    image: senaite/senaite:v2.4.1
+    image: senaite/senaite:v2.5.0
     restart: "unless-stopped"
     ports:
       - "8080:8080"

@@ -1,0 +1,14 @@
+dpkg-dev
+gcc
+libbz2-dev
+libc6-dev
+libffi-dev
+libjpeg62-turbo-dev
+libopenjp2-7-dev
+libpcre3-dev
+libssl-dev
+libtiff5-dev
+libxml2-dev
+libxslt1-dev
+wget
+zlib1g-dev
