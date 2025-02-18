@@ -12,3 +12,6 @@ libxml2-dev
 libxslt1-dev
 wget
 zlib1g-dev
+libsasl2-dev
+libldap2-dev
+libssl-dev
