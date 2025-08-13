@@ -1,0 +1,14 @@
+git
+gosu
+libcairo2
+libgdk-pixbuf2.0-0
+libjpeg62
+libopenjp2-7
+libpango-1.0-0
+libpangocairo-1.0-0
+libtiff5
+libxml2
+libxslt1.1
+lynx
+rsync
+vim
