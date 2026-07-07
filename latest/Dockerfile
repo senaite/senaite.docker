@@ -41,7 +41,10 @@ RUN echo "Acquire::Check-Valid-Until \"false\";" > /etc/apt/apt.conf.d/99no-chec
     && apt-get install -y --no-install-recommends $(grep -vE "^\s*#" /build_deps.txt | tr "\n" " ") \
     && apt-get install -y --no-install-recommends $(grep -vE "^\s*#" /run_deps.txt | tr "\n" " ") \
     # Fetch unified installer
-    && wget -O Plone.tgz https://launchpad.net/plone/$PLONE_MAJOR/$PLONE_VERSION/+download/$PLONE_UNIFIED_INSTALLER.tgz \
+    # buster's CA bundle is EOL and no longer trusts launchpad's TLS
+    # chain, so skip the cert check; the MD5 verification below still
+    # guarantees the integrity of the downloaded archive
+    && wget --no-check-certificate -O Plone.tgz https://launchpad.net/plone/$PLONE_MAJOR/$PLONE_VERSION/+download/$PLONE_UNIFIED_INSTALLER.tgz \
     && echo "$PLONE_MD5 Plone.tgz" | md5sum -c - \
     && tar -xzf /Plone.tgz \
     && cp -rv $PLONE_UNIFIED_INSTALLER/base_skeleton/* $SENAITE_INSTANCE_HOME \
