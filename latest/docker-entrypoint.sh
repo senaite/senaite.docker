@@ -15,6 +15,11 @@ find /home/senaite -not -user senaite -exec chown senaite:senaite {} \+
 # Initializing from environment variables
 gosu senaite python /docker-initialize.py
 
+if [ -n "$PASSWORD" ]; then
+    echo "admin:$PASSWORD" > /home/senaite/senaitelims/parts/instance/inituser
+    chown senaite:senaite /home/senaite/senaitelims/parts/instance/inituser
+fi
+
 function git_fixture {
   for d in `find /home/senaite/senaitelims/src -mindepth 1 -maxdepth 1 -type d`
   do

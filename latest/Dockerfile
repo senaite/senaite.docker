@@ -47,7 +47,7 @@ RUN useradd --system -m -d $SENAITE_HOME -U -u 500 $SENAITE_USER
 RUN mkdir -p $SENAITE_INSTANCE_HOME $SENAITE_FILESTORAGE $SENAITE_BLOBSTORAGE
 
 # Copy Buildout
-COPY requirements.txt buildout.cfg common-addons.cfg $SENAITE_INSTANCE_HOME/
+COPY requirements.txt buildout.cfg common-addons.cfg versions.cfg zope-versions.cfg zope-versions-prod.cfg $SENAITE_INSTANCE_HOME/
 COPY addons/customers/custom-addon.cfg $SENAITE_INSTANCE_HOME/custom-addon.cfg
 
 # Copy the build dependencies and startup scripts
@@ -103,6 +103,7 @@ RUN set -eux; \
     tar -xzf /Plone.tgz -C /tmp/plone-installer --strip-components=1; \
     cp -rv /tmp/plone-installer/base_skeleton/* $SENAITE_INSTANCE_HOME; \
     cp -v /tmp/plone-installer/buildout_templates/buildout.cfg $SENAITE_INSTANCE_HOME/buildout-base.cfg; \
+    sed -i 's|https://dist.plone.org/release/5.2.15/versions.cfg|versions.cfg|g' $SENAITE_INSTANCE_HOME/buildout-base.cfg; \
     rm -rf /tmp/plone-installer /Plone.tgz
 
 RUN --mount=type=cache,target=/root/.cache/pip \

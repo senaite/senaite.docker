@@ -2,3 +2,5 @@ data/
 *.pyc
 __pycache__/
 *.egg-info/
+postgres-data/
+blobstorage/

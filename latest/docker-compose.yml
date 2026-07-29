@@ -1,25 +1,73 @@
 services:
-  app:
-    image: maitux/senaite:latest
-    container_name: senaite-source-clean-2x
+  postgres:
+    image: postgres:18
+    container_name: maitux-lims-postgres
+    restart: unless-stopped
+    shm_size: 1gb
+    environment:
+      POSTGRES_DB: lims_db
+      POSTGRES_USER: lims_user
+      POSTGRES_PASSWORD: Maitux=123456
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C.UTF-8 --data-checksums
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=256MB
+      - -c
+      - max_wal_size=2GB
+      - -c
+      - wal_compression=on
+      - -c
+      - max_connections=200
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lims_user -d lims_db -h 127.0.0.1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - ./postgres-data:/var/lib/postgresql
+    networks:
+      - maitux_lims_backend
+
+  instance:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: maitux-lims:latest
+    container_name: maitux-lims
     restart: unless-stopped
     ports:
       - 8083:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
     deploy:
       resources:
         limits:
           cpus: "1"
           memory: 1024MB
-    volumes:
-      - ./data:/data
-      - ./addons/customers:/opt/addons/customers
-      - ./addons/customers/custom-addon.cfg:/home/senaite/senaitelims/custom-addon.cfg
     environment:
-      SITE: senaite
-      PASSWORD: changeme
+      SITE: MaiLIMS
+      PASSWORD: Maitux=123456
       PIP_INDEX_URL: https://pypi.tuna.tsinghua.edu.cn/simple
       PIP_TRUSTED_HOST: pypi.tuna.tsinghua.edu.cn
       LANG: C.UTF-8
       LC_ALL: C.UTF-8
       PYTHONIOENCODING: utf-8
       CHAMELEON_CACHE: /data/cache
+    volumes:
+      - ./data:/data
+      - ./blobstorage:/data/blobstorage
+      - ./addons/customers:/opt/addons/customers
+      - ./addons/customers/custom-addon.cfg:/home/senaite/senaitelims/custom-addon.cfg
+    networks:
+      - maitux_lims_backend
+
+networks:
+  maitux_lims_backend:
+    driver: bridge
