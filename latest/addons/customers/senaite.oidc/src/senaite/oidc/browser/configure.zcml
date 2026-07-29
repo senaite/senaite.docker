@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="senaite.oidc">
+
+  <!-- Set overrides folder for Just-a-Bunch-Of-Templates product -->
+  <include package="z3c.jbot" file="meta.zcml" />
+  <browser:jbot
+      directory="overrides"
+      layer="senaite.oidc.interfaces.ISenaiteOidcLayer"
+      />
+
+  <!-- Publish static files -->
+  <plone:static
+      name="senaite.oidc"
+      type="plone"
+      directory="static"
+      />
+
+</configure>
