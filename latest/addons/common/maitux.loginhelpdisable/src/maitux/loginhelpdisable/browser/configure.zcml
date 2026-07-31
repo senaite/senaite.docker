@@ -1,0 +1,22 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser">
+
+  <browser:page
+      name="login-help"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".views.DisabledLoginHelpView"
+      permission="zope2.View"
+      layer="maitux.loginhelpdisable.interfaces.IMaituxLoginHelpDisableLayer"
+      />
+
+  <browser:viewlet
+      name="maitux.loginhelpdisable.hide_link"
+      for="*"
+      manager="plone.app.layout.viewlets.interfaces.IHtmlHead"
+      class=".viewlets.HideLoginHelpLinkViewlet"
+      permission="zope2.View"
+      layer="maitux.loginhelpdisable.interfaces.IMaituxLoginHelpDisableLayer"
+      />
+
+</configure>

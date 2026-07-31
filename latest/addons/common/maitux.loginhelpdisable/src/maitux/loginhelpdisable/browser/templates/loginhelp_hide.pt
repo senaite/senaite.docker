@@ -1,0 +1,8 @@
+<tal:block tal:omit-tag="">
+  <style type="text/css">
+    a[href$="/@@login-help"],
+    a[href$="@@login-help"] {
+      display: none !important;
+    }
+  </style>
+</tal:block>

@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<layers>
+  <layer name="maitux.loginhelpdisable.interfaces.IMaituxLoginHelpDisableLayer"
+         interface="maitux.loginhelpdisable.interfaces.IMaituxLoginHelpDisableLayer"
+         remove="True" />
+</layers>
