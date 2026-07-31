@@ -14,7 +14,7 @@ interface AiCfg {
 
 export default function ContextStatusBar() {
   const { currentCompany } = useWorkspace();
-  const [ai, setAi] = useState<AiCfg>({ provider: 'ollama' });
+  const [ai, setAi] = useState<AiCfg>({ provider: 'deterministic' });
 
   const load = () => apiClient.get<{ ai: AiCfg }>('/config/workspace')
     .then(c => setAi(c.ai)).catch(() => {});

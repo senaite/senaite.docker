@@ -49,10 +49,18 @@ def test_connection(params, **_):
     if not url:
         return Result.failure("站点缺少 URL", code=errors.SITE_CONNECTION_FAILED)
     import urllib.request
+    import urllib.error
+    import ssl
     try:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
         req = urllib.request.Request(url, method="HEAD")
-        urllib.request.urlopen(req, timeout=10)
+        urllib.request.urlopen(req, timeout=10, context=ctx)
         return Result.success({"reachable": True, "url": url})
+    except urllib.error.HTTPError as e:
+        # 只要能返回 HTTP 状态码（如 401 Unauthorized 等），说明服务是可达的
+        return Result.success({"reachable": True, "url": url, "note": str(e)})
     except Exception as e:
         return Result.success({"reachable": False, "url": url, "reason": str(e)})
 

@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import json
 import urllib.parse
+import urllib.error
 import urllib.request
 from typing import Optional
 
@@ -77,9 +78,33 @@ class InventoryRunner:
         req.add_header(
             "Authorization", "Basic " + base64.b64encode(token).decode("ascii")
         )
-        with urllib.request.urlopen(req, timeout=self.timeout) as resp:
-            payload = resp.read().decode("utf-8", errors="replace")
-        return json.loads(payload)
+        
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout, context=ctx) as resp:
+                payload = resp.read().decode("utf-8", errors="replace")
+                content_type = (resp.headers.get("Content-Type") or "").lower()
+        except urllib.error.HTTPError as exc:
+            payload = exc.read().decode("utf-8", errors="replace")
+            content_type = (exc.headers.get("Content-Type") or "").lower()
+            if exc.code in (401, 403):
+                raise RuntimeError("站点认证失败，请配置正确的管理员账号密码")
+            raise RuntimeError("端点请求失败: HTTP %s" % exc.code)
+
+        payload_stripped = payload.lstrip()
+        if "html" in content_type or payload_stripped.startswith("<"):
+            if "Unauthorized" in payload:
+                raise RuntimeError("站点认证失败，请配置正确的管理员账号密码")
+            raise RuntimeError("端点返回 HTML 而不是 JSON，请确认代理转发和端点权限")
+
+        try:
+            return json.loads(payload)
+        except ValueError:
+            raise RuntimeError("端点返回了非 JSON 内容")
 
     # ── 精简为 Gate1 所需结构 ──
     @staticmethod

@@ -18,7 +18,7 @@ def _config_path():
 
 DEFAULT_CONFIG = {
     "ai": {
-        "provider": "ollama",
+        "provider": "deterministic",
         "ollama": {"baseUrl": "http://127.0.0.1:11434", "model": ""},
         "cloud": {"provider": "", "model": "", "apiKey": "", "baseUrl": ""},
     },
@@ -27,15 +27,43 @@ DEFAULT_CONFIG = {
 }
 
 
+def _text_value(value):
+    if isinstance(value, list):
+        for item in value:
+            text = str(item or "").strip()
+            if text:
+                return text
+        return ""
+    return str(value or "").strip()
+
+
+def _normalize_ai_config(cfg):
+    cfg = cfg or {}
+    ai = cfg.setdefault("ai", {})
+    ai["provider"] = _text_value(ai.get("provider")) or DEFAULT_CONFIG["ai"]["provider"]
+
+    ollama = ai.setdefault("ollama", {})
+    ollama["baseUrl"] = _text_value(ollama.get("baseUrl")) or DEFAULT_CONFIG["ai"]["ollama"]["baseUrl"]
+    ollama["model"] = _text_value(ollama.get("model"))
+
+    cloud = ai.setdefault("cloud", {})
+    cloud["provider"] = _text_value(cloud.get("provider"))
+    cloud["model"] = _text_value(cloud.get("model"))
+    cloud["apiKey"] = _text_value(cloud.get("apiKey"))
+    cloud["baseUrl"] = _text_value(cloud.get("baseUrl"))
+    return cfg
+
+
 def _read():
     path = _config_path()
     if os.path.isfile(path):
         with open(path, encoding="utf-8") as h:
-            return json.load(h)
-    return dict(DEFAULT_CONFIG)
+            return _normalize_ai_config(json.load(h))
+    return _normalize_ai_config(dict(DEFAULT_CONFIG))
 
 
 def _write(cfg):
+    cfg = _normalize_ai_config(cfg)
     path = _config_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as h:
@@ -118,7 +146,7 @@ def generate_namespace(body, **_):
 
     cfg = _read()
     ai = cfg.get("ai", {})
-    provider = ai.get("provider", "ollama")
+    provider = ai.get("provider", "deterministic")
 
     prompt = (
         "你是软件包命名助手。请把公司名称改写成适合 Python/Plone addon 的 namespace。"

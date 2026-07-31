@@ -198,6 +198,12 @@ def _normalize_permission_action(value: str) -> str:
 
 
 def _safe_text(value) -> str:
+    if isinstance(value, list):
+        for item in value:
+            text = str(item or "").strip()
+            if text:
+                return text
+        return ""
     return str(value or "").strip()
 
 
@@ -537,16 +543,16 @@ def _normalize_update_permission_payload(
 class LLMRequirementEngine:
     def __init__(self, provider: Optional[str] = None, ai_config: Optional[dict] = None) -> None:
         self._ai_config = ai_config or _read_ai_config()
-        self.provider = (provider or self._ai_config.get("provider") or "").strip().lower()
+        self.provider = _safe_text(provider or self._ai_config.get("provider")).lower()
 
     def is_available(self) -> bool:
         if self.provider not in _SUPPORTED_PROVIDERS:
             return False
         if self.provider == "ollama":
             ollama = self._ai_config.get("ollama") or {}
-            return bool((ollama.get("baseUrl") or "").strip() and (ollama.get("model") or "").strip())
+            return bool(_safe_text(ollama.get("baseUrl")) and _safe_text(ollama.get("model")))
         cloud = self._ai_config.get("cloud") or {}
-        return bool((cloud.get("baseUrl") or "").strip() and (cloud.get("model") or "").strip())
+        return bool(_safe_text(cloud.get("baseUrl")) and _safe_text(cloud.get("model")))
 
     def parse_to_change_spec(
         self,
@@ -660,10 +666,10 @@ class LLMRequirementEngine:
 
     def _request_ollama(self, prompt: str) -> Result:
         ollama = self._ai_config.get("ollama") or {}
-        url = (ollama.get("baseUrl") or "http://127.0.0.1:11434").rstrip("/") + "/api/generate"
+        url = (_safe_text(ollama.get("baseUrl")) or "http://127.0.0.1:11434").rstrip("/") + "/api/generate"
         payload = json.dumps(
             {
-                "model": ollama.get("model") or "",
+                "model": _safe_text(ollama.get("model")),
                 "prompt": prompt,
                 "stream": False,
                 "format": "json",
@@ -678,10 +684,10 @@ class LLMRequirementEngine:
 
     def _request_cloud(self, prompt: str) -> Result:
         cloud = self._ai_config.get("cloud") or {}
-        url = (cloud.get("baseUrl") or "").rstrip("/") + "/chat/completions"
+        url = _safe_text(cloud.get("baseUrl")).rstrip("/") + "/chat/completions"
         payload = json.dumps(
             {
-                "model": cloud.get("model") or "",
+                "model": _safe_text(cloud.get("model")),
                 "messages": [
                     {"role": "system", "content": "你只输出 JSON，不输出任何解释。"},
                     {"role": "user", "content": prompt},
@@ -692,7 +698,7 @@ class LLMRequirementEngine:
         ).encode("utf-8")
         req = urllib.request.Request(url, data=payload, method="POST")
         req.add_header("Content-Type", "application/json")
-        req.add_header("Authorization", "Bearer " + (cloud.get("apiKey") or ""))
+        req.add_header("Authorization", "Bearer " + _safe_text(cloud.get("apiKey")))
         with urllib.request.urlopen(req, timeout=45) as resp:
             data = json.loads(resp.read().decode("utf-8", errors="replace"))
         text = ""

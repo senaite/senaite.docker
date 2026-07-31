@@ -9,7 +9,13 @@ import subprocess
 import time
 import urllib.parse
 import urllib.request
+import urllib.error
+import ssl
 from base64 import b64encode
+
+ctx = ssl.create_default_context()
+ctx.check_hostname = False
+ctx.verify_mode = ssl.CERT_NONE
 
 from infrastructure.config_repository import ConfigRepository
 from shared import errors
@@ -227,7 +233,7 @@ class InstallService:
             try:
                 req = urllib.request.Request(url.rstrip("/"), method="HEAD")
                 req.add_header("Authorization", "Basic " + auth)
-                resp = urllib.request.urlopen(req, timeout=5)
+                resp = urllib.request.urlopen(req, timeout=5, context=ctx)
                 if resp.status < 500:
                     return True
             except Exception:
@@ -242,7 +248,7 @@ class InstallService:
             req = urllib.request.Request(url.rstrip("/") + "/install_products", data=data, method="POST")
             req.add_header("Authorization", "Basic " + auth)
             req.add_header("Content-Type", "application/x-www-form-urlencoded")
-            resp = urllib.request.urlopen(req, timeout=30)
+            resp = urllib.request.urlopen(req, timeout=30, context=ctx)
             body = resp.read().decode(errors="replace")
             if "activated" in body.lower() or "installed" in body.lower():
                 return True, "安装成功（响应确认）"
@@ -289,7 +295,7 @@ class InstallService:
             req = urllib.request.Request(url + "/install_products", data=data, method="POST")
             req.add_header("Authorization", "Basic " + auth_token)
             req.add_header("Content-Type", "application/x-www-form-urlencoded")
-            urllib.request.urlopen(req, timeout=30)
+            urllib.request.urlopen(req, timeout=30, context=ctx)
             steps.append({"step": "uninstall", "ok": True})
         except Exception as e:
             steps.append({"step": "uninstall", "ok": False, "reason": str(e)[:80]})
