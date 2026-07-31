@@ -35,12 +35,12 @@ function git_fixture {
 # https://github.com/senaite/senaite.docker/issues/17
 git_fixture
 
-# if [ -e "custom.cfg" ]; then
-#   buildout -c custom.cfg
-#   find /data  -not -user senaite -exec chown senaite:senaite {} \+
-#   find /home/senaite -not -user senaite -exec chown senaite:senaite {} \+
-#   gosu senaite python /docker-initialize.py
-# fi
+if [ -e "custom.cfg" ]; then
+  buildout -c custom.cfg
+  find /data  -not -user senaite -exec chown senaite:senaite {} \+
+  find /home/senaite -not -user senaite -exec chown senaite:senaite {} \+
+  gosu senaite python /docker-initialize.py
+fi
 
 # ZEO Server
 if [[ "$1" == "zeo"* ]]; then
