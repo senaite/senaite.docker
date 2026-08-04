@@ -54,8 +54,26 @@ docker build --progress=plain `
   --build-arg HTTP_PROXY=$env:HTTP_PROXY `
   --build-arg HTTPS_PROXY=$env:HTTPS_PROXY `
   --build-arg NO_PROXY=$env:NO_PROXY `
+  --build-arg CACHEBUST=$(Get-Date -Format "yyyyMMddHHmmss") `
   -t maitux-lims:latest .
 ```
+
+```powershell
+# 只更新 senaite.core（你现在的场景）
+docker build --progress=plain `
+  --build-arg HTTP_PROXY=$env:HTTP_PROXY `
+  --build-arg HTTPS_PROXY=$env:HTTPS_PROXY `
+  --build-arg NO_PROXY=$env:NO_PROXY `
+  --build-arg UPDATED_PACKAGES="senaite.core" `
+  --build-arg CACHEBUST=$(Get-Date -Format "yyyyMMddHHmmss") `
+  -t maitux-lims:latest .
+
+# 更新多个包
+  --build-arg UPDATED_PACKAGES="senaite.core senaite.lims" `
+
+# 什么都不更新，纯重建（所有包走 src 缓存）
+  --build-arg UPDATED_PACKAGES="" `
+  ```
 
 If you need to force a full rebuild without cache:
 

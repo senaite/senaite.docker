@@ -106,6 +106,8 @@ RUN set -eux; \
     sed -i 's|https://dist.plone.org/release/5.2.15/versions.cfg|versions.cfg|g' $SENAITE_INSTANCE_HOME/buildout-base.cfg; \
     rm -rf /tmp/plone-installer /Plone.tgz
 
+ARG CACHEBUST=1
+ARG UPDATED_PACKAGES=
 RUN --mount=type=cache,target=/root/.cache/pip \
     --mount=type=cache,target=/cache/buildout-downloads \
     --mount=type=cache,target=/cache/eggs \
@@ -143,7 +145,8 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     }; \
     pip_download_with_fallback -r requirements.txt argparse==1.4.0 zope.component==4.6.2 collective.recipe.plonesite Plone==$PLONE_VERSION; \
     pip_install_with_fallback -r requirements.txt argparse==1.4.0 zope.component==4.6.2 collective.recipe.plonesite; \
-    GIT_TRACE=1 GIT_CURL_VERBOSE=1 buildout; \
+    if [ -n "$UPDATED_PACKAGES" ]; then for pkg in $UPDATED_PACKAGES; do bin/develop up $pkg 2>/dev/null || true; done; fi; \
+    GIT_TRACE=1 GIT_CURL_VERBOSE=1 buildout -N; \
     cp -a $SENAITE_HOME/buildout-cache/downloads/. /cache/buildout-downloads/ || true; \
     cp -a $SENAITE_INSTANCE_HOME/eggs/. /cache/eggs/ || true; \
     cp -a $WHEELHOUSE/. /cache/wheelhouse/ || true
