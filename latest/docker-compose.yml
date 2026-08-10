@@ -39,7 +39,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: crpi-z99l88o2fu3lae8l.cn-hangzhou.personal.cr.aliyuncs.com/maitux/maisearch-app:latest
+    image: crpi-z99l88o2fu3lae8l.cn-hangzhou.personal.cr.aliyuncs.com/maitux/maitux-lims:latest
     container_name: maitux-lims
     restart: unless-stopped
     depends_on:
