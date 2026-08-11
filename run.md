@@ -11,7 +11,7 @@ cd d:\AWork\senaite.docker\latest
 Use the normal build command:
 
 ```powershell
-docker build -t maitux-lims:latest .
+docker build -t crpi-z99l88o2fu3lae8l.cn-hangzhou.personal.cr.aliyuncs.com/maitux/maitux-lims:latest .
 ```
 
 Before building, if you add or remove any addon under `d:\AWork\senaite.docker\latest\addons\common`, remember to manually update:
@@ -55,7 +55,7 @@ docker build --progress=plain `
   --build-arg HTTPS_PROXY=$env:HTTPS_PROXY `
   --build-arg NO_PROXY=$env:NO_PROXY `
   --build-arg CACHEBUST=$(Get-Date -Format "yyyyMMddHHmmss") `
-  -t maitux-lims:latest .
+  -t crpi-z99l88o2fu3lae8l.cn-hangzhou.personal.cr.aliyuncs.com/maitux/maitux-lims:latest .
 ```
 
 ```powershell
@@ -66,7 +66,7 @@ docker build --progress=plain `
   --build-arg NO_PROXY=$env:NO_PROXY `
   --build-arg UPDATED_PACKAGES="senaite.core" `
   --build-arg CACHEBUST=$(Get-Date -Format "yyyyMMddHHmmss") `
-  -t maitux-lims:latest .
+  -t crpi-z99l88o2fu3lae8l.cn-hangzhou.personal.cr.aliyuncs.com/maitux/maitux-lims:latest .
 
 # 更新多个包
   --build-arg UPDATED_PACKAGES="senaite.core senaite.lims" `
@@ -78,7 +78,7 @@ docker build --progress=plain `
 If you need to force a full rebuild without cache:
 
 ```powershell
-docker build --no-cache --progress=plain -t maitux-lims:latest .
+docker build --no-cache --progress=plain -t crpi-z99l88o2fu3lae8l.cn-hangzhou.personal.cr.aliyuncs.com/maitux/maitux-lims:latest  .
 ```
 
 ## 3. Start the container
