@@ -1,0 +1,29 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup">
+
+  <include package="Products.Five" />
+  <include package="Products.GenericSetup" file="meta.zcml" />
+
+  <five:registerPackage package="." />
+
+  <include package=".browser" />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="MAITUX BRANDING"
+      directory="profiles/default"
+      description="Removes footer branding text, links and footer icon group"
+      post_handler="maitux.branding.profiles.default.setuphandlers.post_install"
+      provides="Products.GenericSetup.interfaces.EXTENSION" />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="MAITUX BRANDING (uninstall)"
+      directory="profiles/uninstall"
+      description="Uninstall profile for MAITUX BRANDING"
+      provides="Products.GenericSetup.interfaces.EXTENSION" />
+
+</configure>
+

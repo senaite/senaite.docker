@@ -1,0 +1,93 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: maitux-lims-postgres
+    restart: unless-stopped
+    shm_size: 1gb
+    environment:
+      POSTGRES_DB: lims_db
+      POSTGRES_USER: lims_user
+      POSTGRES_PASSWORD: Maitux=123456
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --locale=C.UTF-8 --data-checksums
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - work_mem=16MB
+      - -c
+      - maintenance_work_mem=256MB
+      - -c
+      - max_wal_size=2GB
+      - -c
+      - wal_compression=on
+      - -c
+      - max_connections=200
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lims_user -d lims_db -h 127.0.0.1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./postgres-data:/var/lib/postgresql
+    networks:
+      - maitux_lims_backend
+
+  instance:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Versioned tag: building from this directory must NOT overwrite the
+    # rolling `:latest` image that ../latest builds, otherwise the pinned
+    # release and the rolling build clobber each other.
+    image: crpi-z99l88o2fu3lae8l.cn-hangzhou.personal.cr.aliyuncs.com/maitux/maitux-lims:2.7.0-maitux1
+    container_name: maitux-lims
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1024MB
+    environment:
+      SITE: MaiLIMS
+      PASSWORD: Maitux=123456
+      PIP_INDEX_URL: https://pypi.tuna.tsinghua.edu.cn/simple
+      PIP_TRUSTED_HOST: pypi.tuna.tsinghua.edu.cn
+      LANG: C.UTF-8
+      LC_ALL: C.UTF-8
+      PYTHONIOENCODING: utf-8
+      CHAMELEON_CACHE: /data/cache
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./data:/data
+      - ./blobstorage:/data/blobstorage
+      - ./addons/customers:/opt/addons/customers
+      - ./addons/customers/custom-addon.cfg:/home/senaite/senaitelims/custom-addon.cfg
+    networks:
+      - maitux_lims_backend
+
+  nginx:
+    image: nginx:1.30.4
+    container_name: maitux-lims-nginx
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - instance
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./nginx/certificate/certificate.pem:/etc/nginx/certificate/certificate.pem:ro
+      - ./nginx/certificate/certificate.key:/etc/nginx/certificate/certificate.key:ro
+      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - maitux_lims_backend
+
+networks:
+  maitux_lims_backend:
+    driver: bridge

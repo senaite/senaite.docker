@@ -1,0 +1,61 @@
+dist: bionic
+language: python
+cache:
+  pip: true
+  directories:
+    - eggs
+    - $HOME/buildout-cache
+    - $HOME/.buildout
+python:
+  - "2.7"
+matrix:
+  include:
+    - python: "2.7"
+      env: PLONE_VERSION=43
+    - python: "2.7"
+      env: PLONE_VERSION=51
+    - python: "2.7"
+      env: PLONE_VERSION=52
+    - python: "3.7"
+      env: PLONE_VERSION=52
+  fast_finish: true
+
+before_install:
+  - mkdir -p $HOME/buildout-cache/{downloads,eggs,extends}
+  - mkdir -p $HOME/.buildout
+  - echo "[buildout]" > $HOME/.buildout/default.cfg
+  - echo "download-cache = $HOME/buildout-cache/downloads" >> $HOME/.buildout/default.cfg
+  - echo "eggs-directory = $HOME/buildout-cache/eggs" >> $HOME/.buildout/default.cfg
+  - echo "extends-cache = $HOME/buildout-cache/extends" >> $HOME/.buildout/default.cfg
+  - echo "abi-tag-eggs = true" >> $HOME/.buildout/default.cfg
+  - git config --global user.email "travis@travis-ci.org"
+  - git config --global user.name "Travis CI"
+  - sudo apt-get install -y firefox-geckodriver
+  - virtualenv -p `which python` .
+  - bin/pip install -r requirements.txt -c constraints_plone$PLONE_VERSION.txt
+  - cp test_plone$PLONE_VERSION.cfg buildout.cfg
+
+install:
+  - travis_retry pip install -U tox coveralls coverage -c constraints.txt
+
+before_script:
+  - 'export DISPLAY=:99.0'
+  - export VERBOSE=true
+  - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+  - sleep 3
+
+script:
+  - PYTEST_ADDOPTS="-s -vv" tox
+
+after_success:
+  - python -m coverage.pickle2json
+  - coverage combine
+  - coveralls
+
+notifications:
+  email:
+    recipients:
+#      - travis-reports@plone.com
+      - {author}
+    on_success: change
+    on_failure: change

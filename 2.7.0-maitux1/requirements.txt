@@ -1,0 +1,4 @@
+-r https://dist.plone.org/release/5.2.15/requirements.txt
+RelStorage==3.5.0
+psycopg2==2.8.6
+perfmetrics==3.2.0

@@ -1,0 +1,339 @@
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2024-01-03 09:08+0000\n"
+"PO-Revision-Date: 2018-06-06 17:12+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Chinese (China) (https://app.transifex.com/senaite/teams/87187/zh_CN/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Language-Code: en\n"
+"Language-Name: English\n"
+"Preferred-Encodings: utf-8 latin1\n"
+"Domain: DOMAIN\n"
+"Language: zh_CN\n"
+
+#: senaite/impress/controlpanel.py:51
+msgid "Active templates"
+msgstr "已启用模板"
+
+#: senaite/impress/controlpanel.py:139
+msgid "Advanced"
+msgstr "高级"
+
+#: senaite/impress/browser/publish/content.py:112
+msgid "All"
+msgstr "全部"
+
+#: senaite/impress/controlpanel.py:105
+msgid "Allow PDF download"
+msgstr "允许下载 PDF"
+
+#: senaite/impress/controlpanel.py:112
+msgid "Allow PDF email share"
+msgstr "允许通过电子邮件分享 PDF"
+
+#: senaite/impress/controlpanel.py:106
+msgid "Allow direct download of the generated report"
+msgstr "允许直接下载生成的报告"
+
+#: senaite/impress/controlpanel.py:113
+msgid "Allow to share the generated PDF directly via email"
+msgstr "允许通过电子邮件直接分享生成的 PDF"
+
+#: senaite/impress/analysisrequest/templates/header.pt:14
+msgid "Analysis Report"
+msgstr "分析报告"
+
+#: senaite/impress/analysisrequest/templates/discreeter.pt:34
+msgid "Analysis results relate only to the samples tested."
+msgstr "分析结果仅适用于所检测的样品。"
+
+#: senaite/impress/analysisrequest/templates/attachments.pt:29
+msgid "Attachment for"
+msgstr "附件："
+
+#: senaite/impress/analysisrequest/templates/attachments.pt:13
+msgid "Attachments for ${DYNAMIC_CONTENT}"
+msgstr "${DYNAMIC_CONTENT} 的附件"
+
+#: senaite/impress/analysisrequest/templates/controls.pt:34
+msgid "Attachments per Row"
+msgstr "每行附件数"
+
+#: senaite/impress/controlpanel.py:46
+msgid "Available Templates"
+msgstr "可用模板"
+
+#: senaite/impress/analysisrequest/templates/summary.pt:37
+#: senaite/impress/browser/publish/content.py:96
+msgid "Batch ID"
+msgstr "批次 ID"
+
+#: senaite/impress/analysisrequest/templates/summary.pt:91
+msgid "Batch Labels"
+msgstr "批次标签"
+
+#: senaite/impress/analysisrequest/templates/summary.pt:49
+#: senaite/impress/browser/publish/content.py:84
+msgid "Client"
+msgstr "客户"
+
+#: senaite/impress/analysisrequest/templates/summary.pt:45
+msgid "Client Batch ID"
+msgstr "客户批次 ID"
+
+#: senaite/impress/browser/publish/content.py:88
+msgid "Client ID"
+msgstr "客户 ID"
+
+#: senaite/impress/analysisrequest/templates/summary.pt:56
+msgid "Client SID"
+msgstr "客户 SID"
+
+#: senaite/impress/browser/publish/content.py:92
+msgid "Contact"
+msgstr "联系人"
+
+#: senaite/impress/analysisrequest/templates/summary.pt:76
+msgid "Date Published"
+msgstr "发布日期"
+
+#: senaite/impress/analysisrequest/templates/summary.pt:68
+msgid "Date Received"
+msgstr "接收日期"
+
+#: senaite/impress/browser/publish/content.py:80
+msgid "Date Sampled"
+msgstr "采样日期"
+
+#: senaite/impress/analysisrequest/templates/summary.pt:72
+msgid "Date Verified"
+msgstr "审核日期"
+
+#: senaite/impress/controlpanel.py:73
+msgid "Default Orientation"
+msgstr "默认方向"
+
+#: senaite/impress/controlpanel.py:65
+msgid "Default Paper Format"
+msgstr "默认纸张格式"
+
+#: senaite/impress/controlpanel.py:57
+msgid "Default Template"
+msgstr "默认模板"
+
+#: senaite/impress/controlpanel.py:98
+msgid "Developer Mode"
+msgstr "开发者模式"
+
+#: senaite/impress/adapters.py:81
+msgid "Download the generated PDF to your computer"
+msgstr "将生成的 PDF 下载到您的计算机"
+
+#: senaite/impress/actions/providers.py:194
+msgid "Email sent"
+msgstr "邮件已发送"
+
+#: senaite/impress/actions/providers.py:190
+msgid "Failed to send Email"
+msgstr "邮件发送失败"
+
+#: senaite/impress/analysisrequest/templates/attachments.pt:36
+msgid "Filename:"
+msgstr "文件名："
+
+#: senaite/impress/controlpanel.py:81
+msgid "Footer Text"
+msgstr "页脚文本"
+
+#: senaite/impress/ajax.py:332
+msgid "Generated reports for: {}, "
+msgstr "已为以下对象生成报告：{}, "
+
+#: senaite/impress/configure.zcml:175
+msgid "HTML to PDF report engine for SENAITE"
+msgstr "SENAITE 的 HTML 转 PDF 报告引擎"
+
+#: senaite/impress/browser/publish/content.py:60
+msgid "ID"
+msgstr "ID"
+
+#: senaite/impress/profiles/default/actionicons.xml
+#: senaite/impress/profiles/default/controlpanel.xml
+msgid "Impress Settings"
+msgstr "Impress 设置"
+
+#: senaite/impress/controlpanel.py:74
+msgid "Initially loaded orientation"
+msgstr "初始加载方向"
+
+#: senaite/impress/controlpanel.py:66
+msgid "Initially loaded paper format"
+msgstr "初始加载纸张格式"
+
+#: senaite/impress/controlpanel.py:58
+msgid "Initially loaded report template"
+msgstr "初始加载报告模板"
+
+#: senaite/impress/analysisrequest/templates/discreeter.pt:29
+msgid "Methods included in the ${accreditation_body} schedule of Accreditation for this Laboratory. Analysis remarks are not accredited"
+msgstr "本实验室的认可方法包含在 ${accreditation_body} 的认可范围内。分析备注不在认可范围内。"
+
+#: senaite/impress/analysisrequest/templates/discreeter.pt:16
+msgid "Not invoiced"
+msgstr "未开票"
+
+#: senaite/impress/analysisrequest/templates/controls.pt:44
+msgid "Number of attachments rendered within one row per Analysis Request"
+msgstr "每个分析申请在一行内显示的附件数量"
+
+#: senaite/impress/actions/providers.py:170
+msgid "PDF attachment is missing"
+msgstr "PDF 附件缺失"
+
+#: senaite/impress/controlpanel.py:47
+msgid "Please choose the templates that can be selected"
+msgstr "请选择可供选择的模板"
+
+#: senaite/impress/analysisrequest/templates/alerts.pt:20
+msgid "Provisional report"
+msgstr "临时报告"
+
+#: senaite/impress/analysisrequest/templates/signatures.pt:31
+#: senaite/impress/analysisrequest/templates/summary.pt:80
+msgid "Published by"
+msgstr "发布人"
+
+#: senaite/impress/analysisrequest/templates/results.pt:47
+msgid "Range"
+msgstr "范围"
+
+#: senaite/impress/browser/publish/content.py:76
+msgid "Registered"
+msgstr "已登记"
+
+#: senaite/impress/controlpanel.py:119
+msgid "Reload after reorder"
+msgstr "重新排序后重新加载"
+
+#: senaite/impress/controlpanel.py:120
+msgid "Reload report automatically when items order changed"
+msgstr "当项目顺序变更时自动重新加载报告"
+
+#: senaite/impress/analysisrequest/templates/controls.pt:10
+msgid "Report Options"
+msgstr "报告选项"
+
+#: senaite/impress/controlpanel.py:130
+msgid "Report Settings"
+msgstr "报告设置"
+
+#: senaite/impress/analysisrequest/templates/signatures.pt:7
+msgid "Responsibles"
+msgstr "负责人"
+
+#: senaite/impress/analysisrequest/templates/results.pt:41
+msgid "Result"
+msgstr "结果"
+
+#: senaite/impress/analysisrequest/templates/discreeter.pt:14
+msgid "Result out of client specified range."
+msgstr "结果超出客户指定范围。"
+
+#: senaite/impress/analysisrequest/templates/results_transposed.pt:9
+msgid "Results"
+msgstr "结果"
+
+#: senaite/impress/controlpanel.py:99
+msgid "Returns the raw HTML in the report preview."
+msgstr "在报告预览中返回原始 HTML。"
+
+#: senaite/impress/configure.zcml:175
+#: senaite/impress/templates/publish.pt:9
+msgid "SENAITE IMPRESS"
+msgstr "SENAITE IMPRESS"
+
+#: senaite/impress/controlpanel.py:154
+msgid "SENAITE IMPRESS Settings"
+msgstr "SENAITE IMPRESS 设置"
+
+#: senaite/impress/analysisrequest/templates/summary.pt:29
+msgid "Sample ID"
+msgstr "样品 ID"
+
+#: senaite/impress/browser/publish/content.py:72
+msgid "Sample Point"
+msgstr "采样点"
+
+#: senaite/impress/analysisrequest/templates/summary.pt:60
+#: senaite/impress/browser/publish/content.py:68
+msgid "Sample Type"
+msgstr "样品类型"
+
+#: senaite/impress/adapters.py:97
+msgid "Share PDF via email"
+msgstr "通过电子邮件分享 PDF"
+
+#: senaite/impress/analysisrequest/templates/controls.pt:26
+msgid "Show Sample Remarks"
+msgstr "显示样品备注"
+
+#: senaite/impress/analysisrequest/templates/summary.pt:64
+msgid "Specification"
+msgstr "规范"
+
+#: senaite/impress/controlpanel.py:89
+msgid "Store Multi-Report PDFs Individually"
+msgstr "单独存储多报告 PDF"
+
+#: senaite/impress/controlpanel.py:90
+msgid "Store generated multi-report PDFs individually. Turn off to store the multi-report PDF only for the primary item of the report"
+msgstr "单独存储生成的多报告 PDF。关闭后，仅为报告的主要项目存储多报告 PDF。"
+
+#: senaite/impress/analysisrequest/templates/summary.pt:25
+msgid "Summary"
+msgstr "摘要"
+
+#: senaite/impress/analysisrequest/templates/info.pt:59
+msgid "Supervisor"
+msgstr "主管"
+
+#: senaite/impress/analysisrequest/templates/discreeter.pt:45
+msgid "Test results are at a ${lab_confidence}% confidence level"
+msgstr "测试结果的置信水平为 ${lab_confidence}%"
+
+#: senaite/impress/controlpanel.py:82
+msgid "The footer text will be rendered on every PDF page and may contain arbitrary HTML"
+msgstr "页脚文本将渲染在每一页 PDF 上，并且可以包含任意 HTML"
+
+#: senaite/impress/analysisrequest/templates/alerts.pt:9
+msgid "This Analysis Request has been invalidated due to erroneously published results"
+msgstr "该分析申请因错误发布的结果而失效。"
+
+#: senaite/impress/analysisrequest/templates/alerts.pt:12
+msgid "This Analysis request has been replaced by"
+msgstr "此分析申请已被以下内容替代"
+
+#: senaite/impress/analysisrequest/templates/discreeter.pt:41
+msgid "This document shall not be reproduced except in full, without the written approval of ${name_lab}"
+msgstr "未经 ${name_lab} 书面批准，不得以非全文形式复制本文件。"
+
+#: senaite/impress/browser/publish/content.py:64
+msgid "Title"
+msgstr "标题"
+
+#: senaite/impress/analysisrequest/templates/results.pt:44
+msgid "Unit"
+msgstr "单位"
+
+#: senaite/impress/browser/publish/content.py:104
+msgid "Workflow State"
+msgstr "工作流状态"
+
+#: senaite/impress/browser/publish/content.py:100
+msgid "Workflow State ID"
+msgstr "工作流状态 ID"

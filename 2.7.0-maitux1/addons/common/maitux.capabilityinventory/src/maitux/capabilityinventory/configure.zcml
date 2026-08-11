@@ -1,0 +1,35 @@
+﻿<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="maitux.capabilityinventory">
+
+  <include package="Products.Five" />
+  <include package="Products.GenericSetup" file="meta.zcml" />
+  <five:registerPackage package="." />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="MAITUX Capability Inventory"
+      directory="profiles/default"
+      description="Capability inventory export module for SENAITE"
+      pre_handler="maitux.capabilityinventory.setuphandlers.pre_install"
+      post_handler="maitux.capabilityinventory.setuphandlers.post_install"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="MAITUX Capability Inventory (uninstall)"
+      directory="profiles/uninstall"
+      description="Uninstalls MAITUX Capability Inventory"
+      pre_handler="maitux.capabilityinventory.setuphandlers.pre_uninstall"
+      post_handler="maitux.capabilityinventory.setuphandlers.post_uninstall"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <include package=".browser" />
+
+</configure>
+

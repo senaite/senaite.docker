@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<layers>
+  <layer name="maitux.branding.interfaces.IMaituxBrandingLayer"
+         interface="maitux.branding.interfaces.IMaituxBrandingLayer" />
+</layers>
+

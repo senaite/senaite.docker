@@ -1,0 +1,50 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Plone package
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: [3.7, 3.8, 3.9, 2.7]
+
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/cache@v2
+              with:
+                  path: |
+                    ~/.cache/pip
+                    ~/buildout-cache
+                    ~/extends
+                  key: ${{ runner.os }}-tox-${{ hashFiles('**/setup.py') }}-${{ hashFiles('**/requirements.txt') }}-${{ hashFiles('**/tox.ini') }}
+                  restore-keys: |
+                    ${{ runner.os }}-tox-
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v2
+              with:
+                  python-version: ${{ matrix.python-version }}
+            - name: Install system libraries
+              run: sudo apt-get install libxml2-dev libxslt1-dev libjpeg-dev
+            - name: setup buildout cache
+              run: |
+                  mkdir -p ~/buildout-cache/{eggs,downloads}
+                  mkdir ~/.buildout
+                  echo "[buildout]" > $HOME/.buildout/default.cfg
+                  echo "download-cache = $HOME/buildout-cache/downloads" >> $HOME/.buildout/default.cfg
+                  echo "eggs-directory = $HOME/buildout-cache/eggs" >> $HOME/.buildout/default.cfg
+            - name: Install dependencies
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install tox tox-gh-actions
+            - name: Test with tox
+              run: |
+                  tox -r

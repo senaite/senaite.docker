@@ -1,0 +1,14 @@
+﻿<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.capabilityinventory">
+
+  <browser:page
+      name="maitux-runtime-inventory"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".runtime_inventory.MaituxRuntimeInventoryExportView"
+      permission="zope2.ViewManagementScreens"
+      />
+
+</configure>
+

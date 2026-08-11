@@ -1,0 +1,33 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser">
+
+  <browser:viewlet
+      name="plone.footer"
+      for="*"
+      manager="plone.app.layout.viewlets.interfaces.IPortalFooter"
+      class=".viewlets.FooterViewlet"
+      permission="zope2.View"
+      layer="maitux.branding.interfaces.IMaituxBrandingLayer"
+      />
+
+  <browser:viewlet
+      name="plone.colophon"
+      for="*"
+      manager="plone.app.layout.viewlets.interfaces.IPortalFooter"
+      class=".viewlets.ColophonViewlet"
+      permission="zope2.View"
+      layer="maitux.branding.interfaces.IMaituxBrandingLayer"
+      />
+
+  <browser:viewlet
+      name="plone.htmlhead.title"
+      for="*"
+      manager="plone.app.layout.viewlets.interfaces.IHtmlHead"
+      class=".viewlets.TitleViewlet"
+      permission="zope2.View"
+      layer="maitux.branding.interfaces.IMaituxBrandingLayer"
+      />
+
+</configure>
+
