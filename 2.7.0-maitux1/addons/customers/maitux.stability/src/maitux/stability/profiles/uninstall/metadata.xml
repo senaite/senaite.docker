@@ -1,0 +1,8 @@
+﻿<?xml version="1.0"?>
+<metadata>
+  <version>1.0.0</version>
+  <dependencies>
+    <dependency>profile-maitux.stability:default</dependency>
+  </dependencies>
+</metadata>
+

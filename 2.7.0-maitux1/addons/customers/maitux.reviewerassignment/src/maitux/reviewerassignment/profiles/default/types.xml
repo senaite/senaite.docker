@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<object name="portal_types">
+  <object name="ReviewerassignmentContainer" meta_type="Dexterity FTI"/>
+
+  <!-- 如有更多内容类型，在此添加 <object> 行 -->
+</object>

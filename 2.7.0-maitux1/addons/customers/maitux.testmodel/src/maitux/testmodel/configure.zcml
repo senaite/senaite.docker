@@ -1,0 +1,50 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="maitux.testmodel">
+
+  <!-- 引入子包 ZCML 配置 -->
+  <include package=".browser" />
+  <include package=".content" />
+
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      name="maitux.testmodel"
+      />
+
+  <!-- 注册安装 Profile -->
+  <genericsetup:registerProfile
+      name="default"
+      title="Maitux Testmodel Management"
+      directory="profiles/default"
+      description="Maitux Testmodel Management Add-on"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:importStep
+      name="maitux.testmodel.setuphandler"
+      title="maitux.testmodel setup handler"
+      description="Install Maitux Testmodel site structure and registrations"
+      handler="maitux.testmodel.setuphandlers.setup_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+  <!-- 注册卸载 Profile -->
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="Uninstall Maitux Testmodel Management"
+      directory="profiles/uninstall"
+      description="卸载 maitux.testmodel 包"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:importStep
+      name="maitux.testmodel.uninstallhandler"
+      title="maitux.testmodel uninstall handler"
+      description="Uninstall Maitux Testmodel registrations"
+      handler="maitux.testmodel.setuphandlers.uninstall_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+</configure>

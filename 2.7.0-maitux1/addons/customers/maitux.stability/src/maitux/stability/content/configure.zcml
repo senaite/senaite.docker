@@ -1,0 +1,83 @@
+﻿<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="maitux.stability">
+
+  <class class=".stabilitystudies.StabilityStudies">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stabilitystudy.StabilityStudy">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".storageconditions.StorageConditions">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".storagecondition.StorageCondition">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".packagingspecifications.PackagingSpecifications">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".packagingspecification.PackagingSpecification">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stabilitystudytemplates.StabilityPlanTemplates">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stabilitystudytemplate.StabilityPlanTemplate">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stabilityplans.StabilityPlans">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stabilityplan.StabilityPlan">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stabilitytimepointtask.StabilityTimepointTask">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+</configure>
+

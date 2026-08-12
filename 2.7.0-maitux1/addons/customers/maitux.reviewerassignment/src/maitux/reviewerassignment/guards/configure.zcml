@@ -1,0 +1,10 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           i18n_domain="maitux.reviewerassignment">
+
+  <adapter
+      name="reviewer_assignment"
+      factory=".reviewer.ReviewerAssignmentGuardAdapter"
+      for="*"
+      provides="bika.lims.interfaces.IGuardAdapter" />
+
+</configure>

@@ -1,0 +1,10 @@
+﻿<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="maitux.instrument_acquisition">
+
+  <adapter
+      factory=".instrument.InstrumentSchemaExtender"
+      provides="archetypes.schemaextender.interfaces.ISchemaExtender" />
+
+</configure>
+

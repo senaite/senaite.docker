@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object name="ReviewerassignmentContainer" meta_type="Dexterity FTI"
+        i18n:domain="maitux.reviewerassignment"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+        purge="True">
+
+  <!-- 基本信息 -->
+  <property name="title" i18n:translate="">审核工作表</property>
+  <property name="description" i18n:translate="">审核人专用的工作表待审核菜单</property>
+
+  <!-- 图标 -->
+  <property name="icon_expr">string:${portal_url}/++plone++senaite.core.static/assets/icons/setup.svg</property>
+
+  <!-- 工厂名称 -->
+  <property name="factory">ReviewerassignmentContainer</property>
+  <property name="add_view_expr">string:${folder_url}/++add++ReviewerassignmentContainer</property>
+  <property name="immediate_view">dashboard</property>
+
+  <!-- 创建策略 -->
+  <property name="global_allow">False</property>
+  <property name="filter_content_types">True</property>
+  <property name="allowed_content_types">
+    <!-- 在此添加允许在此容器下创建的子类型 -->
+  </property>
+  <property name="allow_discussion">False</property>
+
+  <!-- 默认视图 -->
+  <property name="default_view">dashboard</property>
+  <property name="view_methods">
+    <element value="view"/>
+    <element value="dashboard"/>
+    <element value="review_queue"/>
+  </property>
+  <property name="default_view_fallback">False</property>
+
+  <!-- 新建权限 -->
+  <property name="add_permission">cmf.AddPortalContent</property>
+
+  <!-- Python 类绑定 -->
+  <property name="klass">maitux.reviewerassignment.content.reviewerassignmentcontainer.ReviewerAssignmentContainer</property>
+  <property name="schema">maitux.reviewerassignment.content.reviewerassignmentcontainer.IReviewerAssignmentContainerSchema</property>
+
+  <!-- 行为 -->
+  <property name="behaviors">
+    <element value="plone.app.dexterity.behaviors.metadata.IBasic"/>
+    <element value="plone.app.referenceablebehavior.referenceable.IReferenceable" />
+  </property>
+
+  <!-- 别名 -->
+  <alias from="(Default)" to="(dynamic view)"/>
+  <alias from="edit" to="@@edit"/>
+  <alias from="sharing" to="@@sharing"/>
+  <alias from="view" to="(selected layout)"/>
+
+  <!-- 操作按钮 -->
+  <action title="View"
+          action_id="view"
+          category="object"
+          condition_expr=""
+          description=""
+          icon_expr=""
+          link_target=""
+          url_expr="string:${object_url}"
+          visible="True">
+    <permission value="View"/>
+  </action>
+
+  <action title="Edit"
+          action_id="edit"
+          category="object"
+          condition_expr=""
+          description=""
+          icon_expr=""
+          link_target=""
+          url_expr="string:${object_url}/edit"
+          visible="True">
+    <permission value="Modify portal content"/>
+  </action>
+
+</object>

@@ -1,0 +1,10 @@
+﻿<configure xmlns="http://namespaces.zope.org/zope"
+           i18n_domain="maitux.esignature">
+
+  <subscriber
+      for="*
+           Products.CMFCore.interfaces.IActionSucceededEvent"
+      handler=".auditlog.on_action_succeeded" />
+
+</configure>
+

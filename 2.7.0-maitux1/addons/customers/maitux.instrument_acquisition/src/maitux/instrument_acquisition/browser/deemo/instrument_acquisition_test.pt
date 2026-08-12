@@ -1,0 +1,58 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      metal:use-macro="context/main_template/macros/master">
+
+<body>
+  <metal:content fill-slot="main">
+    <div class="documentContent">
+      <h1 class="documentFirstHeading">Instrument Acquisition Test</h1>
+
+      <div class="form-group">
+        <label>Instrument Parsing Template</label>
+        <select class="form-control" id="template-uid">
+          <option value="">-- Select --</option>
+          <tal:items tal:repeat="t view/templates">
+            <option tal:attributes="value t/uid"
+                    tal:content="t/title">Template</option>
+          </tal:items>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <button class="btn btn-primary" id="btn-debug">Debug</button>
+        <button class="btn btn-default" id="btn-pdf-test" style="margin-left: 8px;">PDF Test</button>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+/* <![CDATA[ */
+    (function($) {
+        var baseUrl = window.location.href.split('#')[0].split('?')[0].replace(/\/$/, '');
+        var appUrl = baseUrl.replace(/\/@@instrument_acquisition_test$/, '');
+        var debugUrl = appUrl + '/@@instrument_acquisition_debug';
+        var pdfTestUrl = appUrl + '/@@instrument_acquisition_pdf_test';
+
+        $('#btn-debug').click(function() {
+            var uid = $('#template-uid').val();
+            if (!uid) {
+                alert('Please select a template');
+                return;
+            }
+            window.location.href = debugUrl + '?uid=' + encodeURIComponent(uid);
+        });
+
+        $('#btn-pdf-test').click(function() {
+            var uid = $('#template-uid').val();
+            var url = pdfTestUrl;
+            if (uid) {
+                url += '?uid=' + encodeURIComponent(uid);
+            }
+            window.location.href = url;
+        });
+    })(jQuery);
+/* ]]> */
+    </script>
+  </metal:content>
+</body>
+</html>

@@ -1,0 +1,8 @@
+﻿<?xml version="1.0"?>
+<layers>
+  <layer
+      name="maitux.esignature"
+      interface="maitux.esignature.interfaces.IMedaiSenaiteESignatureLayer"
+      />
+</layers>
+

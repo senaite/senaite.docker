@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<object name="portal_controlpanel" meta_type="Plone Control Panel Tool">
+
+  <configlet
+      title="MEDAI E-Signature MVP"
+      action_id="maitux.esignature"
+      appId="maitux.esignature"
+      category="Products"
+      condition_expr=""
+      icon_expr=""
+      url_expr="string:${portal_url}/@@maitux-esignature-controlpanel"
+      visible="True">
+    <permission>senaite.core: Manage Bika</permission>
+  </configlet>
+
+</object>
+

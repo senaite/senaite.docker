@@ -1,0 +1,25 @@
+<div tal:omit-tag=""
+     tal:define="items python:view._items"
+     tal:condition="python:items">
+  <div id="portal-alert">
+    <div class="portlet-alert-item alert alert-warning alert-dismissible" tal:condition="python:len(items) > 0">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+      </button>
+      <p class="title" tal:condition="python:len(items) == 1">
+        <span tal:content="python:len(items)"/>
+        <span>个批次处于低量：</span>
+      </p>
+      <p class="title" tal:condition="python:len(items) > 1">
+        <span tal:content="python:len(items)"/>
+        <span>个批次处于低量：</span>
+      </p>
+      <p>
+        <tal:links tal:repeat="i items">
+          <a tal:attributes="href i/url" tal:content="i/title">-</a>
+          <tal:sep tal:condition="python:not repeat['i'].last">, </tal:sep>
+        </tal:links>
+      </p>
+    </div>
+  </div>
+</div>

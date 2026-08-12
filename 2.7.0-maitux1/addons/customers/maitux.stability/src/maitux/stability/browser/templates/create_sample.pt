@@ -1,0 +1,105 @@
+﻿<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="maitux.stability">
+  <body>
+    <metal:content fill-slot="content-core">
+      <h1 i18n:translate="">Create Sample</h1>
+
+      <div class="alert alert-info" tal:condition="python:not view.tasks">
+        <span i18n:translate="">No plan details selected.</span>
+      </div>
+
+      <tal:block tal:condition="python:bool(view.tasks)">
+        <table class="table table-sm table-striped">
+          <thead>
+            <tr>
+              <th i18n:translate="">Plan</th>
+              <th i18n:translate="">Task</th>
+              <th i18n:translate="">Batch</th>
+              <th i18n:translate="">Spec/Profile</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr tal:repeat="item python:view.tasks">
+              <td tal:content="item/plan_title">Plan</td>
+              <td tal:content="item/task_title">Task</td>
+              <td tal:content="python:item.get('batch_title') or '-'">-</td>
+              <td>
+                <tal:block tal:condition="python:bool(item.get('analysis_specification'))">
+                  <span i18n:translate="">Analysis Specification</span>
+                </tal:block>
+                <tal:block tal:condition="python:not item.get('analysis_specification') and bool(item.get('analysis_profile'))">
+                  <span i18n:translate="">Analysis Profile</span>
+                </tal:block>
+                <tal:block tal:condition="python:not item.get('analysis_specification') and not item.get('analysis_profile')">
+                  <span i18n:translate="">(None)</span>
+                </tal:block>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- 绗竴姝ワ細閫夋嫨瀹㈡埛锛屽埛鏂拌仈绯讳汉涓嬫媺 -->
+        <form method="get"
+              tal:attributes="action string:${context/absolute_url}/@@create_sample">
+          <tal:block tal:repeat="item python:view.tasks">
+            <input type="hidden" name="row_ids:list" tal:attributes="value item/row_id"/>
+          </tal:block>
+
+          <div class="form-group">
+            <label for="client_uid" i18n:translate="">Client</label>
+            <select id="client_uid" name="client_uid" class="form-control form-control-sm"
+                    tal:attributes="onchange string:this.form.submit();">
+              <option value="" i18n:translate="">Select鈥?/option>
+              <option tal:repeat="c python:view.clients"
+                      tal:attributes="value c/uid; selected python:'selected' if c.get('uid') == view.selected_client_uid else None"
+                      tal:content="c/title">Client</option>
+            </select>
+            <small class="form-text text-muted" i18n:translate="">
+              閫夋嫨瀹㈡埛鍚庝細鑷姩鍒锋柊鑱旂郴浜哄垪琛ㄣ€?            </small>
+          </div>
+        </form>
+
+        <!-- 绗簩姝ワ細鍒涘缓鏍峰搧 -->
+        <form method="post"
+              tal:attributes="action string:${context/absolute_url}/@@create_sample">
+          <input tal:replace="structure context/@@authenticator/authenticator"/>
+          <tal:block tal:repeat="item python:view.tasks">
+            <input type="hidden" name="row_ids:list" tal:attributes="value item/row_id"/>
+          </tal:block>
+
+          <input type="hidden" name="client_uid" tal:attributes="value view/selected_client_uid"/>
+
+          <div class="form-group">
+            <label for="contact_uid" i18n:translate="">Contact</label>
+            <select id="contact_uid" name="contact_uid" class="form-control form-control-sm" required="required">
+              <option value="" i18n:translate="">Select鈥?/option>
+              <option tal:repeat="c python:view.contacts"
+                      tal:attributes="value c/uid"
+                      tal:content="c/title">Contact</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="sampletype_uid" i18n:translate="">Sample Type</label>
+            <select id="sampletype_uid" name="sampletype_uid" class="form-control form-control-sm" required="required">
+              <option value="" i18n:translate="">Select鈥?/option>
+              <option tal:repeat="st python:view.sampletypes"
+                      tal:attributes="value st/uid"
+                      tal:content="st/title">Sample Type</option>
+            </select>
+          </div>
+
+          <div class="mt-3">
+            <button type="submit" name="button_create" value="1" class="btn btn-primary btn-sm" i18n:translate="">Create</button>
+            <button type="submit" name="button_cancel" value="1" class="btn btn-secondary btn-sm" i18n:translate="">Cancel</button>
+          </div>
+        </form>
+      </tal:block>
+    </metal:content>
+  </body>
+</html>
+

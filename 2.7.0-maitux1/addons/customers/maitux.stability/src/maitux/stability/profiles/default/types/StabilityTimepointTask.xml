@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<object name="StabilityTimepointTask" meta_type="Dexterity FTI"
+        i18n:domain="maitux.stability"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+
+  <property name="title"
+            i18n:translate="">Stability Timepoint Task</property>
+  <property name="description"
+            i18n:translate="">Executable timepoint task created for a stability plan.</property>
+
+  <property name="icon_expr">senaite_theme/icon/file</property>
+  <property name="factory">StabilityTimepointTask</property>
+  <property name="add_view_expr">string:${folder_url}/++add++StabilityTimepointTask</property>
+
+  <property name="link_target"/>
+  <property name="immediate_view">view</property>
+
+  <property name="global_allow">False</property>
+  <property name="filter_content_types">False</property>
+
+  <property name="allow_discussion">False</property>
+  <property name="default_view">view</property>
+  <property name="view_methods">
+    <element value="view"/>
+    <element value="auditlog"/>
+  </property>
+  <property name="default_view_fallback">False</property>
+
+  <property name="add_permission">cmf.AddPortalContent</property>
+
+  <property name="schema">maitux.stability.content.stabilitytimepointtask.IStabilityTimepointTaskSchema</property>
+  <property name="klass">maitux.stability.content.stabilitytimepointtask.StabilityTimepointTask</property>
+
+  <property name="behaviors">
+    <element value="bika.lims.interfaces.IAutoGenerateID"/>
+    <element value="bika.lims.interfaces.IMultiCatalogBehavior"/>
+    <element value="plone.app.referenceablebehavior.referenceable.IReferenceable" />
+    <element value="plone.app.dexterity.behaviors.metadata.IBasic"/>
+  </property>
+
+  <alias from="(Default)" to="(dynamic view)"/>
+  <alias from="edit" to="@@edit"/>
+  <alias from="sharing" to="@@sharing"/>
+  <alias from="view" to="(selected layout)"/>
+  <alias from="auditlog" to="@@auditlog"/>
+
+</object>
+

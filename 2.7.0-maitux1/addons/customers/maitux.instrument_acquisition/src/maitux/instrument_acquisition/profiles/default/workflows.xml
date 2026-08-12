@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<object name="portal_workflow" meta_type="Plone Workflow Tool" purge="False">
+  <bindings>
+    <type type_id="InstrumentParsingTemplates">
+      <bound-workflow workflow_id="one_state_workflow"/>
+    </type>
+    <type type_id="InstrumentParsingTemplate">
+      <bound-workflow workflow_id="senaite_deactivable_type_workflow"/>
+    </type>
+  </bindings>
+</object>

@@ -1,0 +1,15 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="maitux.reviewerassignment">
+
+  <plone:behavior
+      title="Worksheet Reviewer Behavior"
+      description="为工作表增加审核人字段"
+      name="maitux.reviewerassignment.behavior.worksheetreviewer"
+      provides=".reviewer.IWorksheetReviewerBehavior"
+      factory=".reviewer.WorksheetReviewerBehaviorFactory"
+      for="senaite.core.interfaces.IWorksheet"
+      />
+
+</configure>

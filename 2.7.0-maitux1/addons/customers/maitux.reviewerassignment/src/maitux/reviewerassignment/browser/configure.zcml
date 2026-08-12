@@ -1,0 +1,46 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.reviewerassignment">
+
+  <adapter
+      name="workflow_action_submit"
+      for="senaite.core.interfaces.IWorksheet
+           maitux.reviewerassignment.interfaces.IReviewerAssignmentLayer"
+      factory=".workflow.WorkflowActionSubmitReviewerAdapter"
+      provides="bika.lims.interfaces.IWorkflowActionAdapter"
+      permission="zope.Public" />
+
+  <adapter
+      name="workflow_action_verify_assigned"
+      for="maitux.reviewerassignment.interfaces.IReviewerAssignmentContainer
+           maitux.reviewerassignment.interfaces.IReviewerAssignmentLayer"
+      factory=".workflow.WorkflowActionVerifyAssignedAdapter"
+      provides="bika.lims.interfaces.IWorkflowActionAdapter"
+      permission="zope.Public" />
+
+  <browser:page
+      for="senaite.core.interfaces.IWorksheet"
+      name="manage_results"
+      class="maitux.reviewerassignment.browser.manage_results.ManageResultsView"
+      permission="senaite.core.permissions.ViewResults"
+      layer="maitux.reviewerassignment.interfaces.IReviewerAssignmentLayer"
+      />
+
+  <browser:page
+      for="maitux.reviewerassignment.interfaces.IReviewerAssignmentContainer"
+      name="dashboard"
+      class="maitux.reviewerassignment.browser.dashboard.ReviewerAssignmentDashboard"
+      permission="zope2.View"
+      layer="maitux.reviewerassignment.interfaces.IReviewerAssignmentLayer"
+      />
+
+  <browser:page
+      for="maitux.reviewerassignment.interfaces.IReviewerAssignmentContainer"
+      name="review_queue"
+      class="maitux.reviewerassignment.browser.review_queue.ReviewerQueueView"
+      permission="zope2.View"
+      layer="maitux.reviewerassignment.interfaces.IReviewerAssignmentLayer"
+      />
+
+</configure>

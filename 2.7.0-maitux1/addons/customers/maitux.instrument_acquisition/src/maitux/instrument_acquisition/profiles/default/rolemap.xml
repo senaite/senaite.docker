@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<rolemap>
+  <permissions>
+    <permission name="maitux.instrument_acquisition: Add Instrument Parsing Template"
+                acquire="False">
+      <role name="LabClerk"/>
+      <role name="LabManager"/>
+      <role name="Manager"/>
+      <role name="Owner"/>
+    </permission>
+  </permissions>
+</rolemap>
+

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0"?>
+<object name="portal_workflow" meta_type="Plone Workflow Tool">
+  <property name="title">Workflow definitions for maitux.stock</property>
+
+  <object name="senaite_stockbatch_workflow" meta_type="Workflow"/>
+
+  <bindings>
+    <type type_id="StockBatch">
+      <bound-workflow workflow_id="senaite_stockbatch_workflow"/>
+    </type>
+  </bindings>
+</object>
+

@@ -1,0 +1,63 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="maitux.instrument_acquisition">
+
+  <permission
+      id="maitux.instrument_acquisition.permissions.AddInstrumentParsingTemplate"
+      title="maitux.instrument_acquisition: Add Instrument Parsing Template"
+      />
+
+  <include package="senaite.core.permissions" />
+  <include package=".browser" />
+  <include package=".api" />
+  <include package=".extender" />
+  <include package=".importer" />
+
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      name="maitux.instrument_acquisition"
+      />
+
+  <adapter
+      name="workflow_action_instrument_acquisition_debug"
+      for="*
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory="maitux.instrument_acquisition.browser.workflow.WorkflowActionInstrumentAcquisitionDebugAdapter"
+      provides="bika.lims.interfaces.IWorkflowActionAdapter"
+      permission="zope.Public" />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="MAITUX Instrument Acquisition"
+      directory="profiles/default"
+      description="Instrument Acquisition for MAITUX"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:importStep
+      name="maitux.instrument_acquisition.setuphandler"
+      title="maitux.instrument_acquisition setup handler"
+      description="Install MAITUX Instrument Acquisition registrations"
+      handler="maitux.instrument_acquisition.setuphandlers.setup_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="Uninstall MAITUX Instrument Acquisition"
+      directory="profiles/uninstall"
+      description="Uninstalls the maitux.instrument_acquisition package"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:importStep
+      name="maitux.instrument_acquisition.uninstallhandler"
+      title="maitux.instrument_acquisition uninstall handler"
+      description="Uninstall MAITUX Instrument Acquisition registrations"
+      handler="maitux.instrument_acquisition.setuphandlers.uninstall_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+</configure>
+

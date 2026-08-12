@@ -1,0 +1,49 @@
+﻿<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="context/main_template/macros/master">
+  <body>
+    <metal:content fill-slot="content-core">
+      <div class="documentContent">
+        <h1>MEDAI  E-Signature MVP</h1>
+        <p>This add-on is installed and ready for the workflow re-auth MVP.</p>
+        <p>
+          <a class="btn btn-primary"
+             tal:attributes="href python:view.test_entry_url()">
+            Open Visible Test Entry
+          </a>
+          <a class="btn btn-secondary"
+             tal:attributes="href python:view.controlpanel_url()">
+            Open Control Panel
+          </a>
+        </p>
+        <dl>
+          <dt>Package</dt>
+          <dd tal:content="view/package_name">maitux.esignature</dd>
+          <dt>Enabled</dt>
+          <dd tal:content="python:'Yes' if view.enabled() else 'No'">Yes</dd>
+          <dt>Pilot scope</dt>
+          <dd>
+            <span tal:content="python:view.pilot_portal_type()">Analysis</span>
+            <span>-&gt;</span>
+            <span tal:content="python:view.pilot_transition()">verify</span>
+          </dd>
+          <dt>Signature type</dt>
+          <dd tal:content="python:view.signature_type()">verification</dd>
+          <dt>Visible test URL</dt>
+          <dd>
+            <a tal:attributes="href python:view.test_entry_url()"
+               tal:content="python:view.test_entry_url()">test entry</a>
+          </dd>
+          <dt>Main gate</dt>
+          <dd tal:content="view/guard_mode">workflow guard</dd>
+          <dt>Storage mode</dt>
+          <dd tal:content="python:view.storage_mode()">independent lightweight store</dd>
+          <dt>Re-auth mode</dt>
+          <dd tal:content="python:view.auth_mode()">Plone/PAS/acl_users re-auth provider</dd>
+        </dl>
+      </div>
+    </metal:content>
+  </body>
+</html>
+

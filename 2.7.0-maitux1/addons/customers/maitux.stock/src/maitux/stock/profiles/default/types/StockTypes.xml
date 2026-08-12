@@ -1,0 +1,45 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<object name="StockTypes" meta_type="Dexterity FTI"
+        i18n:domain="maitux.stock"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+        purge="True">
+
+  <property name="title" i18n:translate="">Types</property>
+  <property name="description" i18n:translate=""></property>
+
+  <property name="icon_expr">string:${portal_url}/++plone++senaite.core.static/assets/icons/clientfolder.svg</property>
+  <property name="factory">StockTypes</property>
+  <property name="add_view_expr">string:${folder_url}/++add++StockTypes</property>
+  <property name="immediate_view">stock_types</property>
+
+  <property name="global_allow">False</property>
+  <property name="filter_content_types">True</property>
+  <property name="allowed_content_types">
+    <element value="StockType" />
+  </property>
+
+  <property name="allow_discussion">False</property>
+  <property name="default_view">stock_types</property>
+  <property name="view_methods">
+    <element value="stock_types"/>
+    <element value="folder_view"/>
+  </property>
+  <property name="default_view_fallback">False</property>
+
+  <property name="add_permission">cmf.AddPortalContent</property>
+
+  <property name="schema">maitux.stock.content.stocktypes.IStockTypesSchema</property>
+  <property name="klass">maitux.stock.content.stocktypes.StockTypes</property>
+
+  <property name="behaviors">
+    <element value="plone.app.dexterity.behaviors.metadata.IBasic"/>
+    <element value="plone.app.referenceablebehavior.referenceable.IReferenceable" />
+  </property>
+
+  <alias from="(Default)" to="(dynamic view)"/>
+  <alias from="edit" to="@@edit"/>
+  <alias from="sharing" to="@@sharing"/>
+  <alias from="view" to="(selected layout)"/>
+
+</object>
+

@@ -1,0 +1,80 @@
+﻿<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.esignature">
+
+  <adapter
+      name="workflow_action_verify"
+      for="*
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".workflow.WorkflowActionVerifyPromptAdapter"
+      provides="bika.lims.interfaces.IWorkflowActionAdapter"
+      permission="zope.Public" />
+
+  <adapter
+      name="verify"
+      for="senaite.app.listing.interfaces.IAjaxListingView
+           bika.lims.interfaces.IAnalysis
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".workflow.ListingVerifyPromptTransition"
+      provides="senaite.app.listing.interfaces.IListingWorkflowTransition" />
+
+  <adapter
+      name="workflow_action_receive"
+      for="*
+           maitux.esignature.interfaces.IMedaiSenaiteESignatureLayer"
+      factory=".workflow.WorkflowActionReceivePromptAdapter"
+      provides="bika.lims.interfaces.IWorkflowActionAdapter"
+      permission="zope.Public" />
+
+  <adapter
+      name="receive"
+      for="senaite.app.listing.interfaces.IAjaxListingView
+           bika.lims.interfaces.IAnalysisRequest
+           maitux.esignature.interfaces.IMedaiSenaiteESignatureLayer"
+      factory=".workflow.ListingReceivePromptTransition"
+      provides="senaite.app.listing.interfaces.IListingWorkflowTransition" />
+
+  <browser:page
+      name="maitux-esignature-controlpanel"
+      for="*"
+      class=".controlpanel.ESignatureControlPanelView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="maitux.esignature.interfaces.IMedaiSenaiteESignatureLayer"
+      />
+
+  <browser:page
+      name="maitux-esignature-overview"
+      for="*"
+      class=".overview.ESignatureOverviewView"
+      template="templates/overview.pt"
+      permission="senaite.core.permissions.ManageBika"
+      layer="maitux.esignature.interfaces.IMedaiSenaiteESignatureLayer"
+      />
+
+  <browser:page
+      name="maitux-esignature-test-entry"
+      for="*"
+      class=".overview.ESignatureTestEntryView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="maitux.esignature.interfaces.IMedaiSenaiteESignatureLayer"
+      />
+
+  <browser:page
+      name="maitux-esignature-repair-registry"
+      for="*"
+      class=".overview.ESignatureRepairRegistryView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="maitux.esignature.interfaces.IMedaiSenaiteESignatureLayer"
+      />
+
+  <browser:page
+      name="maitux-esignature-prompt"
+      for="*"
+      class=".workflow.SignaturePromptView"
+      permission="zope2.View"
+      layer="maitux.esignature.interfaces.IMedaiSenaiteESignatureLayer"
+      />
+
+</configure>
+

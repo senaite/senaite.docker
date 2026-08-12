@@ -1,0 +1,15 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:browser="http://namespaces.zope.org/browser"
+           i18n_domain="maitux.stock">
+
+  <browser:viewlet
+      for="maitux.stock.interfaces.IStockBatches"
+      name="maitux.stock.low_quantity_viewlet"
+      class="maitux.stock.browser.viewlets.lowquantity.StockBatchesLowQuantityViewlet"
+      manager="plone.app.layout.viewlets.interfaces.IAboveContent"
+      template="templates/stock_low_quantity_viewlet.pt"
+      permission="zope2.View"
+      />
+
+</configure>
+

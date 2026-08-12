@@ -1,0 +1,9 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="context/main_template/macros/master">
+<body>
+<metal:title fill-slot="content-title"></metal:title>
+<metal:description fill-slot="content-description"></metal:description>
+<metal:main fill-slot="content-core"></metal:main>
+</body>
+</html>

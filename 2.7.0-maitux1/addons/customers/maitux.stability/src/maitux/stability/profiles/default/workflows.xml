@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<object name="portal_workflow" meta_type="Plone Workflow Tool" purge="False">
+  <bindings>
+    <type type_id="StabilityStudies">
+      <bound-workflow workflow_id="senaite_setup_workflow"/>
+    </type>
+    <type type_id="StorageConditions">
+      <bound-workflow workflow_id="senaite_setup_workflow"/>
+    </type>
+    <type type_id="PackagingSpecifications">
+      <bound-workflow workflow_id="senaite_setup_workflow"/>
+    </type>
+    <type type_id="StabilityPlanTemplates">
+      <bound-workflow workflow_id="senaite_setup_workflow"/>
+    </type>
+    <type type_id="StabilityPlans">
+      <bound-workflow workflow_id="senaite_setup_workflow"/>
+    </type>
+    <type type_id="StorageCondition">
+      <bound-workflow workflow_id="senaite_deactivable_type_workflow"/>
+    </type>
+    <type type_id="PackagingSpecification">
+      <bound-workflow workflow_id="senaite_deactivable_type_workflow"/>
+    </type>
+    <type type_id="StabilityPlanTemplate">
+      <bound-workflow workflow_id="senaite_deactivable_type_workflow"/>
+    </type>
+    <type type_id="StabilityPlan">
+      <bound-workflow workflow_id="senaite_one_state_workflow"/>
+    </type>
+    <type type_id="StabilityTimepointTask">
+      <bound-workflow workflow_id="senaite_one_state_workflow"/>
+    </type>
+  </bindings>
+</object>

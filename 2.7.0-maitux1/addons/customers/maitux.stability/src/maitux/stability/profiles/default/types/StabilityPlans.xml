@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<object name="StabilityPlans" meta_type="Dexterity FTI"
+        i18n:domain="maitux.stability"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+
+  <property name="title"
+            i18n:translate="">Stability Plans</property>
+  <property name="description"
+            i18n:translate="">Container for stability study plans.</property>
+
+  <property name="icon_expr">string:${portal_url}/++plone++senaite.core.static/assets/icons/clientfolder.svg</property>
+  <property name="factory">StabilityPlans</property>
+  <property name="add_view_expr">string:${folder_url}/++add++StabilityPlans</property>
+
+  <property name="link_target"/>
+  <property name="immediate_view">view</property>
+
+  <property name="global_allow">False</property>
+  <property name="filter_content_types">True</property>
+  <property name="allowed_content_types">
+    <element value="StabilityPlan" />
+  </property>
+
+  <property name="allow_discussion">False</property>
+  <property name="default_view">view</property>
+  <property name="view_methods">
+    <element value="view"/>
+    <element value="task_board"/>
+  </property>
+  <property name="default_view_fallback">False</property>
+
+  <property name="schema">maitux.stability.content.stabilityplans.IStabilityPlansSchema</property>
+  <property name="klass">maitux.stability.content.stabilityplans.StabilityPlans</property>
+
+  <property name="behaviors">
+    <element value="bika.lims.interfaces.IMultiCatalogBehavior"/>
+    <element value="plone.app.referenceablebehavior.referenceable.IReferenceable" />
+    <element value="plone.constraintypes" />
+  </property>
+
+  <alias from="(Default)" to="(dynamic view)"/>
+  <alias from="edit" to="@@edit"/>
+  <alias from="sharing" to="@@sharing"/>
+  <alias from="view" to="(selected layout)"/>
+  <alias from="folder_view" to="view"/>
+  <alias from="task_board" to="@@task_board"/>
+
+</object>
+
