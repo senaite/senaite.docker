@@ -1,0 +1,58 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="maitux.workflow">
+
+  <!-- 引入子包 ZCML 配置 -->
+  <include package=".browser" />
+  <include package=".content" />
+
+  <permission
+      id="maitux.workflow.permissions.TransitionReactivate"
+      title="maitux.workflow: Transition: Reactivate"
+      />
+
+  <!-- 隐藏卸载 Profile，保持 Add-ons 面板整洁 -->
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      name="maitux.workflow"
+      />
+
+  <!-- 注册安装 Profile -->
+  <genericsetup:registerProfile
+      name="default"
+      title="Maitux Workflow Management"
+      directory="profiles/default"
+      description="Maitux Workflow Management Add-on"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <!-- 标准安装入口：通过 importStep 调用 setup_handler -->
+  <genericsetup:importStep
+      name="maitux.workflow.setuphandler"
+      title="maitux.workflow setup handler"
+      description="Install Maitux Workflow site structure and registrations"
+      handler="maitux.workflow.setuphandlers.setup_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+  <!-- 注册卸载 Profile -->
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="Uninstall Maitux Workflow Management"
+      directory="profiles/uninstall"
+      description="卸载 maitux.workflow 包"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <!-- 标准卸载入口：通过 importStep 调用 uninstall_handler -->
+  <genericsetup:importStep
+      name="maitux.workflow.uninstallhandler"
+      title="maitux.workflow uninstall handler"
+      description="Uninstall Maitux Workflow registrations"
+      handler="maitux.workflow.setuphandlers.uninstall_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+</configure>

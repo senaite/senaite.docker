@@ -1,0 +1,12 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="maitux.reviewerassignment">
+
+  <adapter
+      name="getReviewerUserId"
+      factory=".indexer.get_reviewer_userid"
+      for="senaite.core.interfaces.IWorksheet
+           senaite.core.interfaces.catalog.IWorksheetCatalog"
+      provides="plone.indexer.interfaces.IIndexer" />
+
+</configure>

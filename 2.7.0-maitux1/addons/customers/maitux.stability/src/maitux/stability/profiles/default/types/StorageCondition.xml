@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<object name="StorageCondition" meta_type="Dexterity FTI"
+        i18n:domain="maitux.stability"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+
+  <property name="title"
+            i18n:translate="">Storage Condition</property>
+  <property name="description"
+            i18n:translate="">Storage condition option for stability studies.</property>
+
+  <property name="icon_expr">senaite_theme/icon/folder</property>
+  <property name="factory">StorageCondition</property>
+  <property name="add_view_expr">string:${folder_url}/++add++StorageCondition</property>
+
+  <property name="link_target"/>
+  <property name="immediate_view">view</property>
+
+  <property name="global_allow">False</property>
+  <property name="filter_content_types">True</property>
+  <property name="allowed_content_types"/>
+
+  <property name="allow_discussion">False</property>
+  <property name="default_view">view</property>
+  <property name="view_methods">
+    <element value="view"/>
+  </property>
+  <property name="default_view_fallback">False</property>
+
+  <property name="add_permission">cmf.AddPortalContent</property>
+
+  <property name="schema">maitux.stability.content.storagecondition.IStorageConditionSchema</property>
+  <property name="klass">maitux.stability.content.storagecondition.StorageCondition</property>
+
+  <property name="behaviors">
+    <element value="bika.lims.interfaces.IAutoGenerateID"/>
+    <element value="bika.lims.interfaces.IMultiCatalogBehavior"/>
+    <element value="plone.app.referenceablebehavior.referenceable.IReferenceable" />
+  </property>
+
+  <alias from="(Default)" to="(dynamic view)"/>
+  <alias from="edit" to="@@edit"/>
+  <alias from="sharing" to="@@sharing"/>
+  <alias from="view" to="(selected layout)"/>
+
+</object>
+

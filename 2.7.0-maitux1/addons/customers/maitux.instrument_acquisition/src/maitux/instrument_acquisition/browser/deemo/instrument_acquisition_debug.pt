@@ -1,0 +1,392 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      metal:use-macro="context/main_template/macros/master">
+
+<head>
+  <metal:block fill-slot="top_slot">
+    <style>
+      .tcp-console {
+        background: #1e1e1e;
+        color: #00ff00;
+        font-family: monospace;
+        padding: 15px;
+        height: 220px;
+        overflow-y: auto;
+        border-radius: 4px;
+        margin-top: 10px;
+        white-space: pre-wrap;
+      }
+      .tcp-controls {
+        background: #f5f5f5;
+        padding: 20px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+      }
+      .status-indicator {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 5px;
+        background: #ccc;
+      }
+      .status-indicator.active { background: #00ff00; }
+      .status-indicator.error { background: #ff0000; }
+      .status-indicator.warning { background: #ffaa00; }
+      .forward-panel {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        padding: 15px;
+        border-radius: 4px;
+        margin-top: 15px;
+      }
+      .forward-panel.disabled {
+        background: #f8f9fa;
+        border-color: #dee2e6;
+      }
+      .forward-console {
+        background: #0d1117;
+        color: #58a6ff;
+        font-family: monospace;
+        padding: 12px;
+        height: 180px;
+        overflow-y: auto;
+        border-radius: 4px;
+        margin-top: 10px;
+        white-space: pre-wrap;
+      }
+    </style>
+  </metal:block>
+</head>
+
+<body>
+  <metal:content fill-slot="main">
+    <div class="documentContent">
+      <h1 class="documentFirstHeading">Instrument Acquisition Debug</h1>
+      <span tal:replace="structure context/@@authenticator/authenticator"></span>
+
+      <div class="tcp-controls">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>Host / IP</label>
+              <input type="text" id="tcp-host" class="form-control"
+                     tal:attributes="value view/get_host"
+                     disabled="disabled" />
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>Port</label>
+              <input type="number" id="tcp-port" class="form-control"
+                     tal:attributes="value view/get_port"
+                     disabled="disabled" />
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label>&nbsp;</label>
+              <div class="btn-group btn-block">
+                <button id="btn-start" class="btn btn-success">
+                  Start Listening
+                </button>
+                <button id="btn-stop" class="btn btn-danger" disabled="disabled">
+                  Stop
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top: 10px;">
+          <div class="col-md-12">
+            <span class="status-indicator" id="status-dot"></span>
+            <span id="status-text">Stopped</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top: 15px;">
+        <div class="col-md-6">
+          <h3>Raw</h3>
+          <div class="tcp-console" id="console-raw"></div>
+        </div>
+        <div class="col-md-6">
+          <h3>Parsed (JS)</h3>
+          <div class="tcp-console" id="console-parsed"></div>
+        </div>
+      </div>
+
+      <div class="forward-panel" id="forward-panel">
+        <div class="row">
+          <div class="col-md-9">
+            <h4 style="margin-top: 0;">
+              <span class="status-indicator" id="forward-status-dot"></span>
+              <span id="forward-status-text">HTTP Forward</span>
+            </h4>
+            <p id="forward-url" style="margin-bottom: 0; font-family: monospace; color: #666;"></p>
+          </div>
+          <div class="col-md-3 text-right">
+            <button class="btn btn-primary btn-sm" id="btn-test-forward">
+              Test Forward
+            </button>
+            <button class="btn btn-default btn-sm" id="btn-clear-forward">
+              Clear
+            </button>
+          </div>
+        </div>
+        <div class="forward-console" id="console-forward"></div>
+      </div>
+
+      <div class="text-right" style="margin-top: 15px;">
+        <button class="btn btn-default btn-xs" id="btn-clear">Clear All</button>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+/* <![CDATA[ */
+    (function($) {
+        var pollInterval = null;
+        var isRunning = false;
+        var forwardEnabled = false;
+        var forwardUrl = '';
+        var baseUrl = window.location.href.split('#')[0].split('?')[0].replace(/\/$/, '');
+        var apiBaseUrl = baseUrl.replace(/\/@@instrument_acquisition_debug$/, '');
+        var authenticator = $('input[name="_authenticator"]').first().val() || null;
+        function getQueryParam(name) {
+            var query = window.location.search || '';
+            if (query.indexOf('?') === 0) query = query.substring(1);
+            var parts = query.split('&');
+            for (var i = 0; i < parts.length; i++) {
+                var kv = parts[i].split('=');
+                if (decodeURIComponent(kv[0] || '') === name) {
+                    return decodeURIComponent(kv[1] || '');
+                }
+            }
+            return null;
+        }
+        var templateUid = getQueryParam('uid');
+
+        function log($target, msg, type) {
+            var timestamp = new Date().toLocaleTimeString();
+            var color = type === 'error' ? '#ff4444' : type === 'system' ? '#aaa' : type === 'warning' ? '#ffaa00' : '#00ff00';
+            var $line = $('<div>').css('color', color).text('[' + timestamp + '] ' + msg);
+            $target.append($line);
+            $target.scrollTop($target[0].scrollHeight);
+        }
+
+        function updateStatus(running, msg) {
+            isRunning = running;
+            if (running) {
+                $('#btn-start').attr('disabled', 'disabled');
+                $('#btn-stop').removeAttr('disabled');
+                $('#status-dot').addClass('active').removeClass('error');
+                $('#status-text').text('Listening... ' + (msg || ''));
+            } else {
+                $('#btn-start').removeAttr('disabled');
+                $('#btn-stop').attr('disabled', 'disabled');
+                $('#status-dot').removeClass('active');
+                $('#status-text').text('Stopped ' + (msg || ''));
+            }
+        }
+
+        function updateForwardStatus(enabled, url, lastSuccess, lastMessage, lastAttempts) {
+            forwardEnabled = enabled;
+            forwardUrl = url || '';
+            
+            var $panel = $('#forward-panel');
+            var $dot = $('#forward-status-dot');
+            var $text = $('#forward-status-text');
+            var $url = $('#forward-url');
+            var $btnTest = $('#btn-test-forward');
+            
+            if (enabled && url) {
+                $panel.removeClass('disabled');
+                if (lastSuccess === false) {
+                    $dot.addClass('error').removeClass('active').removeClass('warning');
+                    $text.text('HTTP Forward Failed');
+                } else {
+                    $dot.addClass('active').removeClass('error').removeClass('warning');
+                    $text.text('HTTP Forward Enabled');
+                }
+                $url.text(url);
+                if (lastSuccess === false && lastMessage) {
+                    $url.text(url + ' | ' + lastMessage + (lastAttempts ? ' | retries: ' + lastAttempts : ''));
+                }
+                $btnTest.removeAttr('disabled');
+            } else if (enabled && !url) {
+                $panel.removeClass('disabled');
+                $dot.addClass('warning').removeClass('active').removeClass('error');
+                $text.text('HTTP Forward Enabled (no URL)');
+                $url.text('');
+                $btnTest.attr('disabled', 'disabled');
+            } else {
+                $panel.addClass('disabled');
+                $dot.removeClass('active').removeClass('error').removeClass('warning');
+                $text.text('HTTP Forward Disabled');
+                $url.text('');
+                $btnTest.attr('disabled', 'disabled');
+            }
+        }
+
+        function pollMessages() {
+            $.ajax({
+                url: apiBaseUrl + '/@@instrument_acquisition_debug_messages',
+                method: 'GET',
+                cache: false,
+                dataType: 'json',
+                success: function(data) {
+                    if (data.messages && data.messages.length > 0) {
+                        data.messages.forEach(function(msg) {
+                            if (msg.type === 'data') {
+                                log($('#console-raw'), msg.raw || '', 'data');
+                                log($('#console-parsed'), msg.parsed || '', 'data');
+                                
+                                if (msg.forward) {
+                                    var forwardMsg = msg.forward.success ? 
+                                        'Forwarded: ' + msg.forward.message : 
+                                        'Forward failed: ' + msg.forward.message;
+                                    var forwardType = msg.forward.success ? 'data' : 'error';
+                                    log($('#console-forward'), forwardMsg, forwardType);
+                                    updateForwardStatus(true, forwardUrl, msg.forward.success, msg.forward.message, msg.forward.attempts);
+                                }
+                            } else if (msg.type === 'error') {
+                                log($('#console-raw'), msg.data || '', 'error');
+                                log($('#console-parsed'), msg.data || '', 'error');
+                            } else {
+                                log($('#console-raw'), msg.data || '', 'system');
+                                log($('#console-parsed'), msg.data || '', 'system');
+                            }
+                        });
+                    }
+                    if (data.status === 'stopped' && isRunning) {
+                        updateStatus(false, '(Server stopped)');
+                        stopPolling();
+                    }
+                }
+            });
+        }
+
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(pollMessages, 1000);
+        }
+
+        function stopPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = null;
+        }
+
+        $('#btn-start').click(function() {
+            if (!templateUid) {
+                alert('Missing template uid');
+                return;
+            }
+            log($('#console-raw'), 'Starting listener...', 'system');
+            $.ajax({
+                url: apiBaseUrl + '/@@instrument_acquisition_debug_start',
+                method: 'POST',
+                dataType: 'json',
+                data: { uid: templateUid, _authenticator: authenticator },
+                success: function(resp) {
+                    if (resp.success) {
+                        updateStatus(true);
+                        startPolling();
+                        
+                        $.ajax({
+                            url: apiBaseUrl + '/@@instrument_acquisition_debug_status',
+                            dataType: 'json',
+                            success: function(data) {
+                                updateForwardStatus(
+                                    data.forward_enabled,
+                                    data.forward_url,
+                                    data.last_forward_success,
+                                    data.last_forward_message,
+                                    data.last_forward_attempts
+                                );
+                            }
+                        });
+                    } else {
+                        log($('#console-raw'), 'Error: ' + (resp.message || 'Unknown error'), 'error');
+                        updateStatus(false);
+                    }
+                }
+            });
+        });
+
+        $('#btn-stop').click(function() {
+            $.ajax({
+                url: apiBaseUrl + '/@@instrument_acquisition_debug_stop',
+                method: 'POST',
+                dataType: 'json',
+                data: { _authenticator: authenticator },
+                success: function(resp) {
+                    updateStatus(false);
+                    stopPolling();
+                }
+            });
+        });
+
+        $('#btn-clear').click(function() {
+            $('#console-raw').empty();
+            $('#console-parsed').empty();
+            $('#console-forward').empty();
+        });
+
+        $('#btn-clear-forward').click(function() {
+            $('#console-forward').empty();
+        });
+
+        $('#btn-test-forward').click(function() {
+            if (!templateUid) {
+                alert('Missing template uid');
+                return;
+            }
+            log($('#console-forward'), 'Testing forward...', 'system');
+            var testData = {
+                raw_data: 'TEST_FORWARD_' + Date.now(),
+                parsed_data: JSON.stringify({test: 'value', timestamp: new Date().toISOString()})
+            };
+            $.ajax({
+                url: apiBaseUrl + '/@@instrument_acquisition_api_forward_test',
+                method: 'GET',
+                data: $.extend({ uid: templateUid }, testData),
+                dataType: 'json',
+                success: function(resp) {
+                    if (resp.success) {
+                        log($('#console-forward'), 'Test success: ' + resp.message, 'data');
+                    } else {
+                        log($('#console-forward'), 'Test failed: ' + resp.message, 'error');
+                    }
+                },
+                error: function() {
+                    log($('#console-forward'), 'Test request failed', 'error');
+                }
+            });
+        });
+
+        $.ajax({
+            url: apiBaseUrl + '/@@instrument_acquisition_debug_status',
+            dataType: 'json',
+            success: function(data) {
+                if (data.running) {
+                    updateStatus(true);
+                    startPolling();
+                }
+                updateForwardStatus(
+                    data.forward_enabled,
+                    data.forward_url,
+                    data.last_forward_success,
+                    data.last_forward_message,
+                    data.last_forward_attempts
+                );
+            }
+        });
+
+    })(jQuery);
+/* ]]> */
+    </script>
+  </metal:content>
+</body>
+</html>

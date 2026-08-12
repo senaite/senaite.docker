@@ -1,0 +1,12 @@
+﻿<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="maitux.instrument_acquisition">
+
+  <adapter
+      name="instrument_acquisition_importer"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      factory=".instrumentacquisition.InstrumentAcquisitionImporter"
+      provides="senaite.core.exportimport.instruments.IInstrumentImportInterface" />
+
+</configure>
+

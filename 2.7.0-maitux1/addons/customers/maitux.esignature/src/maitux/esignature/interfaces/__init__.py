@@ -1,0 +1,103 @@
+﻿# -*- coding: utf-8 -*-
+"""Interfaces for the MEDAI  electronic signature add-on."""
+
+from plone.supermodel import model
+from plone.theme.interfaces import IDefaultPloneLayer
+from senaite.core.interfaces import ISenaiteCore
+from zope import schema
+from zope.interface import Interface
+
+
+class IMedaiSenaiteESignatureLayer(ISenaiteCore, IDefaultPloneLayer):
+    """Browser layer for the electronic signature add-on."""
+
+
+class IESignatureControlPanelSettings(model.Schema):
+    """Registry schema for the MVP add-on settings."""
+
+    enabled = schema.Bool(
+        title=u"Enable electronic signature MVP",
+        description=u"Turn the electronic signature gate on or off.",
+        default=True,
+        required=False,
+    )
+
+    auditlog_summary_enabled = schema.Bool(
+        title=u"Show signature summary in AuditLog",
+        description=u"Keep the signature record, but optionally hide the AuditLog summary.",
+        default=True,
+        required=False,
+    )
+
+    verified_context_ttl_seconds = schema.Int(
+        title=u"Verified context TTL in seconds",
+        description=u"How long a verified signature context stays valid before the transition is executed.",
+        default=300,
+        required=False,
+        min=30,
+    )
+
+    pilot_portal_type = schema.TextLine(
+        title=u"Pilot portal type",
+        description=u"Portal type that requires electronic signature in the current pilot scope.",
+        default=u"Analysis",
+        required=False,
+    )
+
+    pilot_transition = schema.TextLine(
+        title=u"Pilot transition",
+        description=u"Workflow transition that requires electronic signature in the current pilot scope.",
+        default=u"verify",
+        required=False,
+    )
+
+    signature_type = schema.TextLine(
+        title=u"Signature type",
+        description=u"Logical signature type stored with successful signature records.",
+        default=u"verification",
+        required=False,
+    )
+
+    meaning_required = schema.Bool(
+        title=u"Meaning is required",
+        description=u"Require users to fill the Meaning field before continuing.",
+        default=True,
+        required=False,
+    )
+
+    reason_required = schema.Bool(
+        title=u"Reason is required",
+        description=u"Require users to fill the Reason field before continuing.",
+        default=True,
+        required=False,
+    )
+
+    policy_rules_json = schema.Text(
+        title=u"Policy rules JSON",
+        description=u"Internal storage used by the table-based configuration UI.",
+        default=u"[]",
+        required=False,
+    )
+
+
+class ISignaturePolicyResolver(Interface):
+    """Resolve whether a transition requires electronic signature."""
+
+    def resolve(context, transition_id, user_id=None):
+        """Return a policy mapping for the context and transition."""
+
+
+class IReAuthenticationProvider(Interface):
+    """Authenticate the current user through the same backend chain as login."""
+
+    backend_id = schema.TextLine(
+        title=u"Provider backend id",
+        required=True,
+    )
+
+    def authenticate_current_user(user_id, credential, request_context=None):
+        """Return a result mapping for the current-user re-auth attempt."""
+
+    def supports_interactive_reauth():
+        """Return True when the provider supports password-based re-auth."""
+

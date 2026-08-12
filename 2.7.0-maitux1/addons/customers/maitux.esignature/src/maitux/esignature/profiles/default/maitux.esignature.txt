@@ -1,0 +1,1 @@
+This profile installs the MAITUX electronic signature add-on.

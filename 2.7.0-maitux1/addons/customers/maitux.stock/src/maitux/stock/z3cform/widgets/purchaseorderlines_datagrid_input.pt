@@ -1,0 +1,413 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      tal:omit-tag="">
+
+  <table class="table table-hover table-responsive table-sm table-borderless datagridwidget-table-view"
+         data-mode="row"
+         tal:attributes="data-extra view/extra; id view/id_prefix">
+    <thead>
+      <tr>
+        <tal:block repeat="column view/columns">
+          <th class="header"
+              tal:define="cssclass string:header cell-${repeat/column/number};
+                     cssclass python: cssclass + (column['mode'] == 'hidden' and ' datagridwidget-hidden-data' or '')"
+              tal:attributes="class cssclass">
+            <span tal:content="column/label">title</span>
+            <span class="required"
+                  tal:condition="column/required" title="Required" i18n:domain="plone" i18n:attributes="title title_required">&nbsp;</span>
+            <span class="formHelp" tal:condition="column/description" tal:content="column/description">Description</span>
+          </th>
+        </tal:block>
+        <th class="header" tal:condition="view/allow_insert"></th>
+        <th class="header" tal:condition="view/allow_delete"></th>
+        <th class="header" tal:condition="view/allow_reorder"></th>
+        <th class="header" tal:condition="view/allow_reorder"></th>
+      </tr>
+    </thead>
+    <tbody class="datagridwidget-body"
+           data-auto-append="false"
+           data-po-lines="1"
+           tal:attributes="data-name_prefix view/name_prefix; data-id_prefix view/id_prefix">
+      <tal:block repeat="widget view/widgets">
+        <tr tal:define="idx python:widget.name.split('.')[-1]"
+            tal:attributes="class python:'%s row-%d%s' % (widget.klass, repeat['widget'].number(), widget.mode=='hidden' and ' hidden' or '');
+                            data-index idx;"
+            tal:condition="python:view._includeRow(widget.name) and idx != 'AA'">
+          <metal:block define-macro="widget-row">
+            <div tal:replace="structure widget/render"></div>
+          </metal:block>
+        </tr>
+      </tal:block>
+    </tbody>
+  </table>
+  <input type="hidden" tal:replace="structure view/counterMarker" />
+  <button type="button" class="btn btn-sm btn-outline-secondary mb-2" id="po-lines-add-row">Add row</button>
+  <script type="text/javascript" src="" tal:attributes="src string:${view/portal_url}/++resource++senaite.core.z3cform.static/datagrid.js"></script>
+  <script type="text/javascript">
+  (function () {
+    function fixUidReferenceWidgetAttrs(datagrid) {
+      if (!datagrid) return;
+      var widgets = datagrid.querySelectorAll(".senaite-uidreference-widget-input,.senaite-queryselect-widget-input");
+      for (var i = 0; i < widgets.length; i++) {
+        var w = widgets[i];
+        var field = w.querySelector("[name]");
+        var name = field && field.name ? field.name : null;
+        if (!name) continue;
+        var id = name.replace(/\./g, "-");
+        w.setAttribute("data-name", JSON.stringify(name));
+        w.setAttribute("data-id", JSON.stringify(id));
+      }
+    }
+
+    function sanitizeTemplateRow(datagrid) {
+      if (!datagrid) return;
+      var tt = datagrid.querySelector("tr[data-index='TT']");
+      if (!tt) return;
+      var widgets = tt.querySelectorAll(".senaite-uidreference-widget-input,.senaite-queryselect-widget-input");
+      for (var i = 0; i < widgets.length; i++) {
+        var w = widgets[i];
+        if (w.dataset && w.dataset.poTemplateSanitized === "1") continue;
+        var isUid = w.classList.contains("senaite-uidreference-widget-input");
+        var isQs = w.classList.contains("senaite-queryselect-widget-input");
+        var field = w.querySelector("[name]");
+        var name = field && field.name ? field.name : null;
+        if (!name) {
+          var dn = w.getAttribute("data-name");
+          if (dn) {
+            try { name = JSON.parse(dn); } catch (e) { name = dn; }
+          }
+        }
+        if (!name) continue;
+        w.dataset.poTemplateSanitized = "1";
+        w.dataset.poReactKlass = isUid ? "senaite-uidreference-widget-input" : (isQs ? "senaite-queryselect-widget-input" : "");
+        w.classList.remove("senaite-uidreference-widget-input");
+        w.classList.remove("senaite-queryselect-widget-input");
+        while (w.firstChild) w.removeChild(w.firstChild);
+        var input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = "";
+        w.appendChild(input);
+        var id = name.replace(/\./g, "-");
+        w.setAttribute("data-name", JSON.stringify(name));
+        w.setAttribute("data-id", JSON.stringify(id));
+      }
+    }
+
+    function restoreRowWidgets(row) {
+      if (!row) return;
+      var widgets = row.querySelectorAll("[data-po-react-klass],[data-po-react-klass=''],[data-po-react-klass]");
+      for (var i = 0; i < widgets.length; i++) {
+        var w = widgets[i];
+        var klass = w.dataset ? w.dataset.poReactKlass : null;
+        if (!klass) continue;
+        w.classList.add(klass);
+      }
+    }
+
+    function normalizeErrorHighlighting(datagrid) {
+      if (!datagrid) return;
+      var wrapper = datagrid.closest("div[id^='formfield-']");
+      if (wrapper) {
+        wrapper.classList.remove("error");
+        wrapper.classList.remove("has-error");
+      }
+      var cells = datagrid.querySelectorAll("td.datagridwidget-cell");
+      for (var i = 0; i < cells.length; i++) {
+        var cell = cells[i];
+        var hasError = !!cell.querySelector(".small.text-danger, .invalid-feedback, .error, .fieldErrorBox");
+        var els = cell.querySelectorAll("input,select,textarea,button,.btn");
+        for (var j = 0; j < els.length; j++) {
+          els[j].classList.remove("is-invalid");
+          if (els[j].getAttribute && els[j].getAttribute("aria-invalid") === "true") {
+            els[j].setAttribute("aria-invalid", "false");
+          }
+        }
+        if (!hasError) {
+          continue;
+        }
+        var primary = cell.querySelector("input,select,textarea");
+        if (primary) {
+          primary.classList.add("is-invalid");
+          if (primary.getAttribute) {
+            primary.setAttribute("aria-invalid", "true");
+          }
+        }
+        var bsToggle = cell.querySelector(".bootstrap-select .dropdown-toggle");
+        if (bsToggle) {
+          bsToggle.classList.add("is-invalid");
+        }
+      }
+    }
+
+    function reenableSubmitButtons(form) {
+      if (!form) return;
+      var buttons = form.querySelectorAll("button[type='submit'],input[type='submit']");
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].disabled = false;
+      }
+    }
+
+    function formHasErrors(form) {
+      if (!form) return false;
+      if (form.querySelector(".fieldErrorBox,.invalid-feedback,.error,.has-error")) return true;
+      if (form.querySelector("[aria-invalid='true'],.is-invalid")) return true;
+      return false;
+    }
+
+    function keepSubmitEnabledOnErrors(form) {
+      if (!form) return;
+      if (form.__senaite_po_keep_submit_enabled) return;
+      form.__senaite_po_keep_submit_enabled = true;
+      setInterval(function () {
+        if (formHasErrors(form)) {
+          reenableSubmitButtons(form);
+        }
+      }, 400);
+    }
+
+    function isDecimal(str) {
+      if (typeof str !== "string") return false;
+      var s = str.trim();
+      if (!s) return false;
+      if (!/^[+-]?(?:\\d+\\.\\d+|\\d+|\\.\\d+)$/.test(s)) return false;
+      var n = parseFloat(s);
+      return isFinite(n);
+    }
+
+    function normalizeNumericString(str) {
+      if (str === null || str === undefined) return "";
+      var s = String(str);
+      s = s.replace(/\u00A0/g, " ");
+      s = s.replace(/[\uFF10-\uFF19]/g, function (ch) { return String.fromCharCode(ch.charCodeAt(0) - 0xFEE0); });
+      s = s.replace(/[\uFF0B]/g, "+");
+      s = s.replace(/[\u2212\uFF0D]/g, "-");
+      s = s.replace(/[\uFF0E\u3002]/g, ".");
+      s = s.replace(/[\uFF0C]/g, ",");
+      s = s.replace(/[\u200B-\u200F\uFEFF]/g, "");
+      s = s.replace(/\s+/g, "");
+      s = s.replace(/[^0-9+\-.,]/g, "");
+      if (s.indexOf(",") !== -1 && s.indexOf(".") === -1) {
+        s = s.replace(",", ".");
+      }
+      if (s.indexOf(",") !== -1 && s.indexOf(".") !== -1) {
+        s = s.replace(/,/g, "");
+      }
+      return s;
+    }
+
+    function decodeEntities(str) {
+      if (!str) return "";
+      var el = document.createElement("textarea");
+      el.innerHTML = str;
+      return el.value;
+    }
+
+    function getRowStockValue(row) {
+      if (!row || !row.querySelector) return "";
+      var stock = row.querySelector("input[name*='.stock.'], input[name$='.stock']");
+      if (!stock) return "";
+      return String(stock.value || "").trim();
+    }
+
+    function validateQuantities(form) {
+      var root = form || document;
+      var dg = root.querySelector(".datagridwidget-body[data-po-lines='1']");
+      var ok = true;
+      if (dg) {
+        var rows = dg.querySelectorAll("tr[data-index]:not([data-index='TT'])");
+        for (var i = 0; i < rows.length; i++) {
+          var row = rows[i];
+          if (!getRowStockValue(row)) continue;
+          var el = row.querySelector("input[name*='.quantity_ordered.'], input[name$='.quantity_ordered']");
+          if (!el || el.disabled) continue;
+          var v = normalizeNumericString(el.value || "");
+          if (el.value !== v) {
+            el.value = v;
+          }
+          if (!isDecimal(v)) {
+            ok = false;
+            el.classList.add("is-invalid");
+            el.setAttribute("aria-invalid", "true");
+          } else {
+            el.classList.remove("is-invalid");
+            el.setAttribute("aria-invalid", "false");
+          }
+        }
+        return ok;
+      }
+
+      var qInputs = root.querySelectorAll("input[name*='.quantity_ordered.'], input[name$='.quantity_ordered']");
+      for (var j = 0; j < qInputs.length; j++) {
+        var el2 = qInputs[j];
+        if (el2.disabled) continue;
+        var v2 = normalizeNumericString(el2.value || "");
+        if (el2.value !== v2) {
+          el2.value = v2;
+        }
+        if (!isDecimal(v2)) {
+          ok = false;
+          el2.classList.add("is-invalid");
+          el2.setAttribute("aria-invalid", "true");
+        } else {
+          el2.classList.remove("is-invalid");
+          el2.setAttribute("aria-invalid", "false");
+        }
+      }
+      return ok;
+    }
+
+    function addRow() {
+      if (!window.widgets || !window.widgets.datagrid) return;
+      var body = document.querySelector(".datagridwidget-body[data-po-lines='1']");
+      if (!body) return;
+      var grid = window.widgets.datagrid;
+      var templateRow = body.querySelector("tr[data-index='TT']") || body.querySelector("[data-index=TT]");
+      if (!templateRow) return;
+      try {
+        var newtr = grid.create_new_row(body);
+        var last = typeof grid.get_last_visible_row === "function" ? grid.get_last_visible_row(body) : null;
+        if (last && last.parentNode) {
+          last.parentNode.insertBefore(newtr, last.nextSibling);
+        } else if (templateRow.parentNode) {
+          templateRow.parentNode.insertBefore(newtr, templateRow);
+        }
+        if (typeof grid.init_auto_append_handler === "function") grid.init_auto_append_handler(body);
+        if (typeof grid.update_order_index === "function") grid.update_order_index(body);
+        restoreRowWidgets(newtr);
+        fixUidReferenceWidgetAttrs(body);
+        normalizeErrorHighlighting(body);
+        if (typeof grid.trigger_custom_event === "function") {
+          grid.trigger_custom_event("datagrid:row_added", {datagrid: body, row: newtr});
+        }
+      } catch (e) {
+        try {
+          grid.insert_row(templateRow);
+        } catch (e2) {
+          return;
+        }
+      }
+    }
+
+    function reindex(e) {
+      if (!e || !e.detail) return;
+      var datagrid = e.detail.datagrid;
+      if (!datagrid) return;
+      if (!window.widgets || !window.widgets.datagrid) return;
+      if (typeof window.widgets.datagrid.update_order_index !== "function") return;
+      if (!datagrid.dataset || datagrid.dataset.poLines !== "1") return;
+      window.widgets.datagrid.update_order_index(datagrid);
+      fixUidReferenceWidgetAttrs(datagrid);
+      normalizeErrorHighlighting(datagrid);
+    }
+    document.body.addEventListener("datagrid:row_added", reindex);
+    document.body.addEventListener("datagrid:row_removed", reindex);
+
+    function patchAddButton() {
+      if (!window.widgets || !window.widgets.datagrid) return;
+      var grid = window.widgets.datagrid;
+      if (grid.__senaite_stock_po_patched) return;
+      grid.__senaite_stock_po_patched = true;
+      var origInsert = grid.insert_row;
+      if (typeof origInsert !== "function") return;
+      grid.insert_row = function (ref_row, before) {
+        var dg = ref_row.closest(".datagridwidget-body");
+        if (!(dg && dg.dataset && dg.dataset.poLines === "1")) {
+          return origInsert.call(grid, ref_row, before);
+        }
+        var newtr = grid.create_new_row(dg);
+        if (before) {
+          ref_row.parentNode.insertBefore(newtr, ref_row);
+        } else {
+          ref_row.parentNode.insertBefore(newtr, ref_row.nextSibling);
+        }
+        grid.init_auto_append_handler(dg);
+        grid.update_order_index(dg);
+        restoreRowWidgets(newtr);
+        fixUidReferenceWidgetAttrs(dg);
+        grid.trigger_custom_event("datagrid:row_added", {datagrid: dg, row: newtr});
+        return newtr;
+      }
+    }
+
+    var dgNow = document.querySelector(".datagridwidget-body[data-po-lines='1']");
+    if (dgNow) {
+      sanitizeTemplateRow(dgNow);
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", function () {
+        patchAddButton();
+        var btn = document.getElementById("po-lines-add-row");
+        if (btn) btn.addEventListener("click", addRow);
+        var form = document.querySelector(".datagridwidget-body[data-po-lines='1']") && document.querySelector(".datagridwidget-body[data-po-lines='1']").closest("form");
+        if (form) {
+          form.addEventListener("input", function () { reenableSubmitButtons(form); }, true);
+          form.addEventListener("change", function () { reenableSubmitButtons(form); }, true);
+          form.addEventListener("invalid", function () { reenableSubmitButtons(form); }, true);
+          form.addEventListener("click", function (e) {
+            var t = e && e.target;
+            if (!t) return;
+            if (t.matches && t.matches("button[type='submit'],input[type='submit']")) {
+              setTimeout(function () { reenableSubmitButtons(form); }, 0);
+              setTimeout(function () { reenableSubmitButtons(form); }, 300);
+              keepSubmitEnabledOnErrors(form);
+            }
+          }, true);
+          keepSubmitEnabledOnErrors(form);
+        }
+        var dg = document.querySelector(".datagridwidget-body[data-po-lines='1']");
+        if (dg) {
+          sanitizeTemplateRow(dg);
+          fixUidReferenceWidgetAttrs(dg);
+          normalizeErrorHighlighting(dg);
+        }
+      });
+    } else {
+      patchAddButton();
+      var btn = document.getElementById("po-lines-add-row");
+      if (btn) btn.addEventListener("click", addRow);
+      var form = document.querySelector(".datagridwidget-body[data-po-lines='1']") && document.querySelector(".datagridwidget-body[data-po-lines='1']").closest("form");
+      if (form) {
+        form.addEventListener("input", function () { reenableSubmitButtons(form); }, true);
+        form.addEventListener("change", function () { reenableSubmitButtons(form); }, true);
+        form.addEventListener("invalid", function () { reenableSubmitButtons(form); }, true);
+        form.addEventListener("click", function (e) {
+          var t = e && e.target;
+          if (!t) return;
+          if (t.matches && t.matches("button[type='submit'],input[type='submit']")) {
+            setTimeout(function () { reenableSubmitButtons(form); }, 0);
+            setTimeout(function () { reenableSubmitButtons(form); }, 300);
+            keepSubmitEnabledOnErrors(form);
+          }
+        }, true);
+        keepSubmitEnabledOnErrors(form);
+      }
+      var dg = document.querySelector(".datagridwidget-body[data-po-lines='1']");
+      if (dg) {
+        sanitizeTemplateRow(dg);
+        fixUidReferenceWidgetAttrs(dg);
+        normalizeErrorHighlighting(dg);
+      }
+    }
+
+    // Pre-submit validation: Quantity Ordered must be numeric/decimal
+    (function attachSubmitValidation() {
+      var form = document.querySelector(".datagridwidget-body[data-po-lines='1']") && document.querySelector(".datagridwidget-body[data-po-lines='1']").closest("form");
+      if (!form || form.__senaite_po_decimal_validation_attached) return;
+      form.__senaite_po_decimal_validation_attached = true;
+      form.addEventListener("submit", function (e) {
+        var ok = validateQuantities(form);
+        if (!ok) {
+          e.preventDefault();
+          e.stopPropagation();
+          alert(decodeEntities("Quantity Ordered 必须是数字（可含小数点）"));
+        }
+      }, true);
+    })();
+  })();
+  </script>
+  <link rel="stylesheet" href="" type="text/css" media="screen"  tal:attributes="href string:${view/portal_url}/++resource++senaite.core.z3cform.static/datagrid.css"/>
+</html>

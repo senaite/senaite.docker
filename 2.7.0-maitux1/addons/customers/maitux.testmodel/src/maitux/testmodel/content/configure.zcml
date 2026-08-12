@@ -1,0 +1,16 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="maitux.testmodel">
+
+  <!-- 注册内容类型：Python 类 ↔ Interface 权限绑定 -->
+
+  <class class=".testmodelcontainer.TestmodelContainer">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <!-- 如有更多内容类型，在此添加 <class> 块 -->
+
+</configure>

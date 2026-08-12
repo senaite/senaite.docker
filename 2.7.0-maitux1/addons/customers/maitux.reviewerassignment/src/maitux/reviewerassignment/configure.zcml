@@ -1,0 +1,59 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="maitux.reviewerassignment">
+
+  <include package="plone.behavior" file="meta.zcml"/>
+
+  <!-- 引入子包 ZCML 配置 -->
+  <include package=".browser" />
+  <include package=".content" />
+  <include package=".behaviors" />
+  <include package=".catalog" />
+  <include package=".guards" />
+
+  <!-- 隐藏卸载 Profile，保持 Add-ons 面板整洁 -->
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      name="maitux.reviewerassignment"
+      />
+
+  <!-- 注册安装 Profile -->
+  <genericsetup:registerProfile
+      name="default"
+      title="Maitux 审核分配"
+      directory="profiles/default"
+      description="工作表审核分配与审核队列功能"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <!-- 标准安装入口：通过 importStep 调用 setup_handler -->
+  <genericsetup:importStep
+      name="maitux.reviewerassignment.setuphandler"
+      title="maitux.reviewerassignment setup handler"
+      description="Install Maitux Reviewerassignment site structure and registrations"
+      handler="maitux.reviewerassignment.setuphandlers.setup_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+  <!-- 注册卸载 Profile -->
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="卸载 Maitux 审核分配"
+      directory="profiles/uninstall"
+      description="卸载 maitux.reviewerassignment 包"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <!-- 标准卸载入口：通过 importStep 调用 uninstall_handler -->
+  <genericsetup:importStep
+      name="maitux.reviewerassignment.uninstallhandler"
+      title="maitux.reviewerassignment uninstall handler"
+      description="Uninstall Maitux Reviewerassignment registrations"
+      handler="maitux.reviewerassignment.setuphandlers.uninstall_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+</configure>

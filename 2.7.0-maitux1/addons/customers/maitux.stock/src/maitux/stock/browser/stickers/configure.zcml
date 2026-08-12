@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone">
+
+  <plone:static
+      directory="templates"
+      type="stickers"
+      name="maitux.stock"
+      />
+
+  <adapter
+      factory="maitux.stock.browser.stickers.adapters.StockBatchStickerTemplates"
+      for="maitux.stock.interfaces.IStockBatches"
+      provides="senaite.core.interfaces.stickers.IGetStickerTemplates"
+      />
+
+</configure>
+

@@ -1,0 +1,300 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      metal:use-macro="context/main_template/macros/master">
+
+<head>
+  <metal:block fill-slot="top_slot">
+    <style>
+      .pdf-test-panel {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 20px;
+      }
+      .pdf-test-log {
+        background: #1e1e1e;
+        color: #00ff99;
+        font-family: monospace;
+        height: 120px;
+        overflow-y: auto;
+        padding: 12px;
+        border-radius: 4px;
+        white-space: pre-wrap;
+      }
+      .pdf-test-textarea {
+        min-height: 320px;
+        font-family: Consolas, monospace;
+      }
+    </style>
+  </metal:block>
+</head>
+
+<body>
+  <metal:content fill-slot="main">
+    <div class="documentContent">
+      <h1 class="documentFirstHeading">Instrument Acquisition PDF Test</h1>
+      <span tal:replace="structure context/@@authenticator/authenticator"></span>
+
+      <div class="pdf-test-panel">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>Instrument Parsing Template</label>
+              <select class="form-control" id="template-uid">
+                <option value="">-- Select --</option>
+                <tal:items tal:repeat="t view/templates">
+                  <option tal:attributes="value t/uid; selected python:request.get('uid') == t['uid'] and 'selected' or None"
+                          tal:content="t/title">Template</option>
+                </tal:items>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="form-group">
+              <label>PDF File</label>
+              <input type="file" class="form-control" id="pdf-file" accept="application/pdf" />
+            </div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12">
+            <button class="btn btn-primary" id="btn-extract">1. Extract Text</button>
+            <button class="btn btn-success" id="btn-parse" style="margin-left: 8px;">2. Parse With JS</button>
+            <button class="btn btn-warning" id="btn-write" style="margin-left: 8px;">3. Write To System</button>
+            <button class="btn btn-default" id="btn-clear" style="margin-left: 8px;">Clear</button>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top: 15px;">
+          <div class="col-md-12">
+            <div class="pdf-test-log" id="console-log"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top: 20px;">
+        <div class="col-md-6">
+          <h3>Extracted Text</h3>
+          <textarea id="extracted-text" class="form-control pdf-test-textarea"></textarea>
+        </div>
+        <div class="col-md-6">
+          <h3>Parsed Result</h3>
+          <textarea id="parsed-text" class="form-control pdf-test-textarea"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <script type="text/javascript">
+/* <![CDATA[ */
+    (function($) {
+        var baseUrl = window.location.href.split('#')[0].split('?')[0].replace(/\/$/, '');
+        var appUrl = baseUrl.replace(/\/@@instrument_acquisition_pdf_test$/, '');
+        var extractUrl = appUrl + '/@@instrument_acquisition_pdf_extract';
+        var parseUrl = appUrl + '/@@instrument_acquisition_pdf_parse';
+        var writeUrl = appUrl + '/@@instrument_acquisition_pdf_write';
+        var authenticator = $('input[name="_authenticator"]').first().val() || null;
+
+        function log(msg, type) {
+            var colors = { error: '#ff6666', info: '#66d9ef', success: '#00ff99' };
+            var timestamp = new Date().toLocaleTimeString();
+            $('<div>')
+                .css('color', colors[type] || '#cccccc')
+                .text('[' + timestamp + '] ' + msg)
+                .appendTo('#console-log');
+            $('#console-log').scrollTop($('#console-log')[0].scrollHeight);
+        }
+
+        function formatValue(value) {
+            if ($.isArray(value)) {
+                return '[' + value.join(', ') + ']';
+            }
+            if (value === null || value === undefined) {
+                return '';
+            }
+            return String(value);
+        }
+
+        function logAvailableAnalyses(items) {
+            if (!items || !items.length) {
+                return;
+            }
+            log('Available analyses in sample:', 'info');
+            $.each(items, function(_, item) {
+                log(
+                    'analysis_keyword=' + (item.analysis_keyword || '') +
+                    ', analysis_title=' + (item.analysis_title || '') +
+                    ', service_keyword=' + (item.service_keyword || '') +
+                    ', service_title=' + (item.service_title || ''),
+                    'info'
+                );
+            });
+        }
+
+        function logSampleDetails(sample) {
+            if (!sample) {
+                return;
+            }
+
+            log('Sample: ' + (sample.sample_id || sample.sample_name || '(unknown)') +
+                ' (matched by ' + (sample.matched_by || 'unknown') + ')', 'info');
+
+            if (sample.updated && sample.updated.length) {
+                log('Updated analyses: ' + sample.updated.map(function(item) {
+                    return (item.analysis_title || item.analysis_keyword || item.target_keyword || '') +
+                        '=' + formatValue(item.value);
+                }).join(', '), 'success');
+            }
+
+            if (sample.missing && sample.missing.length) {
+                log('Missing analyses: ' + sample.missing.map(function(item) {
+                    return item.analysis_keyword || item.target_keyword || item.source_result_name || '(unknown)';
+                }).join(', '), 'error');
+            }
+
+            if (sample.skipped && sample.skipped.length) {
+                log('Skipped items: ' + sample.skipped.map(function(item) {
+                    return item.reason || 'unknown reason';
+                }).join(', '), 'info');
+            }
+
+            if (sample.worksheet_attachments && sample.worksheet_attachments.length) {
+                log('Worksheet attachments added: ' + sample.worksheet_attachments.map(function(item) {
+                    return (item.worksheet_title || item.worksheet_uid || '(worksheet)') +
+                        ' <- ' + (item.attachment_title || item.attachment_uid || '(attachment)') +
+                        ' @ ' + (item.analysis_keyword || '');
+                }).join(' | '), 'success');
+            }
+
+            logAvailableAnalyses(sample.available_analyses || []);
+        }
+
+        $('#btn-extract').click(function() {
+            var fileInput = $('#pdf-file')[0];
+            if (!fileInput.files || !fileInput.files.length) {
+                alert('Please choose a PDF file');
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('pdf_file', fileInput.files[0]);
+            if (authenticator) {
+                formData.append('_authenticator', authenticator);
+            }
+
+            log('Extracting text from PDF...', 'info');
+            $.ajax({
+                url: extractUrl,
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function(resp) {
+                    if (resp.success) {
+                        $('#extracted-text').val(resp.text || '');
+                        log((resp.filename || 'PDF') + ': text extracted', 'success');
+                    } else {
+                        log(resp.message || 'PDF extraction failed', 'error');
+                    }
+                },
+                error: function() {
+                    log('PDF extraction request failed', 'error');
+                }
+            });
+        });
+
+        $('#btn-parse').click(function() {
+            var uid = $('#template-uid').val();
+            var text = $('#extracted-text').val();
+            if (!uid) {
+                alert('Please select a template');
+                return;
+            }
+            if (!text) {
+                alert('Please extract text first');
+                return;
+            }
+
+            log('Parsing extracted text with JS template...', 'info');
+            $.ajax({
+                url: parseUrl,
+                method: 'POST',
+                dataType: 'json',
+                data: {
+                    uid: uid,
+                    text: text,
+                    _authenticator: authenticator
+                },
+                success: function(resp) {
+                    if (resp.success) {
+                        $('#parsed-text').val(resp.parsed || '');
+                        log('Parsed with template: ' + (resp.template_title || uid), 'success');
+                    } else {
+                        log(resp.message || 'JS parse failed', 'error');
+                    }
+                },
+                error: function() {
+                    log('JS parse request failed', 'error');
+                }
+            });
+        });
+
+        $('#btn-clear').click(function() {
+            $('#console-log').empty();
+            $('#extracted-text').val('');
+            $('#parsed-text').val('');
+            $('#pdf-file').val('');
+        });
+
+        $('#btn-write').click(function() {
+            var parsed = $('#parsed-text').val();
+            if (!parsed) {
+                alert('Please parse the extracted text first');
+                return;
+            }
+
+            log('Writing parsed JSON into system...', 'info');
+            var fileInput = $('#pdf-file')[0];
+            var formData = new FormData();
+            formData.append('parsed', parsed);
+            if (fileInput && fileInput.files && fileInput.files.length) {
+                formData.append('pdf_file', fileInput.files[0]);
+            }
+            if (authenticator) {
+                formData.append('_authenticator', authenticator);
+            }
+            $.ajax({
+                url: writeUrl,
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                dataType: 'json',
+                success: function(resp) {
+                    var details = resp.details || {};
+                    var samples = details.samples || [];
+                    if (resp.success) {
+                        log(resp.message || 'Parsed JSON written successfully', 'success');
+                        $.each(samples, function(_, sample) {
+                            logSampleDetails(sample);
+                        });
+                    } else {
+                        log(resp.message || 'Write to system failed', 'error');
+                        $.each(samples, function(_, sample) {
+                            logSampleDetails(sample);
+                        });
+                    }
+                },
+                error: function() {
+                    log('Write to system request failed', 'error');
+                }
+            });
+        });
+    })(jQuery);
+/* ]]> */
+    </script>
+  </metal:content>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.stock">
+
+  <!-- Folder Listing View -->
+  <browser:page
+      for="*"
+      name="stock_items"
+      class="maitux.stock.browser.stockitem.StockItemsView"
+      permission="zope2.View"
+      />
+
+  <!-- Specific folder_view for StockFolder -->
+  <browser:page
+      for="maitux.stock.interfaces.IStockFolder"
+      name="folder_view"
+      class="maitux.stock.browser.stockitem.StockItemsView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockManager"
+      name="stock_dashboard"
+      class="maitux.stock.browser.stockmanager.StockManagerDashboard"
+      template="stockmanager.pt"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockSection"
+      name="low_stock"
+      class="maitux.stock.browser.lowstock.LowStockBatchesView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStock"
+      name="view"
+      class="maitux.stock.browser.stockview.StockView"
+      template="stock.pt"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockUnits"
+      name="stock_units"
+      class="maitux.stock.browser.stockunits.StockUnitsView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockUnits"
+      name="folder_view"
+      class="maitux.stock.browser.stockunits.StockUnitsView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockTypes"
+      name="stock_types"
+      class="maitux.stock.browser.stocktypes.StockTypesView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockTypes"
+      name="folder_view"
+      class="maitux.stock.browser.stocktypes.StockTypesView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockPurchaseOrders"
+      name="purchase_orders"
+      class="maitux.stock.browser.purchaseorders.StockPurchaseOrdersView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockPurchaseOrders"
+      name="folder_view"
+      class="maitux.stock.browser.purchaseorders.StockPurchaseOrdersView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockBatches"
+      name="stock_batches"
+      class="maitux.stock.browser.stockbatches.StockBatchesView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockBatches"
+      name="folder_view"
+      class="maitux.stock.browser.stockbatches.StockBatchesView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockBatches"
+      name="stockbatch_consume"
+      class="maitux.stock.browser.stockbatchconsume.StockBatchConsumeView"
+      template="stockbatchconsume.pt"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockBatches"
+      name="stockbatch_destroy"
+      class="maitux.stock.browser.stockbatchdestroy.StockBatchDestroyView"
+      template="stockbatchdestroy.pt"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockBatches"
+      name="stockbatch_return"
+      class="maitux.stock.browser.stockbatchreturn.StockBatchReturnView"
+      template="stockbatchreturn.pt"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockBatches"
+      name="stockbatch_split"
+      class="maitux.stock.browser.stockbatchsplit.StockBatchSplitView"
+      template="stockbatchsplit.pt"
+      permission="zope2.View"
+      />
+
+  <include package=".viewlets" />
+  <include package=".stickers" />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockBatches"
+      name="stockbatch_stocktake"
+      class="maitux.stock.browser.stockbatchstocktake.StockBatchStocktakeView"
+      template="stockbatchstocktake.pt"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockBatches"
+      name="stockbatch_print"
+      class="maitux.stock.browser.stockbatchprint.StockBatchPrintView"
+      template="stockbatchprint.pt"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockManager"
+      name="apply_fixes"
+      class="maitux.stock.browser.stockmanagerfix.StockStructureFixView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockManager"
+      name="sync_expired_batches"
+      class="maitux.stock.browser.stockbatchexpiry.StockBatchExpirySyncView"
+      permission="cmf.ManagePortal"
+      />
+
+  <browser:page
+      for="maitux.stock.interfaces.IStockBatch"
+      name="view"
+      class="maitux.stock.browser.stockbatchview.StockBatchView"
+      template="stockbatch.pt"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="*"
+      name="stock_suppliers_json"
+      class="maitux.stock.browser.stocksuppliers.StockSuppliersJSON"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="*"
+      name="stock_quantity_json"
+      class="maitux.stock.browser.stockquantity.StockQuantityJSON"
+      permission="zope2.View"
+      />
+
+  <!-- Stock Item Detail View (placeholder for now, or let AT handle it) -->
+
+
+
+</configure>
+

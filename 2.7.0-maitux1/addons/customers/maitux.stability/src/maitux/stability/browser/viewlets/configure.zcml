@@ -1,0 +1,17 @@
+﻿<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.stability">
+
+  <browser:viewlet
+      for="*"
+      name="maitux.stability.stabilityplantemplate_form"
+      class=".stabilityplantemplateform.StabilityPlanTemplateFormViewlet"
+      manager="plone.app.layout.viewlets.interfaces.IHtmlHead"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+</configure>
+
+

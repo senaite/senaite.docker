@@ -1,0 +1,91 @@
+﻿<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="maitux.stock">
+
+  <!-- Register Content Types -->
+  <class class=".stock.Stock">
+    <require
+        permission="zope2.View"
+        interface="maitux.stock.interfaces.IStock"
+        />
+  </class>
+
+  <class class=".stockfolder.StockFolder">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stockmanager.StockManager">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stocksection.StockSection">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stockunits.StockUnits">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stockunit.StockUnit">
+    <require
+        permission="zope2.View"
+        interface="maitux.stock.interfaces.IStockUnit"
+        />
+  </class>
+
+  <class class=".stocktypes.StockTypes">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stocktype.StockType">
+    <require
+        permission="zope2.View"
+        interface="maitux.stock.interfaces.IStockType"
+        />
+  </class>
+
+  <class class=".stockpurchaseorders.StockPurchaseOrders">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stockpurchaseorder.StockPurchaseOrder">
+    <require
+        permission="zope2.View"
+        interface="maitux.stock.interfaces.IStockPurchaseOrder"
+        />
+  </class>
+
+  <class class=".stockbatches.StockBatches">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".stockbatch.StockBatch">
+    <require
+        permission="zope2.View"
+        interface="maitux.stock.interfaces.IStockBatch"
+        />
+  </class>
+
+</configure>
+

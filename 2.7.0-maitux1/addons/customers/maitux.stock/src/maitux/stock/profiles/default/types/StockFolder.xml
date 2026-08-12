@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<object name="StockFolder" meta_type="Dexterity FTI"
+        i18n:domain="maitux.stock"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+        purge="True">
+
+  <property name="title" i18n:translate="">Stock</property>
+  <property name="description" i18n:translate="">Manage stock</property>
+
+  <property name="icon_expr">string:${portal_url}/++plone++senaite.core.static/assets/icons/clientfolder.svg</property>
+  <property name="factory">StockFolder</property>
+  <property name="add_view_expr">string:${folder_url}/++add++StockFolder</property>
+  <property name="immediate_view">stock_items</property>
+
+  <property name="global_allow">True</property>
+  <property name="filter_content_types">True</property>
+  <property name="allowed_content_types">
+    <element value="Stock" />
+  </property>
+
+  <property name="allow_discussion">False</property>
+  <property name="default_view">stock_items</property>
+  <property name="view_methods">
+    <element value="stock_items"/>
+    <element value="folder_view"/>
+  </property>
+  <property name="default_view_fallback">False</property>
+
+  <property name="add_permission">cmf.AddPortalContent</property>
+
+  <property name="klass">maitux.stock.content.stockfolder.StockFolder</property>
+  <property name="schema">maitux.stock.content.stockfolder.IStockFolderSchema</property>
+
+  <property name="behaviors">
+    <element value="plone.app.dexterity.behaviors.metadata.IBasic"/>
+    <element value="plone.app.referenceablebehavior.referenceable.IReferenceable" />
+  </property>
+
+  <alias from="(Default)" to="(dynamic view)"/>
+  <alias from="edit" to="@@edit"/>
+  <alias from="sharing" to="@@sharing"/>
+  <alias from="view" to="(selected layout)"/>
+
+  <action title="View"
+          action_id="view"
+          category="object"
+          condition_expr=""
+          description=""
+          icon_expr=""
+          link_target=""
+          url_expr="string:${object_url}"
+          visible="False">
+    <permission value="View"/>
+  </action>
+
+  <action title="Edit"
+          action_id="edit"
+          category="object"
+          condition_expr=""
+          description=""
+          icon_expr=""
+          link_target=""
+          url_expr="string:${object_url}/edit"
+          visible="False">
+    <permission value="Modify portal content"/>
+  </action>
+
+</object>
+

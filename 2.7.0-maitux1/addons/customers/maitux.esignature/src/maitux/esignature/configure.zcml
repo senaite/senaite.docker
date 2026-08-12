@@ -1,0 +1,54 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="maitux.esignature">
+
+  <include package="Products.Five" />
+  <include package="Products.GenericSetup" file="meta.zcml" />
+  <include package="senaite.core.permissions" />
+  <five:registerPackage package="." />
+
+  <include package=".browser" />
+  <include package=".services" />
+  <include package=".adapters" />
+  <include package=".guards" />
+  <include package=".storage" />
+
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      name="maitux.esignature"
+      />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="MAITUX E-Signature"
+      directory="profiles/default"
+      description="Electronic signature workflow re-auth add-on"
+      provides="Products.GenericSetup.interfaces.EXTENSION" />
+
+  <genericsetup:importStep
+      name="maitux.esignature.setuphandler"
+      title="maitux.esignature setup handler"
+      description="Install MAITUX E-Signature registrations"
+      handler="maitux.esignature.setuphandlers.setup_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="MAITUX E-Signature (uninstall)"
+      directory="profiles/uninstall"
+      description="Uninstall MAITUX E-Signature"
+      provides="Products.GenericSetup.interfaces.EXTENSION" />
+
+  <genericsetup:importStep
+      name="maitux.esignature.uninstallhandler"
+      title="maitux.esignature uninstall handler"
+      description="Uninstall MAITUX E-Signature registrations"
+      handler="maitux.esignature.setuphandlers.uninstall_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+</configure>
+

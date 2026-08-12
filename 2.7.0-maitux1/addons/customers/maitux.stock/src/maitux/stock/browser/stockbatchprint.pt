@@ -1,0 +1,100 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="context/main_template/macros/master">
+
+  <metal:content fill-slot="content-core">
+    <div class="mb-3">
+      <h1>Print Labels</h1>
+    </div>
+
+    <div class="mb-3">
+      <a tal:attributes="href context/absolute_url"
+         class="btn btn-outline-secondary">Back</a>
+      <button type="button" id="stockbatch-print-pdf" class="btn btn-primary">Print PDF</button>
+    </div>
+
+    <div class="mb-2">
+      <label for="template" class="mr-2">Template</label>
+      <select id="template" class="form-control d-inline-block" style="width:320px;">
+        <tal:formats tal:repeat="tpl python:view.get_available_templates()">
+          <option tal:attributes="value tpl/id; selected tpl/selected|nothing;"
+                  tal:content="tpl/title"></option>
+        </tal:formats>
+      </select>
+    </div>
+
+    <style id="stickers-style" type="text/css" tal:content="structure python:view.get_selected_template_css()"></style>
+    <div id="stickers-wrapper" tal:content="structure python:view.render_stickers()"></div>
+
+    <script type="text/javascript">
+      (function () {
+        function loadCodes() {
+          try {
+            var qrs = document.querySelectorAll(".qrcode, .barcode");
+            for (var i = 0; i < qrs.length; i++) {
+              while (qrs[i].firstChild) {
+                qrs[i].removeChild(qrs[i].firstChild);
+              }
+            }
+            var bu = new BarcodeUtils();
+            bu.load();
+          } catch (e) {}
+        }
+
+        function printPdf() {
+          var style = document.getElementById("stickers-style");
+          var wrapper = document.getElementById("stickers-wrapper");
+          if (!style || !wrapper) return;
+          var stickersHtml = "";
+          var stickers = wrapper.querySelectorAll(".sticker");
+          for (var i = 0; i < stickers.length; i++) {
+            stickersHtml += stickers[i].outerHTML;
+          }
+          var form = document.createElement("form");
+          form.method = "post";
+          form.target = "_blank";
+          form.style.display = "none";
+          form.action = window.location.href;
+
+          var htmlField = document.createElement("textarea");
+          htmlField.name = "html";
+          htmlField.value = stickersHtml;
+          form.appendChild(htmlField);
+
+          var styleField = document.createElement("textarea");
+          styleField.name = "style";
+          styleField.value = style.outerHTML;
+          form.appendChild(styleField);
+
+          var pdfField = document.createElement("input");
+          pdfField.type = "hidden";
+          pdfField.name = "pdf";
+          pdfField.value = "1";
+          form.appendChild(pdfField);
+
+          document.body.appendChild(form);
+          form.submit();
+          document.body.removeChild(form);
+        }
+
+        function reloadWithTemplate() {
+          var sel = document.getElementById("template");
+          if (!sel) return;
+          var url = new URL(window.location.href);
+          url.searchParams.set("template", sel.value);
+          window.location.href = url.toString();
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+          loadCodes();
+          var btn = document.getElementById("stockbatch-print-pdf");
+          if (btn) btn.addEventListener("click", printPdf);
+          var sel = document.getElementById("template");
+          if (sel) sel.addEventListener("change", reloadWithTemplate);
+        });
+      })();
+    </script>
+  </metal:content>
+</html>

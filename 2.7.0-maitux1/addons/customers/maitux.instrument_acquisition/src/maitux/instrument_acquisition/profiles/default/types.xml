@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<object name="portal_types" meta_type="Plone Types Tool">
+  <object name="InstrumentParsingTemplates" meta_type="Dexterity FTI"/>
+  <object name="InstrumentParsingTemplate" meta_type="Dexterity FTI"/>
+</object>

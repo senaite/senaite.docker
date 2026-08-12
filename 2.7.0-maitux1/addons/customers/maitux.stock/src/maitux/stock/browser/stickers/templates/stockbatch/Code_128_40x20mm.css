@@ -1,0 +1,21 @@
+.sticker {
+  width: 40mm;
+  height: 20mm;
+  padding: 2mm;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  font-size: 8pt;
+}
+.barcode {
+  width: 100%;
+  height: 14mm;
+}
+.item-info {
+  width: 100%;
+  margin-top: 1mm;
+  text-align: left;
+}
+.item-info strong {
+  font-size: 8pt;
+}

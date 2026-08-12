@@ -1,0 +1,15 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="context/main_template/macros/master">
+<body>
+<metal:title fill-slot="content-title">
+  <h1>Testmodel Management</h1>
+</metal:title>
+<metal:description fill-slot="content-description">
+  <p>maitux.testmodel 模块已成功安装。</p>
+</metal:description>
+<metal:main fill-slot="content-core">
+  <p>这是 Testmodel 的默认仪表盘页面。请在此处添加功能模块。</p>
+</metal:main>
+</body>
+</html>

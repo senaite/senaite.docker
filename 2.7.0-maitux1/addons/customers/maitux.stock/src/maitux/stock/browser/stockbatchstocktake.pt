@@ -1,0 +1,81 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="context/main_template/macros/master">
+
+  <metal:content fill-slot="content-core">
+    <tal:block tal:define="batches python:view.get_batches();
+                           errors python:request.get('stocktake_errors', [])">
+      <div class="mb-3">
+        <h1>Stocktake Batches</h1>
+      </div>
+
+      <form method="post" tal:attributes="action string:${context/absolute_url}/@@stockbatch_stocktake">
+        <input tal:replace="structure context/@@authenticator/authenticator"/>
+        <input type="hidden" name="uids" tal:attributes="value python:','.join(view.get_uids())" />
+
+        <tal:block tal:condition="python:errors">
+          <div class="alert alert-danger">
+            <div tal:repeat="e errors" tal:content="python:e[1]">Error</div>
+          </div>
+        </tal:block>
+
+        <table class="table table-sm table-striped">
+          <thead>
+            <tr>
+              <th>Batch ID</th>
+              <th class="text-right">Current Amount</th>
+              <th class="text-right">Actual Amount</th>
+              <th>Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tal:block tal:condition="python:not batches">
+              <tr>
+                <td colspan="4" class="text-center">No active batches selected</td>
+              </tr>
+            </tal:block>
+            <tal:block tal:repeat="batch batches">
+              <tal:block tal:define="info python:view.get_display_info(batch)">
+                <tr>
+                  <td>
+                    <span tal:content="info/batch_id"></span>
+                    <br/>
+                    <small class="text-muted" tal:content="info/title"></small>
+                  </td>
+                  <td class="text-right">
+                    <span tal:content="info/current_amount"></span>
+                    <span tal:content="info/unit_title"></span>
+                  </td>
+                  <td class="text-right">
+                    <input type="number" 
+                           step="0.01" 
+                           min="0" 
+                           required="required"
+                           class="form-control form-control-sm text-right d-inline-block w-auto" 
+                           tal:attributes="name string:qty.${info/uid}; value info/current_amount" />
+                  </td>
+                  <td>
+                    <input type="text" 
+                           class="form-control form-control-sm" 
+                           tal:attributes="name string:remarks.${info/uid}" 
+                           placeholder="Remarks..." />
+                  </td>
+                </tr>
+              </tal:block>
+            </tal:block>
+          </tbody>
+        </table>
+
+        <div class="mt-3" tal:condition="python:batches">
+          <button type="submit" name="form.button.submit" class="btn btn-primary">Save</button>
+          <button type="submit" name="form.button.cancel" class="btn btn-secondary">Cancel</button>
+        </div>
+        <div class="mt-3" tal:condition="python:not batches">
+          <button type="submit" name="form.button.cancel" class="btn btn-secondary">Go Back</button>
+        </div>
+      </form>
+    </tal:block>
+  </metal:content>
+</html>

@@ -1,0 +1,12 @@
+﻿<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser">
+
+  <utility
+      name="senaite.core.vocabularies.resulttypes"
+      component="maitux.calcenhance.vocabularies.resulttypes.ResultTypesVocabularyFactory"
+      provides="zope.schema.interfaces.IVocabularyFactory"
+      />
+
+</configure>
+

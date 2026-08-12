@@ -1,0 +1,14 @@
+<tal:sticker define="item python:view.current_item;
+                     batch_id python:getattr(item, 'getBatchID', None) and item.getBatchID() or item.getTitle();">
+
+  <!-- QR Code -->
+  <div class="qrcode"
+       data-size="128"
+       data-render="image"
+       data-quiet="4"
+       tal:attributes="data-text python:batch_id;">
+  </div>
+
+  <div class="batch_id" tal:content="batch_id">Batch ID</div>
+
+</tal:sticker>

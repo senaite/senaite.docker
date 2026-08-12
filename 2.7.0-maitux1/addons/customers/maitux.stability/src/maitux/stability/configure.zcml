@@ -1,0 +1,112 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="maitux.stability">
+
+  <permission
+      id="maitux.stability.permissions.AddStabilityPlanTemplate"
+      title="maitux.stability: Add Stability Plan Template"
+      />
+
+  <include package=".browser" />
+  <include package=".content" />
+
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      name="maitux.stability"
+      />
+
+  <adapter
+      factory="maitux.stability.content.stabilitystudytemplates.StabilityPlanTemplatesConstrainTypes"
+      for="maitux.stability.interfaces.IStabilityPlanTemplates"
+      provides="Products.CMFPlone.interfaces.constrains.ISelectableConstrainTypes"
+      />
+
+  <adapter
+      factory="maitux.stability.content.stabilitystudytemplates.StabilityPlanTemplatesConstrainTypes"
+      for="maitux.stability.interfaces.IStabilityPlanTemplates"
+      provides="Products.CMFPlone.interfaces.constrains.IConstrainTypes"
+      />
+
+  <adapter
+      name="workflow_action_create_plan"
+      for="*
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory="maitux.stability.browser.view.WorkflowActionCreatePlanAdapter"
+      provides="bika.lims.interfaces.IWorkflowActionAdapter"
+      permission="zope.Public" />
+
+  <adapter
+      name="workflow_action_sample_placement"
+      for="*
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory="maitux.stability.browser.view.WorkflowActionSamplePlacementAdapter"
+      provides="bika.lims.interfaces.IWorkflowActionAdapter"
+      permission="zope.Public" />
+
+  <adapter
+      name="workflow_action_sync_plan_tasks"
+      for="*
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory="maitux.stability.browser.view.WorkflowActionSyncPlanTasksAdapter"
+      provides="bika.lims.interfaces.IWorkflowActionAdapter"
+      permission="zope.Public" />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="MAITUX Stability Studies"
+      directory="profiles/default"
+      description="Stability Studies for MAITUX"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:importStep
+      name="maitux.stability.setuphandler"
+      title="maitux.stability setup handler"
+      description="Install MAITUX Stability Studies registrations"
+      handler="maitux.stability.setuphandlers.setup_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="Uninstall MAITUX Stability Studies"
+      directory="profiles/uninstall"
+      description="Uninstalls the maitux.stability package"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:importStep
+      name="maitux.stability.uninstallhandler"
+      title="maitux.stability uninstall handler"
+      description="Uninstall MAITUX Stability Studies registrations"
+      handler="maitux.stability.setuphandlers.uninstall_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+  <subscriber
+      for="maitux.stability.interfaces.IStabilityPlanTemplate
+           zope.lifecycleevent.interfaces.IObjectAddedEvent"
+      handler="maitux.stability.subscribers.stability_plan_template_added"
+      />
+
+  <subscriber
+      for="maitux.stability.interfaces.IStabilityPlanTemplate
+           zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+      handler="maitux.stability.subscribers.stability_plan_template_modified"
+      />
+
+  <subscriber
+      for="maitux.stability.interfaces.IStabilityPlan
+           zope.lifecycleevent.interfaces.IObjectAddedEvent"
+      handler="maitux.stability.subscribers.stability_plan_added"
+      />
+
+  <subscriber
+      for="maitux.stability.interfaces.IStabilityPlan
+           zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+      handler="maitux.stability.subscribers.stability_plan_modified"
+      />
+
+</configure>
+

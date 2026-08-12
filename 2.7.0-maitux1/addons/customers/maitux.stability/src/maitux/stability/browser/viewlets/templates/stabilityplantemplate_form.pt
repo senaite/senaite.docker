@@ -1,0 +1,881 @@
+<script type="text/javascript">
+(function() {
+  function init($) {
+    if (window.__senaiteStabilityPlanTemplateEnhancementsApplied) {
+      return;
+    }
+    window.__senaiteStabilityPlanTemplateEnhancementsApplied = true;
+
+    function controllerFor(inputId) {
+      try {
+        return (window.senaite && window.senaite.core && window.senaite.core.widgets && window.senaite.core.widgets[inputId]) || null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function findFieldWrapper(fieldName) {
+      var $wrap = $("#formfield-form-widgets-" + fieldName);
+      if ($wrap.length) {
+        return $wrap.first();
+      }
+      $wrap = $("[id$='formfield-form-widgets-" + fieldName + "']");
+      if ($wrap.length) {
+        return $wrap.first();
+      }
+      $wrap = $("[id*='formfield-form-widgets-" + fieldName + "']");
+      if ($wrap.length) {
+        return $wrap.first();
+      }
+      return $();
+    }
+
+    function findFieldInput(fieldName) {
+      var $byId = $("#form-widgets-" + fieldName);
+      if ($byId.length) {
+        return $byId.first();
+      }
+      var $wrap = findFieldWrapper(fieldName);
+      if ($wrap.length) {
+        var $uid = $wrap.find("input.senaite-uidreference-widget-input");
+        if ($uid.length) {
+          return $uid.first();
+        }
+        var $input = $wrap.find("input,textarea,select").filter(function() {
+          var $el = $(this);
+          if ($el.attr("type") === "hidden") {
+            return false;
+          }
+          return true;
+        });
+        if ($input.length) {
+          return $input.first();
+        }
+      }
+      var $byName = $("input[name$='." + fieldName + "'],textarea[name$='." + fieldName + "'],select[name$='." + fieldName + "']");
+      if ($byName.length) {
+        return $byName.first();
+      }
+      $byName = $("input[name*='" + fieldName + "'],textarea[name*='" + fieldName + "'],select[name*='" + fieldName + "']");
+      if ($byName.length) {
+        return $byName.first();
+      }
+      return $();
+    }
+
+    function setEnabled($input, enabled) {
+      var $container = $input.closest(".senaite-uidreference-widget");
+      if (!$container.length) {
+        $container = $input.closest(".senaite-queryselect-widget");
+      }
+      if (!$container.length) {
+        $container = findFieldWrapper($input.attr("id") ? $input.attr("id").replace("form-widgets-", "") : "");
+      }
+      if ($container.length) {
+        $container.find("input,button,select,textarea").prop("disabled", !enabled);
+        $container.css("pointer-events", enabled ? "" : "none");
+        $container.css("opacity", enabled ? "" : "0.6");
+      }
+      $input.prop("disabled", !enabled);
+    }
+
+    function clearField($input) {
+      var ctrl = controllerFor($input.prop("id"));
+      if (ctrl && typeof ctrl.set_values === "function") {
+        ctrl.set_values([]);
+        return;
+      }
+      $input.val("");
+      $input.trigger("change");
+    }
+
+    function setFieldValue(fieldName, value, record) {
+      var $input = findFieldInput(fieldName);
+      if (!$input.length) {
+        return false;
+      }
+      var ctrl = controllerFor($input.prop("id"));
+      if (ctrl && typeof ctrl.set_values === "function") {
+        if (record && typeof ctrl.set_data_records === "function" && value) {
+          var records = {};
+          records[value] = record;
+          ctrl.set_data_records(records);
+        }
+        if (!value) {
+          ctrl.set_values([], { sync: false });
+        } else {
+          ctrl.set_values([value], { sync: !record });
+        }
+        return true;
+      }
+      if ($input.is("input.senaite-uidreference-widget-input")) {
+        return false;
+      }
+      $input.val(value == null ? "" : value);
+      $input.trigger("change");
+      return true;
+    }
+
+    function setHiddenFieldValue(fieldName, value) {
+      var $hidden = $("[name='form.widgets." + fieldName + "']");
+      if (!$hidden.length) {
+        $hidden = $("[name$='." + fieldName + "']");
+      }
+      if (!$hidden.length) {
+        return false;
+      }
+      $hidden.val(value == null ? "" : value);
+      $hidden.trigger("change");
+      return true;
+    }
+
+    function getPlanDetailsRows() {
+      return $(".datagridwidget-body[data-plan-details='1']").find("tr[data-index]").filter(function() {
+        var idx = $(this).attr("data-index");
+        return idx && idx !== "TT" && idx !== "AA";
+      });
+    }
+
+    function findRowField($row, fieldName) {
+      return $row.find("[name$='." + fieldName + "']").first();
+    }
+
+    function findRowWidgetRoot($row, fieldName) {
+      return $row.find(".senaite-uidreference-widget-input,.senaite-queryselect-widget-input,[data-name]").filter(function() {
+        var rawName = this.getAttribute("data-name");
+        if (!rawName) {
+          return false;
+        }
+        try {
+          rawName = JSON.parse(rawName);
+        } catch (e) {}
+        return rawName && rawName.slice(-fieldName.length - 1) === ("." + fieldName);
+      }).first();
+    }
+
+    function getRowWidgetController($row, fieldName) {
+      var $root = findRowWidgetRoot($row, fieldName);
+      if (!$root.length) {
+        return null;
+      }
+      var widgetId = $root.attr("id") || $root.attr("data-id");
+      if (!widgetId) {
+        return null;
+      }
+      try {
+        widgetId = JSON.parse(widgetId);
+      } catch (e) {}
+      return controllerFor(widgetId);
+    }
+
+    function getRowWidgetRootAndController($row, fieldName) {
+      var $root = findRowWidgetRoot($row, fieldName);
+      var ctrl = null;
+      if ($root.length) {
+        var widgetId = $root.attr("id") || $root.attr("data-id");
+        if (widgetId) {
+          try {
+            widgetId = JSON.parse(widgetId);
+          } catch (e) {}
+          ctrl = controllerFor(widgetId);
+        }
+      }
+      return { root: $root, ctrl: ctrl };
+    }
+
+    function getPortalUrl() {
+      var body = document.body;
+      if (body) {
+        var url = body.getAttribute("data-portal-url") || "";
+        if (!url && body.dataset && body.dataset.portalUrl) {
+          url = body.dataset.portalUrl;
+        }
+        if (url) {
+          return url.replace(/\/$/, "");
+        }
+      }
+      if (window.portal_url) {
+        return String(window.portal_url).replace(/\/$/, "");
+      }
+      return "";
+    }
+
+    function getPortalPath() {
+      var portalUrl = getPortalUrl();
+      if (!portalUrl) {
+        return "";
+      }
+      try {
+        return new URL(portalUrl, window.location.origin).pathname.replace(/\/$/, "");
+      } catch (e) {
+        return String(portalUrl).replace(/\/$/, "");
+      }
+    }
+
+    function getLabAnalysisSpecPath() {
+      var portalPath = getPortalPath();
+      if (!portalPath) {
+        return "";
+      }
+      // catalog 的 path 查询需要站点路径，不是完整 URL。
+      return portalPath + "/bika_setup/bika_analysisspecs";
+    }
+
+    function buildLabAnalysisSpecSearchQuery() {
+      var specPath = getLabAnalysisSpecPath();
+      if (!specPath) {
+        return null;
+      }
+      return {
+        path: {
+          query: specPath,
+          level: 0
+        }
+      };
+    }
+
+    function applyAnalysisSpecSearchRestriction(entry) {
+      var query = buildLabAnalysisSpecSearchQuery();
+      if (!query || !entry || !entry.root || !entry.root.length) {
+        return;
+      }
+      entry.root.attr("data-search_query", JSON.stringify(query));
+      if (entry.ctrl && typeof entry.ctrl.set_search_query === "function") {
+        entry.ctrl.set_search_query(query);
+      }
+    }
+
+    // 稳定性计划这里仅允许选择实验室公共检验标准，排除客户私有标准，
+    // 避免同名 Analysis Specification 同时出现在下拉结果里。
+    function restrictPlanDetailsAnalysisSpecSearch() {
+      var query = buildLabAnalysisSpecSearchQuery();
+      if (!query) {
+        return;
+      }
+      getPlanDetailsRows().each(function() {
+        var entry = getRowWidgetRootAndController($(this), "analysis_specification");
+        if (!entry.root || !entry.root.length) {
+          return;
+        }
+        applyAnalysisSpecSearchRestriction(entry);
+      });
+    }
+
+    function restrictAnalysisSpecSearchForTarget(target) {
+      var fieldName = analysisFieldNameFromTarget(target);
+      if (fieldName !== "analysis_specification") {
+        return;
+      }
+      var $row = rowForAnalysisWidget(target);
+      if (!$row.length) {
+        return;
+      }
+      applyAnalysisSpecSearchRestriction(
+        getRowWidgetRootAndController($row, "analysis_specification")
+      );
+    }
+
+    function setRowReferenceEnabled($row, fieldName, enabled) {
+      var entry = getRowWidgetRootAndController($row, fieldName);
+      var $root = entry.root;
+      var $field = findRowField($row, fieldName);
+      if ($root && $root.length) {
+        $root.find("input,button,select,textarea").prop("disabled", !enabled);
+        $root.css("pointer-events", enabled ? "" : "none");
+        $root.css("opacity", enabled ? "" : "0.6");
+      }
+      if ($field.length) {
+        $field.prop("disabled", !enabled);
+      }
+    }
+
+    function clearRowReferenceField($row, fieldName) {
+      var entry = getRowWidgetRootAndController($row, fieldName);
+      var ctrl = entry.ctrl;
+      var $field = findRowField($row, fieldName);
+      if (ctrl && typeof ctrl.set_values === "function") {
+        ctrl.set_values([], { sync: false });
+      }
+      if ($field.length) {
+        $field.val("");
+        $field.trigger("change");
+      }
+      if (entry.root && entry.root.length) {
+        entry.root.attr("data-values", JSON.stringify([]));
+        entry.root.removeAttr("data-records");
+      }
+    }
+
+    function getRowReferenceValue($row, fieldName) {
+      var $field = findRowField($row, fieldName);
+      if ($field.length) {
+        var value = $.trim($field.val() || "");
+        if (value) {
+          return value;
+        }
+      }
+      var entry = getRowWidgetRootAndController($row, fieldName);
+      if (entry.root && entry.root.length) {
+        try {
+          var values = JSON.parse(entry.root.attr("data-values") || "[]");
+          if (values && values.length) {
+            return values[0] || "";
+          }
+        } catch (e) {
+        }
+      }
+      return "";
+    }
+
+    function applyRowAnalysisChoiceRules($row) {
+      var specValue = getRowReferenceValue($row, "analysis_specification");
+      var profileValue = getRowReferenceValue($row, "analysis_profile");
+
+      if (specValue) {
+        if (profileValue) {
+          clearRowReferenceField($row, "analysis_profile");
+        }
+        setRowReferenceEnabled($row, "analysis_profile", false);
+        setRowReferenceEnabled($row, "analysis_specification", true);
+        return;
+      }
+
+      if (profileValue) {
+        setRowReferenceEnabled($row, "analysis_specification", false);
+        setRowReferenceEnabled($row, "analysis_profile", true);
+        return;
+      }
+
+      setRowReferenceEnabled($row, "analysis_specification", true);
+      setRowReferenceEnabled($row, "analysis_profile", true);
+    }
+
+    function applyAnalysisChoiceRules() {
+      getPlanDetailsRows().each(function() {
+        applyRowAnalysisChoiceRules($(this));
+      });
+    }
+
+    function rowForAnalysisWidget(target) {
+      var $target = $(target);
+      var $row = $target.closest("tr[data-index]");
+      if (!$row.length) {
+        return $();
+      }
+      return $row;
+    }
+
+    function analysisFieldNameFromTarget(target) {
+      var $target = $(target);
+      var rawName = $target.attr("data-name") || "";
+      if (!rawName && $target.attr("name")) {
+        rawName = $target.attr("name");
+      }
+      if (!rawName) {
+        var $carrier = $target.closest("[data-name]");
+        rawName = $carrier.attr("data-name") || "";
+      }
+      try {
+        rawName = JSON.parse(rawName);
+      } catch (e) {
+      }
+      if (!rawName) {
+        return "";
+      }
+      if (rawName.slice(-23) === ".analysis_specification") {
+        return "analysis_specification";
+      }
+      if (rawName.slice(-17) === ".analysis_profile") {
+        return "analysis_profile";
+      }
+      return "";
+    }
+
+    function handleAnalysisWidgetInteraction(event) {
+      var fieldName = analysisFieldNameFromTarget(event.target);
+      if (!fieldName) {
+        return;
+      }
+      var $row = rowForAnalysisWidget(event.target);
+      if (!$row.length) {
+        return;
+      }
+      // 组件会异步回写 UID，这里延迟一次统一刷新，保证禁用状态跟着选中结果走。
+      window.setTimeout(function() {
+        applyRowAnalysisChoiceRules($row);
+      }, 50);
+      window.setTimeout(function() {
+        applyRowAnalysisChoiceRules($row);
+      }, 250);
+    }
+
+    var planDetailsDropdownOverlay = null;
+    var planDetailsOverlayActiveRoots = [];
+
+    // 只要焦点/点击还在当前查询控件内部，就不要强制收起下拉结果。
+    function isPlanDetailsSearchTarget(target) {
+      if (!target || !target.closest) {
+        return false;
+      }
+      return !!target.closest(
+        ".datagridwidget-body[data-plan-details='1'] .queryselectwidget-search-field, " +
+        ".datagridwidget-body[data-plan-details='1'] .queryselectwidget-results-container, " +
+        ".datagridwidget-body[data-plan-details='1'] .senaite-uidreference-widget-input, " +
+        ".datagridwidget-body[data-plan-details='1'] .senaite-queryselect-widget-input"
+      );
+    }
+
+    function getPlanDetailsOpenDropdownRoots() {
+      var roots = [];
+      $(".datagridwidget-body[data-plan-details='1'] .queryselectwidget-results-container").each(function() {
+        var root = this.closest(".senaite-uidreference-widget-input, .senaite-queryselect-widget-input, [data-name]");
+        if (root && roots.indexOf(root) === -1) {
+          roots.push(root);
+        }
+      });
+      return roots;
+    }
+
+    function getPlanDetailsSearchInput(root) {
+      if (!root || !root.querySelector) {
+        return null;
+      }
+      return root.querySelector(".queryselectwidget-search-field input");
+    }
+
+    function getPlanDetailsDropdown(root) {
+      if (!root || !root.querySelector) {
+        return null;
+      }
+      return root.querySelector(".queryselectwidget-results-container");
+    }
+
+    // 每次打开或再次点击输入框时，按当前输入框位置重算悬浮框坐标。
+    function repositionPlanDetailsDropdownRoot(root) {
+      var input = getPlanDetailsSearchInput(root);
+      var dropdown = getPlanDetailsDropdown(root);
+      if (!input || !dropdown) {
+        return;
+      }
+
+      var inputRect = input.getBoundingClientRect();
+      var dropdownRect = dropdown.getBoundingClientRect();
+      var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+      var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      var left = inputRect.left;
+      var top = inputRect.bottom + 8;
+      var dropdownWidth = dropdownRect.width || Math.max(inputRect.width, 400);
+      var dropdownHeight = dropdownRect.height || 0;
+
+      if (left + dropdownWidth > viewportWidth - 8) {
+        left = Math.max(8, viewportWidth - dropdownWidth - 8);
+      }
+      if (top + dropdownHeight > viewportHeight - 8) {
+        top = inputRect.top - dropdownHeight - 8;
+      }
+      if (top < 8) {
+        top = Math.max(8, inputRect.bottom + 8);
+      }
+
+      dropdown.style.position = "fixed";
+      dropdown.style.left = left + "px";
+      dropdown.style.top = top + "px";
+      dropdown.style.transform = "none";
+      dropdown.style.marginTop = "0";
+      dropdown.style.minWidth = Math.max(inputRect.width, 400) + "px";
+    }
+
+    function repositionPlanDetailsDropdowns() {
+      getPlanDetailsOpenDropdownRoots().forEach(function(root) {
+        repositionPlanDetailsDropdownRoot(root);
+      });
+    }
+
+    // 打开结果面板时，把当前控件抬到透明收口层之上，避免输入框本身被遮住。
+    function clearPlanDetailsOverlayState() {
+      planDetailsOverlayActiveRoots.forEach(function(root) {
+        if (!root) {
+          return;
+        }
+        if (root.getAttribute("data-stability-overlay-zindex") === "1") {
+          root.style.zIndex = "";
+          root.removeAttribute("data-stability-overlay-zindex");
+        }
+        if (root.getAttribute("data-stability-overlay-position") === "1") {
+          root.style.position = "";
+          root.removeAttribute("data-stability-overlay-position");
+        }
+      });
+      planDetailsOverlayActiveRoots = [];
+      if (planDetailsDropdownOverlay) {
+        planDetailsDropdownOverlay.style.display = "none";
+      }
+    }
+
+    function ensurePlanDetailsDropdownOverlay() {
+      if (planDetailsDropdownOverlay) {
+        return planDetailsDropdownOverlay;
+      }
+      var overlay = document.createElement("div");
+      overlay.setAttribute("data-stability-plan-details-overlay", "1");
+      overlay.style.position = "fixed";
+      overlay.style.inset = "0";
+      overlay.style.background = "transparent";
+      overlay.style.zIndex = "999998";
+      overlay.style.display = "none";
+      overlay.style.cursor = "default";
+
+      // 点击空白区或滚动条时，优先收起下拉，避免悬浮层残留。
+      function dismissOverlay(event) {
+        if (event) {
+          event.stopPropagation();
+        }
+        closePlanDetailsDropdowns();
+      }
+
+      overlay.addEventListener("mousedown", dismissOverlay, true);
+      overlay.addEventListener("touchstart", dismissOverlay, true);
+      overlay.addEventListener("wheel", dismissOverlay, { capture: true, passive: true });
+      document.body.appendChild(overlay);
+      planDetailsDropdownOverlay = overlay;
+      return overlay;
+    }
+
+    function syncPlanDetailsDropdownOverlay() {
+      var roots = getPlanDetailsOpenDropdownRoots();
+      if (!roots.length) {
+        clearPlanDetailsOverlayState();
+        return;
+      }
+
+      var overlay = ensurePlanDetailsDropdownOverlay();
+      clearPlanDetailsOverlayState();
+
+      roots.forEach(function(root) {
+        if (!root) {
+          return;
+        }
+        if (!root.style.position) {
+          root.style.position = "relative";
+          root.setAttribute("data-stability-overlay-position", "1");
+        }
+        root.style.zIndex = "999999";
+        root.setAttribute("data-stability-overlay-zindex", "1");
+        planDetailsOverlayActiveRoots.push(root);
+      });
+
+      overlay.style.display = "block";
+      repositionPlanDetailsDropdowns();
+    }
+
+    // 在 datagrid 横向/纵向滚动时，主动关闭结果面板，避免悬浮位置错乱。
+    function closePlanDetailsDropdowns() {
+      var $roots = $(".datagridwidget-body[data-plan-details='1']")
+        .find(".senaite-uidreference-widget-input,.senaite-queryselect-widget-input,[data-name]");
+      $roots.each(function() {
+        var widgetId = this.getAttribute("id") || this.getAttribute("data-id");
+        if (!widgetId) {
+          return;
+        }
+        try {
+          widgetId = JSON.parse(widgetId);
+        } catch (e) {
+        }
+        var ctrl = controllerFor(widgetId);
+        if (ctrl && typeof ctrl.clear_results === "function") {
+          ctrl.clear_results();
+        }
+        var input = this.querySelector(".queryselectwidget-search-field input");
+        if (input) {
+          input.value = "";
+          if (document.activeElement === input) {
+            input.blur();
+          }
+        }
+      });
+      clearPlanDetailsOverlayState();
+    }
+
+    // 直接绑定到真实滚动容器，而不是全局 document，避免滚动条交互漏掉事件。
+    function bindPlanDetailsDropdownAutoClose() {
+      var elements = [];
+      $(".datagridwidget-body[data-plan-details='1']").each(function() {
+        elements.push(this);
+        var view = this.closest(".datagridwidget-table-view");
+        if (view) {
+          elements.push(view);
+        }
+      });
+      elements.forEach(function(el) {
+        if (!el || el.__stabilityPlanDropdownCloseBound) {
+          return;
+        }
+        el.__stabilityPlanDropdownCloseBound = true;
+        el.addEventListener("scroll", closePlanDetailsDropdowns, true);
+        el.addEventListener("wheel", closePlanDetailsDropdowns, true);
+        el.addEventListener("touchmove", closePlanDetailsDropdowns, true);
+        el.addEventListener("focusin", function(event) {
+          if (!isPlanDetailsSearchTarget(event.target)) {
+            closePlanDetailsDropdowns();
+          }
+        }, true);
+        el.addEventListener("mousedown", function(event) {
+          if (!isPlanDetailsSearchTarget(event.target)) {
+            closePlanDetailsDropdowns();
+          }
+        }, true);
+      });
+    }
+
+    // 监听结果面板的挂载/卸载，及时切换透明收口层，避免再依赖不稳定的 blur 行为。
+    function bindPlanDetailsDropdownOverlayWatcher() {
+      $(".datagridwidget-body[data-plan-details='1']").each(function() {
+        if (this.__stabilityPlanDropdownOverlayWatcherBound) {
+          return;
+        }
+        this.__stabilityPlanDropdownOverlayWatcherBound = true;
+        var observer = new MutationObserver(function() {
+          syncPlanDetailsDropdownOverlay();
+        });
+        observer.observe(this, {
+          childList: true,
+          subtree: true,
+        });
+        this.__stabilityPlanDropdownOverlayObserver = observer;
+      });
+      syncPlanDetailsDropdownOverlay();
+    }
+
+    function schedulePlanDetailsDropdownReposition() {
+      window.setTimeout(repositionPlanDetailsDropdowns, 0);
+      window.setTimeout(repositionPlanDetailsDropdowns, 60);
+      window.setTimeout(repositionPlanDetailsDropdowns, 220);
+    }
+
+    function bindPlanDetailsDropdownPositionRefresh() {
+      var selector = ".datagridwidget-body[data-plan-details='1'] .queryselectwidget-search-field input";
+      if (!window.__stabilityPlanDropdownPositionRefreshBound) {
+        window.__stabilityPlanDropdownPositionRefreshBound = true;
+        window.addEventListener("resize", repositionPlanDetailsDropdowns, true);
+      }
+      $(document)
+        .off(".stabilityPlanDropdownPosition")
+        .on(
+          "focusin.stabilityPlanDropdownPosition mousedown.stabilityPlanDropdownPosition click.stabilityPlanDropdownPosition keyup.stabilityPlanDropdownPosition",
+          selector,
+          function() {
+            schedulePlanDetailsDropdownReposition();
+          }
+        );
+    }
+
+    function setRowFieldValue($row, fieldName, value) {
+      var $field = findRowField($row, fieldName);
+      if (!$field.length) {
+        return false;
+      }
+      if (Array.isArray(value)) {
+        value = value.join("\r\n");
+      }
+      $field.val(value == null ? "" : value);
+      $field.trigger("change");
+      return true;
+    }
+
+    // Render selected values for UIDReference/QuerySelect cells in Plan Details.
+    // These widgets need both the raw UID and the display record, otherwise the
+    // chip/text stays empty even if the hidden textarea already has a value.
+    function setRowReferenceFieldValue($row, fieldName, value, record) {
+      var entry = getRowWidgetRootAndController($row, fieldName);
+      var $root = entry.root;
+      var ctrl = entry.ctrl;
+
+      // Plan Details render hook for UIDReference/QuerySelect widgets.
+      // If the React controller is not mounted yet, pre-seed the root element
+      // with `data-values` and `data-records`; the widget reads them on mount.
+      if ($root && $root.length) {
+        $root.attr("data-values", JSON.stringify(value ? [value] : []));
+        if (value && record) {
+          var attrRecords = {};
+          attrRecords[value] = record;
+          $root.attr("data-records", JSON.stringify(attrRecords));
+        }
+      }
+
+      if (!ctrl) {
+        return !!($root && $root.length);
+      }
+      if (value && record && typeof ctrl.set_data_records === "function") {
+        var records = {};
+        records[value] = record;
+        ctrl.set_data_records(records);
+      }
+      if (typeof ctrl.set_values === "function") {
+        ctrl.set_values(value ? [value] : [], { sync: !record });
+        return true;
+      }
+      return false;
+    }
+
+    function addPlanDetailsRow() {
+      var btn = document.getElementById("stability-plan-details-add-row");
+      if (!btn) {
+        return false;
+      }
+      btn.click();
+      return true;
+    }
+
+  function populatePlanDetails(rows) {
+  var $grid = $(".datagridwidget-body[data-plan-details='1']").first();
+  if (!$grid.length) {
+    return false;
+  }
+
+  rows = rows || [];
+
+  var guard = 0;
+  while (getPlanDetailsRows().length < rows.length && guard < 50) {
+    if (!addPlanDetailsRow()) {
+      break;
+    }
+    guard += 1;
+  }
+
+  var $allRows = getPlanDetailsRows();
+  if ($allRows.length < rows.length) {
+    return false;
+  }
+
+  var ok = true;
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i] || {};
+    var $row = $allRows.eq(i);
+
+    // 使用 setRowReferenceFieldValue 为 UIDReference 字段设置数据
+    ok = setRowReferenceFieldValue($row, "packaging_specification", row.packaging_specification || "", row.packaging_specification_record || null) && ok;
+    ok = setRowReferenceFieldValue($row, "storage_condition", row.storage_condition || "", row.storage_condition_record || null) && ok;
+    ok = setRowFieldValue($row, "orientation", row.orientation || "") && ok;
+    ok = setRowFieldValue($row, "timepoint_days", row.timepoint_days == null ? "" : String(row.timepoint_days)) && ok;
+    ok = setRowFieldValue($row, "window_days", row.window_days == null ? "" : String(row.window_days)) && ok;
+    ok = setRowReferenceFieldValue($row, "analysis_specification", row.analysis_specification || "", row.analysis_specification_record || null) && ok;
+    ok = setRowReferenceFieldValue($row, "analysis_profile", row.analysis_profile || "", row.analysis_profile_record || null) && ok;
+    ok = setRowFieldValue($row, "inspection_quantity", row.inspection_quantity == null ? "" : String(row.inspection_quantity)) && ok;
+    ok = setRowFieldValue($row, "notes", row.notes || "") && ok;
+    applyRowAnalysisChoiceRules($row);
+  }
+  return ok;
+}
+
+   function applyPlanTemplateDefaults() {
+  if (!$("body").is(".portaltype-stabilityplans")) {
+    return;
+  }
+
+  var params = new URLSearchParams(window.location.search || "");
+  var templateUid = params.get("template_uid");
+  if (!templateUid || window.__senaitePlanTemplateDefaultsApplied) {
+    return;
+  }
+
+  if (!window.__senaitePlanTemplateDefaultsData && !window.__senaitePlanTemplateDefaultsLoading) {
+    window.__senaitePlanTemplateDefaultsLoading = true;
+    var baseUrl = (document.body && document.body.dataset && document.body.dataset.viewUrl) || window.location.pathname;
+    baseUrl = baseUrl.replace(/\/\+\+add\+\+StabilityPlan(\/)?$/, "");
+    $.getJSON(baseUrl + "/@@plan_template_defaults", { uid: templateUid })
+      .done(function(data) {
+        window.__senaitePlanTemplateDefaultsData = data || {};
+      })
+      .always(function() {
+        window.__senaitePlanTemplateDefaultsLoading = false;
+      });
+    return;
+  }
+
+  var data = window.__senaitePlanTemplateDefaultsData;
+  if (!data) {
+    return;
+  }
+
+  var ok = true;
+  ok = setFieldValue("title", data.title || "") && ok;
+  ok = setFieldValue("description", data.description || "") && ok;
+  ok = setFieldValue("sample_quantity", data.sample_quantity == null ? "" : String(data.sample_quantity)) && ok;
+  ok = setFieldValue("reserve_quantity", data.reserve_quantity == null ? "" : String(data.reserve_quantity)) && ok;
+  if (data.plan_template) {
+    ok = setHiddenFieldValue("plan_template", data.plan_template || "") && ok;
+  }
+  if (data.unit) {
+    ok = setFieldValue("unit", data.unit || "", data.unit_record || null) && ok;
+  }
+  if (data.plan_details && data.plan_details.length) {
+    ok = populatePlanDetails(data.plan_details) && ok;
+  }
+  if (ok) {
+    window.__senaitePlanTemplateDefaultsApplied = true;
+  }
+}
+
+    function applyAll() {
+      var $rights = findFieldWrapper("rights");
+      if ($rights.length) {
+        $rights.hide();
+      }
+      var $defaultTab = $("#default-tab");
+      if ($defaultTab.length) {
+        $defaultTab.text("Basic Information");
+      }
+      applyPlanTemplateDefaults();
+      applyAnalysisChoiceRules();
+      restrictPlanDetailsAnalysisSpecSearch();
+      bindPlanDetailsDropdownAutoClose();
+      bindPlanDetailsDropdownOverlayWatcher();
+      bindPlanDetailsDropdownPositionRefresh();
+    }
+    $(applyAll);
+    document.addEventListener("senaite.core.widgets:loaded", applyAll);
+    $(document).on(
+      "change input",
+      ".datagridwidget-body[data-plan-details='1'] [name$='.analysis_specification'], .datagridwidget-body[data-plan-details='1'] [name$='.analysis_profile']",
+      applyAnalysisChoiceRules
+    );
+    $(document).on(
+      "click keyup change",
+      ".datagridwidget-body[data-plan-details='1'] [data-name], .datagridwidget-body[data-plan-details='1'] input, .datagridwidget-body[data-plan-details='1'] button",
+      handleAnalysisWidgetInteraction
+    );
+    $(document).on(
+      "mousedown focusin click",
+      ".datagridwidget-body[data-plan-details='1'] [data-name], .datagridwidget-body[data-plan-details='1'] input, .datagridwidget-body[data-plan-details='1'] button",
+      function(event) {
+        restrictAnalysisSpecSearchForTarget(event.target);
+      }
+    );
+    document.body.addEventListener("datagrid:row_added", applyAll);
+
+    var tries = 0;
+    var timer = setInterval(function() {
+      tries += 1;
+      applyAll();
+      if (tries >= 8) {
+        clearInterval(timer);
+      }
+    }, 250);
+  }
+
+  var tries = 0;
+  var timer = setInterval(function() {
+    tries += 1;
+    if (window.jQuery) {
+      try {
+        init(window.jQuery);
+      } catch (e) {
+      }
+      clearInterval(timer);
+    }
+    if (tries >= 40) {
+      clearInterval(timer);
+    }
+  }, 250);
+})();
+</script>

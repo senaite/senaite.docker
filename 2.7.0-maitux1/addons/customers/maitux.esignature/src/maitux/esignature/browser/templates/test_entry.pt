@@ -1,0 +1,83 @@
+﻿<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="context/main_template/macros/master">
+  <body>
+    <metal:content fill-slot="content-core">
+      <div class="documentContent">
+        <h1>Electronic Signature Test Entry</h1>
+        <p>
+          Paste a real <strong>Analysis</strong>, <strong>Sample</strong>, or
+          <strong>analyses list</strong> URL here and launch the current
+          electronic signature prompt directly.
+        </p>
+
+        <form method="post" tal:attributes="action string:${context/absolute_url}/@@maitux-esignature-test-entry">
+          <input tal:replace="structure context/@@authenticator/authenticator" />
+          <input type="hidden" name="form.submitted" value="1" />
+
+          <div class="field">
+            <label for="esign-analysis-url">Analysis / Sample / analyses URL or path</label>
+            <input id="esign-analysis-url"
+                   type="text"
+                   name="analysis_url"
+                   size="100"
+                   tal:attributes="value python:view.submitted_analysis_url()" />
+            <div class="formHelp">
+              Example:
+              <code tal:content="python:view.example_input()">/senaite-test/clients/client-1/H2O-0005/analyses</code>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Current pilot transition</label>
+            <div tal:content="python:view.pilot_transition()">verify</div>
+          </div>
+
+          <div class="formControls">
+            <input class="context"
+                   type="submit"
+                   value="Open Signature Prompt" />
+            <a class="standalone"
+               tal:attributes="href string:${context/absolute_url}/@@maitux-esignature-overview">Back to Overview</a>
+          </div>
+        </form>
+
+        <tal:block tal:define="analyses python:view.selected_analyses()"
+                   tal:condition="analyses">
+          <hr />
+          <h2>Available Analyses</h2>
+          <p>
+            The provided URL points to a sample or analyses list. Choose one
+            Analysis below to open the electronic signature prompt.
+          </p>
+          <table class="listing">
+            <thead>
+              <tr>
+                <th>Analysis</th>
+                <th>Review State</th>
+                <th>Object URL</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr tal:repeat="item analyses">
+                <td tal:content="python:item['title']">Analysis title</td>
+                <td tal:content="python:item['state'] or '-'">state</td>
+                <td>
+                  <a tal:attributes="href python:item['url']"
+                     tal:content="python:item['url']">url</a>
+                </td>
+                <td>
+                  <a class="context"
+                     tal:attributes="href python:item['prompt_url']">Open Signature Prompt</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </tal:block>
+      </div>
+    </metal:content>
+  </body>
+</html>
+

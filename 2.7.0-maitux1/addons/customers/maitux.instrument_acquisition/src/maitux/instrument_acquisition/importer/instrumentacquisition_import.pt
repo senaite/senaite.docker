@@ -1,0 +1,8 @@
+<div class="my-2">
+  <p class="form-text text-muted">
+    This interface uses the Instrument Parsing Template linked on the Instrument edit form.
+  </p>
+
+  <label for="instrument_results_file">Report File</label>
+  <input type="file" name="instrument_results_file" id="instrument_results_file"/>
+</div>

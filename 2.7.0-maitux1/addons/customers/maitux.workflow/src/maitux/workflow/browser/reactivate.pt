@@ -1,0 +1,47 @@
+<html metal:use-macro="context/main_template/macros/master"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal">
+  <body>
+    <metal:main fill-slot="main">
+      <div class="documentContent">
+        <h1>重新激活</h1>
+        <p>对象会回退到可继续录入结果的状态，原有结果数据会保留。</p>
+
+        <form method="post">
+          <input type="hidden" name="form.submitted" value="1" />
+          <tal:uids repeat="uid view/get_uids">
+            <input type="hidden"
+                   name="uids:list"
+                   tal:attributes="value uid" />
+          </tal:uids>
+
+          <fieldset>
+            <legend>待处理对象</legend>
+            <ul>
+              <li tal:repeat="item view/get_items">
+                <strong tal:content="item/title">Title</strong>
+                <span tal:content="python:' (%s / %s)' % (item['portal_type'], item['id'])">
+                  (Type / ID)
+                </span>
+              </li>
+            </ul>
+          </fieldset>
+
+          <fieldset>
+            <legend>激活原因</legend>
+            <textarea name="reason"
+                      rows="6"
+                      cols="80"
+                      tal:content="view/get_reason"></textarea>
+          </fieldset>
+
+          <div class="formControls">
+            <input class="context" type="submit" name="form.button.save" value="确认重新激活" />
+            <input class="standalone" type="submit" name="form.button.cancel" value="取消" />
+          </div>
+        </form>
+      </div>
+    </metal:main>
+  </body>
+</html>
