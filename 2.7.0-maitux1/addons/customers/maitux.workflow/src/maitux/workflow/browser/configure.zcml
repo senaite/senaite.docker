@@ -1,0 +1,32 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.workflow">
+
+  <!-- 注册工作流动作适配器：供列表页的 reactivate 按钮跳转到原因确认页 -->
+  <adapter
+      for="*
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory=".workflow.WorkflowActionReactivateAdapter"
+      provides="bika.lims.interfaces.IWorkflowActionAdapter"
+      name="workflow_action_reactivate"
+      permission="zope.Public"
+      />
+
+  <!-- 容器仪表盘视图 -->
+  <browser:page
+      for="maitux.workflow.interfaces.IWorkflowContainer"
+      name="dashboard"
+      class="maitux.workflow.browser.dashboard.WorkflowDashboard"
+      template="dashboard.pt"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="*"
+      name="reactivate_workflow"
+      class="maitux.workflow.browser.workflow.ReactivateWorkflowView"
+      permission="zope2.View"
+      />
+
+</configure>

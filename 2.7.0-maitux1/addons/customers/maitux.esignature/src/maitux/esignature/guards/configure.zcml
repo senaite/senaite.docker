@@ -1,0 +1,15 @@
+﻿<configure xmlns="http://namespaces.zope.org/zope"
+           i18n_domain="maitux.esignature">
+
+  <adapter
+      factory=".guard.ESignatureGuardAdapter"
+      for="*"
+      provides="bika.lims.interfaces.IGuardAdapter" />
+
+  <subscriber
+      for="*
+           Products.DCWorkflow.interfaces.IBeforeTransitionEvent"
+      handler=".events.on_before_transition" />
+
+</configure>
+

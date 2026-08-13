@@ -1,0 +1,311 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="maitux.stability">
+
+  <metal:content-title fill-slot="content-title">
+    <h1 class="documentFirstHeading">Stability Task Board</h1>
+  </metal:content-title>
+
+  <metal:content-core fill-slot="content-core">
+    <style>
+      .stability-board-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+        width: 100%;
+      }
+      @media (max-width: 768px) {
+        .stability-board-stats {
+          grid-template-columns: 1fr;
+        }
+      }
+      .stability-board-card {
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        padding: 16px;
+        background: #ffffff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        min-width: 0; /* 闃叉鍐呭鎾戝紑瀹瑰櫒 */
+      }
+      .stability-board-card .label {
+        color: #7f8c8d;
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+      .stability-board-card .value {
+        font-size: 32px;
+        font-weight: 700;
+        line-height: 1.1;
+      }
+      .stability-board-card.expired .value { color: #e74c3c; }
+      .stability-board-card.pending .value { color: #f39c12; }
+      .stability-board-card.in-progress .value { color: #3498db; }
+      .stability-board-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .stability-status-filters {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .stability-status-filters .btn.active {
+        background-color: #337ab7;
+        border-color: #2e6da4;
+        color: #fff;
+      }
+      .stability-task-table th,
+      .stability-task-table td {
+        vertical-align: middle;
+      }
+      .stability-status-pill {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 2px 10px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .stability-status-pill.pending_placement {
+        background: #fff0db;
+        color: #8a4b00;
+      }
+      .stability-status-pill.active {
+        background: #deefff;
+        color: #0b4f86;
+      }
+      .stability-status-pill.completed {
+        background: #e9f7ef;
+        color: #1e6b3d;
+      }
+      .stability-overdue {
+        color: #c0392b;
+        font-weight: 600;
+      }
+      .stability-bulk-actions {
+        margin-top: 12px;
+        display: flex;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .stability-search-form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+      }
+      .stability-search-form .form-control {
+        width: 240px;
+        min-width: 180px;
+        flex: 0 1 240px;
+      }
+      .stability-search-form .btn {
+        flex: 0 0 auto;
+        white-space: nowrap;
+      }
+      .stability-sort-link {
+        color: inherit;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .stability-sort-link:hover,
+      .stability-sort-link:focus {
+        text-decoration: underline;
+      }
+    </style>
+
+    <div class="stability-board-stats">
+      <div class="stability-board-card expired">
+        <div class="label">Expired</div>
+        <div class="value" tal:content="python:view.stats.get('expired', 0)">0</div>
+      </div>
+      <div class="stability-board-card pending">
+        <div class="label">Pending Placement</div>
+        <div class="value" tal:content="python:view.stats.get('pending', 0)">0</div>
+      </div>
+      <div class="stability-board-card in-progress">
+        <div class="label">In Progress</div>
+        <div class="value" tal:content="python:view.stats.get('in_progress', 0)">0</div>
+      </div>
+    </div>
+
+    <div class="stability-board-toolbar">
+      <div class="stability-status-filters" role="group" aria-label="Status filters">
+        <a tal:repeat="f python:view.get_status_filter_buttons()"
+           tal:attributes="href f/url; class python:'btn btn-sm btn-outline-secondary %s' % ('active' if f.get('active') else '')"
+           tal:content="f/title">All</a>
+      </div>
+      <form class="stability-search-form"
+            method="get"
+            tal:attributes="action string:${context/absolute_url}/@@task_board">
+        <input type="hidden" name="status_filter" tal:condition="python:view.status_filter != 'all'" tal:attributes="value view/status_filter"/>
+        <input type="hidden" name="sort_on" tal:attributes="value view/sort_on"/>
+        <input type="hidden" name="sort_order" tal:attributes="value view/sort_order"/>
+        <input type="text"
+               class="form-control form-control-sm"
+               name="plan_query"
+               placeholder="Search Plan"
+               tal:attributes="value view/plan_query"/>
+        <button type="submit" class="btn btn-sm btn-outline-secondary">Search</button>
+      </form>
+    </div>
+
+    <form id="stability_task_board_form"
+          method="GET"
+          tal:attributes="action string:${context/absolute_url}/@@task_board">
+      <input type="hidden" name="status_filter" tal:attributes="value view/status_filter"/>
+      <input type="hidden" name="plan_query" tal:attributes="value view/plan_query"/>
+      <input type="hidden" name="sort_on" tal:attributes="value view/sort_on"/>
+      <input type="hidden" name="sort_order" tal:attributes="value view/sort_order"/>
+
+      <h2>Timepoint Tasks</h2>
+      <table class="table table-striped table-hover stability-task-table">
+        <thead>
+          <tr>
+            <th style="width: 36px;">
+              <input type="checkbox" id="select_all_tasks" onclick="toggleAllTasks(this)"/>
+            </th>
+            <th>Plan</th>
+            <th>Task</th>
+            <th>Sample</th>
+            <th>Stock Batch</th>
+            <th>Timepoint (Months)</th>
+            <th>Window (Days)</th>
+            <th>
+              <a class="stability-sort-link"
+                 tal:attributes="href python:view.get_sort_url('target_date')"
+                 tal:content="python:u'Target Date' + view.get_sort_indicator('target_date')">Target Date</a>
+            </th>
+            <th>
+              <a class="stability-sort-link"
+                 tal:attributes="href python:view.get_sort_url('window_start')"
+                 tal:content="python:u'Window Start' + view.get_sort_indicator('window_start')">Window Start</a>
+            </th>
+            <th>
+              <a class="stability-sort-link"
+                 tal:attributes="href python:view.get_sort_url('window_end')"
+                 tal:content="python:u'Window End' + view.get_sort_indicator('window_end')">Window End</a>
+            </th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr tal:repeat="row python:view.rows">
+            <td>
+              <input type="checkbox"
+                     name="row_ids:list"
+                     tal:attributes="value python:row.get('row_id', ''); data-status row/status; disabled python:not bool(row.get('row_id'))"/>
+            </td>
+            <td><a tal:attributes="href row/plan_url" tal:content="row/plan_title">Plan</a></td>
+            <td tal:content="row/task_title">Task</td>
+            <td>
+              <tal:block tal:condition="python:bool(row.get('sample_url'))">
+                <a tal:attributes="href row/sample_url" tal:content="row/sample_id">SAMPLE</a>
+              </tal:block>
+              <tal:block tal:condition="python:not row.get('sample_url')">-</tal:block>
+            </td>
+            <td tal:content="python:row.get('stock_batch_title') or '-'">-</td>
+            <td tal:content="row/timepoint_months">0</td>
+            <td tal:content="row/window_days">0</td>
+            <td tal:attributes="class python:'stability-overdue' if row.get('is_overdue') else ''"
+                tal:content="row/target_date">-</td>
+            <td tal:content="row/window_start">-</td>
+            <td tal:content="row/window_end">-</td>
+            <td>
+              <span class="stability-status-pill"
+                    tal:attributes="class python:'stability-status-pill %s' % row.get('status', '')"
+                    tal:content="row/status_title">Status</span>
+            </td>
+          </tr>
+          <tr tal:condition="python:not view.rows">
+            <td colspan="11">No task data available</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="stability-bulk-actions"
+           id="sample-placement-actions"
+           tal:condition="python:view.can_place_samples()">
+        <button type="submit"
+                class="btn btn-primary btn-sm"
+                name="bulk_action"
+                value="sample_placement"
+                onclick="return validatePendingSelection();">
+          Sample Placement
+        </button>
+        <button type="submit"
+                class="btn btn-primary btn-sm"
+                name="bulk_action"
+                value="link_sample"
+                onclick="return validateSelectionRequired();">
+          Link Existing Sample
+        </button>
+        <button type="submit"
+                class="btn btn-primary btn-sm"
+                name="bulk_action"
+                value="create_sample"
+                onclick="return validateSelectionRequired();">
+          Create Sample
+        </button>
+      </div>
+    </form>
+
+    <script>
+      function toggleAllTasks(source) {
+        var checkboxes = document.getElementsByName('row_ids:list');
+        for (var i = 0; i < checkboxes.length; i++) {
+          checkboxes[i].checked = source.checked;
+        }
+      }
+
+      function validateSelectionRequired() {
+        var checkboxes = document.getElementsByName('row_ids:list');
+        for (var i = 0; i < checkboxes.length; i++) {
+          if (checkboxes[i].checked) {
+            return true;
+          }
+        }
+        alert('Please select at least one task.');
+        return false;
+      }
+
+      function validatePendingSelection() {
+        var checkboxes = document.getElementsByName('row_ids:list');
+        var hasAny = false;
+        var hasPending = false;
+        for (var i = 0; i < checkboxes.length; i++) {
+          if (!checkboxes[i].checked) {
+            continue;
+          }
+          hasAny = true;
+          if (checkboxes[i].getAttribute('data-status') === 'pending_placement') {
+            hasPending = true;
+          }
+        }
+        if (!hasAny) {
+          alert('Please select at least one task.');
+          return false;
+        }
+        if (!hasPending) {
+          alert('Sample Placement can only be applied to Pending Placement tasks.');
+          return false;
+        }
+        return true;
+      }
+
+      /* 浣跨敤鍚庣 bulk_action 鍒嗗彂璺宠浆锛岄伩鍏嶆祻瑙堝櫒涓嶆敮鎸?formaction 鎴?JS 鍔ㄦ€佹敼 action 甯︽潵鐨勫吋瀹归棶棰?*/
+    </script>
+  </metal:content-core>
+</html>
+

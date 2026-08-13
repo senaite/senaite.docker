@@ -1,0 +1,75 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser">
+
+  <browser:page
+      for="*"
+      name="instrument_acquisition_test"
+      class=".instrument_acquisition_test.InstrumentAcquisitionTestView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="*"
+      name="instrument_acquisition_pdf_test"
+      class=".instrument_acquisition_test.InstrumentAcquisitionPDFTestView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="*"
+      name="instrument_acquisition_pdf_extract"
+      class=".instrument_acquisition_test.InstrumentAcquisitionPDFExtract"
+      permission="senaite.core.permissions.ManageBika"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="*"
+      name="instrument_acquisition_pdf_parse"
+      class=".instrument_acquisition_test.InstrumentAcquisitionPDFParse"
+      permission="senaite.core.permissions.ManageBika"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="*"
+      name="instrument_acquisition_pdf_write"
+      class=".instrument_acquisition_test.InstrumentAcquisitionPDFWrite"
+      permission="senaite.core.permissions.ManageBika"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="*"
+      name="instrument_acquisition_debug"
+      class=".instrument_acquisition_test.InstrumentAcquisitionDebugView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="*"
+      name="instrument_acquisition_debug_start"
+      class=".instrument_acquisition_test.InstrumentAcquisitionDebugStart"
+      permission="senaite.core.permissions.ManageBika"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="*"
+      name="instrument_acquisition_debug_stop"
+      class=".instrument_acquisition_test.InstrumentAcquisitionDebugStop"
+      permission="senaite.core.permissions.ManageBika"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="*"
+      name="instrument_acquisition_debug_status"
+      class=".instrument_acquisition_test.InstrumentAcquisitionDebugStatus"
+      permission="senaite.core.permissions.ManageBika"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="*"
+      name="instrument_acquisition_debug_messages"
+      class=".instrument_acquisition_test.InstrumentAcquisitionDebugMessages"
+      permission="senaite.core.permissions.ManageBika"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+</configure>

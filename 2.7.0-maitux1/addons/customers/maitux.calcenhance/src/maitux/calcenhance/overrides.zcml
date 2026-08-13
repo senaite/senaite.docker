@@ -1,0 +1,7 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope">
+
+  <!-- Override the core RESULT_TYPES vocabulary to add List and Calculated -->
+  <include package=".vocabularies" file="configure.zcml" />
+
+</configure>

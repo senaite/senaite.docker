@@ -1,0 +1,13 @@
+<tal:sticker define="item python:view.current_item;
+                     text python:(getattr(item, 'getBatchID', None) and item.getBatchID()) or
+                                  (getattr(item, 'getTitle', None) and item.getTitle()) or
+                                  (getattr(item, 'getId', None) and item.getId()) or '';">
+
+  <div class="qrcode"
+       data-size="96"
+       data-render="image"
+       data-quiet="4"
+       tal:attributes="data-text python:text">
+  </div>
+
+</tal:sticker>

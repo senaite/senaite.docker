@@ -1,0 +1,396 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="context/main_template/macros/master">
+  <body>
+    <metal:content fill-slot="content-core">
+      <div class="documentContent">
+        <style type="text/css">
+          .maitux-esign-page {
+            max-width: 960px;
+            margin: 18px auto 32px;
+            padding: 0 12px;
+          }
+          .maitux-esign-card {
+            background: #ffffff;
+            border: 1px solid #d8e1ea;
+            border-radius: 18px;
+            box-shadow: 0 12px 32px rgba(31, 45, 61, 0.10);
+            overflow: hidden;
+          }
+          .maitux-esign-hero {
+            padding: 28px 32px 20px;
+            background: linear-gradient(135deg, #f7fbff 0%, #eef5ff 100%);
+            border-bottom: 1px solid #dfe8f3;
+          }
+          .maitux-esign-badge {
+            display: inline-block;
+            margin-bottom: 12px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: #d9ecff;
+            color: #175a96;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+          }
+          .maitux-esign-title {
+            margin: 0 0 8px;
+            font-size: 30px;
+            line-height: 1.2;
+            color: #183247;
+          }
+          .maitux-esign-subtitle {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #536b7d;
+          }
+          .maitux-esign-layout {
+            padding: 28px 32px 32px;
+          }
+          .maitux-esign-summary {
+            display: table;
+            width: 100%;
+            margin-bottom: 22px;
+            border-collapse: separate;
+            border-spacing: 12px;
+          }
+          .maitux-esign-summary-item {
+            display: table-cell;
+            width: 33.33%;
+            padding: 16px 18px;
+            border: 1px solid #e4ebf2;
+            border-radius: 14px;
+            background: #f9fbfd;
+            vertical-align: top;
+          }
+          .maitux-esign-summary-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #7a8d9d;
+          }
+          .maitux-esign-summary-value {
+            display: block;
+            font-size: 16px;
+            line-height: 1.5;
+            word-break: break-word;
+            color: #183247;
+          }
+          .maitux-esign-panel {
+            padding: 18px 20px;
+            margin-bottom: 24px;
+            border-left: 4px solid #3b82c4;
+            border-radius: 12px;
+            background: #f5f9fd;
+            color: #466172;
+          }
+          .maitux-esign-panel strong {
+            color: #183247;
+          }
+          .maitux-esign-grid {
+            display: table;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 16px 0;
+            margin: 0 -16px 6px;
+          }
+          .maitux-esign-col {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding: 0 16px;
+          }
+          .maitux-esign-field {
+            margin-bottom: 18px;
+          }
+          .maitux-esign-field label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #314a5d;
+          }
+          .maitux-esign-required {
+            color: #d14343;
+            margin-left: 4px;
+          }
+          .maitux-esign-help {
+            display: block;
+            margin-top: 6px;
+            font-size: 12px;
+            color: #748898;
+          }
+          .maitux-esign-input,
+          .maitux-esign-textarea {
+            width: 100%;
+            min-height: 44px;
+            padding: 10px 14px;
+            border: 1px solid #cad6e2;
+            border-radius: 10px;
+            background: #ffffff;
+            box-sizing: border-box;
+            color: #183247;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+          }
+          .maitux-esign-input:focus,
+          .maitux-esign-textarea:focus {
+            border-color: #4f8fcb;
+            box-shadow: 0 0 0 3px rgba(79, 143, 203, 0.18);
+            outline: none;
+          }
+          .maitux-esign-input[readonly="readonly"] {
+            background: #f3f6f9;
+            color: #5d7485;
+          }
+          .maitux-esign-textarea {
+            min-height: 130px;
+            resize: vertical;
+          }
+          .maitux-esign-actions {
+            display: table;
+            width: 100%;
+            margin-top: 10px;
+            border-top: 1px solid #e6edf3;
+            padding-top: 22px;
+          }
+          .maitux-esign-actions-left,
+          .maitux-esign-actions-right {
+            display: table-cell;
+            vertical-align: middle;
+          }
+          .maitux-esign-actions-right {
+            text-align: right;
+          }
+          .maitux-esign-submit {
+            min-width: 180px;
+            padding: 11px 20px;
+            border: 1px solid #2f6ea8;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #3f84c3 0%, #2f6ea8 100%);
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+          }
+          .maitux-esign-submit:hover {
+            background: linear-gradient(135deg, #3778b3 0%, #285f92 100%);
+          }
+          .maitux-esign-cancel {
+            display: inline-block;
+            margin-left: 12px;
+            padding: 11px 18px;
+            border: 1px solid #cad6e2;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #476070;
+            text-decoration: none;
+          }
+          .maitux-esign-cancel:hover {
+            background: #f7fafc;
+            text-decoration: none;
+          }
+          .maitux-esign-note {
+            font-size: 12px;
+            color: #7a8d9d;
+          }
+        </style>
+
+        <div class="maitux-esign-page">
+          <div class="maitux-esign-card">
+            <div class="maitux-esign-hero">
+              <span class="maitux-esign-badge">Electronic Signature</span>
+              <h1 class="maitux-esign-title">Verification Required</h1>
+              <p class="maitux-esign-subtitle">
+                Complete the required electronic signature verification on this page
+                before the workflow transition is executed.
+              </p>
+            </div>
+
+            <div class="maitux-esign-layout">
+              <div class="maitux-esign-summary">
+                <div class="maitux-esign-summary-item">
+                  <span class="maitux-esign-summary-label">Transition</span>
+                  <span class="maitux-esign-summary-value" tal:content="python:view.transition_id()">verify</span>
+                </div>
+                <div class="maitux-esign-summary-item">
+                  <span class="maitux-esign-summary-label">Current User</span>
+                  <span class="maitux-esign-summary-value" tal:content="python:view.current_user_id() or ''">admin</span>
+                </div>
+                <div class="maitux-esign-summary-item">
+                  <span class="maitux-esign-summary-label">Target Item</span>
+                  <span class="maitux-esign-summary-value" tal:content="python:context.Title() or context.getId()">Item</span>
+                </div>
+              </div>
+
+              <div class="maitux-esign-panel">
+                <strong>Confirmation Notice:</strong>
+                This action will continue the current workflow after the electronic
+                signature is successfully verified.
+              </div>
+
+              <form method="post" tal:attributes="action string:${context/absolute_url}/@@maitux-esignature-prompt">
+          <input tal:replace="structure context/@@authenticator/authenticator" />
+          <input type="hidden" name="form.submitted" value="1" />
+          <input type="hidden" name="execute_transition" value="1" />
+          <input type="hidden" name="transition_id" tal:attributes="value python:view.transition_id()" />
+          <input type="hidden" name="redirect_url" tal:attributes="value python:view.redirect_url()" />
+          <input type="hidden"
+                 name="skip_transition_check"
+                 tal:attributes="value python:view.skip_transition_check() and '1' or ''" />
+
+                <div class="maitux-esign-grid">
+                  <div class="maitux-esign-col">
+                    <tal:block tal:condition="python:view.require_countersign()">
+                      <div class="maitux-esign-field">
+                        <label for="esign-primary-user-id">First Operator</label>
+                        <input id="esign-primary-user-id"
+                               class="maitux-esign-input"
+                               type="text"
+                               name="primary_user_id"
+                               placeholder="Enter the first operator account"
+                               tal:attributes="value python:view.form_primary_user_id()" />
+                        <span class="maitux-esign-help">The first operator must enter the account used for the approval.</span>
+                      </div>
+
+                      <div class="maitux-esign-field">
+                        <label for="esign-primary-password">First Operator Password</label>
+                        <input id="esign-primary-password"
+                               class="maitux-esign-input"
+                               type="password"
+                               name="primary_password"
+                               value=""
+                               placeholder="Enter the first operator password" />
+                        <span class="maitux-esign-help">The first operator password is verified immediately on this page.</span>
+                      </div>
+                    </tal:block>
+
+                    <tal:block tal:condition="python:not view.require_countersign()">
+                      <div class="maitux-esign-field">
+                        <label for="esign-user-id">User</label>
+                        <input id="esign-user-id"
+                               class="maitux-esign-input"
+                               type="text"
+                               name="user_id"
+                               readonly="readonly"
+                               tal:attributes="value python:view.current_user_id() or ''" />
+                        <span class="maitux-esign-help">The current authenticated account for this signature.</span>
+                      </div>
+                    </tal:block>
+
+                    <div class="maitux-esign-field">
+                      <label for="esign-meaning">
+                        Meaning
+                        <span class="maitux-esign-required" tal:condition="python:view.policy().get('meaning_required')">*</span>
+                      </label>
+                      <input id="esign-meaning"
+                             class="maitux-esign-input"
+                             type="text"
+                             name="meaning"
+                             placeholder="Enter the purpose of this signature"
+                             tal:attributes="value python:view.form_meaning()" />
+                      <span class="maitux-esign-help">Describe what this verification is authorizing.</span>
+                    </div>
+                  </div>
+
+                  <div class="maitux-esign-col">
+                    <tal:block tal:condition="python:view.require_countersign()">
+                      <div class="maitux-esign-field">
+                        <label for="esign-secondary-user-id">Second Operator</label>
+                        <input id="esign-secondary-user-id"
+                               class="maitux-esign-input"
+                               type="text"
+                               name="secondary_user_id"
+                               placeholder="Enter the second operator account"
+                               tal:attributes="value python:view.form_secondary_user_id()" />
+                        <span class="maitux-esign-help">The second operator must be different from the first operator.</span>
+                      </div>
+
+                      <div class="maitux-esign-field">
+                        <label for="esign-secondary-password">Second Operator Password</label>
+                        <input id="esign-secondary-password"
+                               class="maitux-esign-input"
+                               type="password"
+                               name="secondary_password"
+                               value=""
+                               placeholder="Enter the second operator password" />
+                        <span class="maitux-esign-help">The second operator password is also verified on this page.</span>
+                      </div>
+                    </tal:block>
+
+                    <tal:block tal:condition="python:not view.require_countersign()">
+                      <div class="maitux-esign-field">
+                        <label for="esign-password">Password</label>
+                        <input id="esign-password"
+                               class="maitux-esign-input"
+                               type="password"
+                               name="password"
+                               value=""
+                               placeholder="Re-enter your password" />
+                        <span class="maitux-esign-help">Your password is required to confirm the current operation.</span>
+                      </div>
+                    </tal:block>
+
+                    <div class="maitux-esign-field">
+                      <label for="esign-reason">
+                        Reason
+                        <span class="maitux-esign-required" tal:condition="python:view.policy().get('reason_required')">*</span>
+                      </label>
+                      <textarea id="esign-reason"
+                                class="maitux-esign-textarea"
+                                name="reason"
+                                rows="4"
+                                cols="60"
+                                placeholder="Enter the detailed reason for this action"
+                                tal:content="python:view.form_reason()"></textarea>
+                      <span class="maitux-esign-help">Provide the business reason that will be stored in the audit trail.</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div tal:condition="python:view.require_countersign()" class="maitux-esign-panel">
+                  <strong>Countersign Required:</strong>
+                  Two different operators must enter their own account and password on
+                  this same page. The workflow continues only after both credentials are
+                  verified successfully in a single submission.
+                </div>
+
+                <div class="maitux-esign-actions">
+                  <div class="maitux-esign-actions-left">
+                    <span class="maitux-esign-note">Fields marked with * are required by the current policy.</span>
+                  </div>
+                  <div class="maitux-esign-actions-right">
+                    <input class="maitux-esign-submit"
+                           type="submit"
+                           value="Verify and Continue" />
+                    <a class="maitux-esign-cancel"
+                       tal:attributes="href python:view.redirect_url()">Cancel</a>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <script type="text/javascript">
+          (function() {
+            if (!window.sessionStorage) {
+              return;
+            }
+            var state = {
+              redirect_url: "${python:view.redirect_url()}",
+              prompt_url: "${python:context.absolute_url()}/@@maitux-esignature-prompt"
+            };
+            sessionStorage.setItem("maitux.esignature.return", JSON.stringify(state));
+            sessionStorage.removeItem("maitux.esignature.return.reloaded");
+          })();
+        </script>
+      </div>
+    </metal:content>
+  </body>
+</html>
+

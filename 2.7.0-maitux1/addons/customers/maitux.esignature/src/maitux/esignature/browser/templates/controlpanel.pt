@@ -1,0 +1,346 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="context/main_template/macros/master">
+  <body>
+    <metal:content fill-slot="content-core">
+      <div class="documentContent">
+        <h1>MEDAI E-Signature</h1>
+        <p>Manage the electronic signature base settings and the workflow rule table that supports bulk add, edit, and delete.</p>
+
+        <form method="post"
+              tal:attributes="action string:${context/absolute_url}/@@maitux-esignature-controlpanel">
+          <input tal:replace="structure context/@@authenticator/authenticator" />
+
+          <fieldset>
+            <legend>Base Settings</legend>
+            <div class="field">
+              <label for="esign-enabled">
+                <input id="esign-enabled"
+                       type="checkbox"
+                       name="enabled"
+                       value="1"
+                       tal:attributes="checked python:view.enabled() and 'checked' or None" />
+                Enable electronic signature
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Workflow Rule Table</legend>
+            <p>Each row represents one workflow electronic signature rule. Use the dropdowns to select portal type, workflow, and transition, and set whether countersign is required.</p>
+            <input type="hidden" id="esign-rules-payload" name="rules_payload" value="[]" />
+            <table class="listing" id="esign-rules-table">
+              <thead>
+                <tr>
+                  <th>Portal Type</th>
+                  <th>Workflow</th>
+                  <th>Transition</th>
+                  <th>Require Signature</th>
+                  <th>Countersign</th>
+                  <th>Meaning Required</th>
+                  <th>Reason Required</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="esign-rules-body">
+                <tr>
+                  <td colspan="8">Loading rules...</td>
+                </tr>
+              </tbody>
+            </table>
+            <p>
+              <button type="button" class="btn btn-secondary" id="esign-add-rule">Add Row</button>
+            </p>
+          </fieldset>
+
+          <div class="formControls">
+            <input class="context"
+                   type="submit"
+                   name="form.save"
+                   value="Save" />
+            <input class="standalone"
+                   type="submit"
+                   name="form.cancel"
+                   value="Cancel" />
+          </div>
+        </form>
+
+        <script type="application/json"
+                id="esign-workflow-catalog"
+                tal:content="python:view.workflow_catalog_json()">{"portal_types": [], "workflows": {}, "portal_type_workflows": {}}</script>
+        <script type="application/json"
+                id="esign-current-rules"
+                tal:content="python:view.current_rules_json()">[]</script>
+
+        <script type="text/javascript">
+          (function () {
+            function readJson(id, fallback) {
+              var node = document.getElementById(id);
+              if (!node) {
+                return fallback;
+              }
+              try {
+                return JSON.parse(node.textContent || node.innerText || '');
+              } catch (err) {
+                return fallback;
+              }
+            }
+
+            var catalog = readJson('esign-workflow-catalog', {
+              portal_types: [],
+              workflows: {},
+              portal_type_workflows: {}
+            });
+            var currentRules = readJson('esign-current-rules', []);
+            var tableBody = document.getElementById('esign-rules-body');
+            var addButton = document.getElementById('esign-add-rule');
+            var payloadInput = document.getElementById('esign-rules-payload');
+            var form = payloadInput ? payloadInput.form : null;
+            var saveButton = form ? form.querySelector('input[name="form.save"]') : null;
+            var saveTriggered = false;
+
+            function text(value) {
+              return value || '';
+            }
+
+            function createSelect(options, value, cssClass) {
+              var select = document.createElement('select');
+              select.className = cssClass || '';
+              fillSelect(select, options, value);
+              return select;
+            }
+
+            function createCheckbox(value, cssClass) {
+              var input = document.createElement('input');
+              input.type = 'checkbox';
+              input.className = cssClass || '';
+              input.checked = !!value;
+              return input;
+            }
+
+            function portalTypeOptions() {
+              return catalog.portal_types || [];
+            }
+
+            function workflowOptions(portalType) {
+              var workflowIds = (catalog.portal_type_workflows || {})[portalType] || [];
+              var workflows = catalog.workflows || {};
+              var options = [];
+              workflowIds.forEach(function (workflowId) {
+                if (workflows[workflowId]) {
+                  options.push({
+                    id: workflowId,
+                    title: workflows[workflowId].title || workflowId
+                  });
+                }
+              });
+              return options;
+            }
+
+            function transitionOptions(workflowId) {
+              var workflow = (catalog.workflows || {})[workflowId] || {};
+              return workflow.transitions || [];
+            }
+
+            function fillSelect(select, options, value) {
+              var blank = document.createElement('option');
+              blank.value = '';
+              blank.appendChild(document.createTextNode('Please select'));
+              select.appendChild(blank);
+              (options || []).forEach(function (item) {
+                var option = document.createElement('option');
+                option.value = item.id;
+                option.appendChild(document.createTextNode(item.title + ' (' + item.id + ')'));
+                if (item.id === value) {
+                  option.selected = true;
+                }
+                select.appendChild(option);
+              });
+            }
+
+            function renderWorkflowOptions(row, workflowId) {
+              var workflowSelect = row.querySelector('.js-workflow-id');
+              var portalType = row.querySelector('.js-portal-type').value;
+              var options = workflowOptions(portalType);
+              var previousValue = workflowId || workflowSelect.value;
+              workflowSelect.innerHTML = '';
+              fillSelect(workflowSelect, options, previousValue);
+              if (!workflowSelect.value && options.length === 1) {
+                workflowSelect.value = options[0].id;
+              }
+            }
+
+            function renderTransitionOptions(row, transitionId) {
+              var transitionSelect = row.querySelector('.js-transition-id');
+              var workflowId = row.querySelector('.js-workflow-id').value;
+              var options = transitionOptions(workflowId);
+              var previousValue = transitionId || transitionSelect.value;
+              transitionSelect.innerHTML = '';
+              fillSelect(transitionSelect, options, previousValue);
+            }
+
+            function bindRowEvents(row) {
+              var portalTypeSelect = row.querySelector('.js-portal-type');
+              var workflowSelect = row.querySelector('.js-workflow-id');
+              var deleteButton = row.querySelector('.js-delete-row');
+
+              portalTypeSelect.addEventListener('change', function () {
+                renderWorkflowOptions(row, '');
+                renderTransitionOptions(row, '');
+              });
+
+              workflowSelect.addEventListener('change', function () {
+                renderTransitionOptions(row, '');
+              });
+
+              deleteButton.addEventListener('click', function () {
+                row.parentNode.removeChild(row);
+                ensureAtLeastOneRow();
+              });
+            }
+
+            function createRow(rule) {
+              rule = rule || {};
+              var row = document.createElement('tr');
+
+              var portalTypeCell = document.createElement('td');
+              var portalTypeSelect = createSelect(
+                portalTypeOptions(),
+                text(rule.portal_type),
+                'js-portal-type'
+              );
+              portalTypeCell.appendChild(portalTypeSelect);
+              row.appendChild(portalTypeCell);
+
+              var workflowCell = document.createElement('td');
+              var workflowSelect = document.createElement('select');
+              workflowSelect.className = 'js-workflow-id';
+              workflowCell.appendChild(workflowSelect);
+              row.appendChild(workflowCell);
+
+              var transitionCell = document.createElement('td');
+              var transitionSelect = document.createElement('select');
+              transitionSelect.className = 'js-transition-id';
+              transitionCell.appendChild(transitionSelect);
+              row.appendChild(transitionCell);
+
+              var signatureCell = document.createElement('td');
+              signatureCell.appendChild(createCheckbox(rule.signature_required !== false, 'js-signature-required'));
+              row.appendChild(signatureCell);
+
+              var countersignCell = document.createElement('td');
+              countersignCell.appendChild(createCheckbox(!!rule.require_countersign, 'js-require-countersign'));
+              row.appendChild(countersignCell);
+
+              var meaningCell = document.createElement('td');
+              meaningCell.appendChild(createCheckbox(rule.meaning_required !== false, 'js-meaning-required'));
+              row.appendChild(meaningCell);
+
+              var reasonCell = document.createElement('td');
+              reasonCell.appendChild(createCheckbox(rule.reason_required !== false, 'js-reason-required'));
+              row.appendChild(reasonCell);
+
+              var actionCell = document.createElement('td');
+              var deleteButton = document.createElement('button');
+              deleteButton.type = 'button';
+              deleteButton.className = 'btn btn-danger js-delete-row';
+              deleteButton.appendChild(document.createTextNode('Delete'));
+              actionCell.appendChild(deleteButton);
+              row.appendChild(actionCell);
+
+              tableBody.appendChild(row);
+              renderWorkflowOptions(row, text(rule.workflow_id));
+              renderTransitionOptions(row, text(rule.transition_id));
+              bindRowEvents(row);
+              return row;
+            }
+
+            function ensureAtLeastOneRow() {
+              if (!tableBody.children.length) {
+                createRow({
+                  portal_type: '',
+                  workflow_id: '',
+                  transition_id: '',
+                  signature_required: true,
+                  require_countersign: false,
+                  meaning_required: true,
+                  reason_required: true
+                });
+              }
+            }
+
+            function serializeRows() {
+              var rows = tableBody.querySelectorAll('tr');
+              var result = [];
+              var errors = [];
+
+              Array.prototype.forEach.call(rows, function (row) {
+                var portalType = row.querySelector('.js-portal-type').value;
+                var workflowId = row.querySelector('.js-workflow-id').value;
+                var transitionId = row.querySelector('.js-transition-id').value;
+                var hasAnyValue = portalType || workflowId || transitionId;
+                if (!hasAnyValue) {
+                  return;
+                }
+                if (!portalType || !workflowId || !transitionId) {
+                  errors.push('Please fully select portal type, workflow, and transition for each row.');
+                  return;
+                }
+                result.push({
+                  portal_type: portalType,
+                  workflow_id: workflowId,
+                  transition_id: transitionId,
+                  signature_required: row.querySelector('.js-signature-required').checked,
+                  require_countersign: row.querySelector('.js-require-countersign').checked,
+                  meaning_required: row.querySelector('.js-meaning-required').checked,
+                  reason_required: row.querySelector('.js-reason-required').checked
+                });
+              });
+
+              if (errors.length) {
+                window.alert(errors[0]);
+                return null;
+              }
+              return result;
+            }
+
+            addButton.addEventListener('click', function () {
+              createRow();
+            });
+
+            if (form) {
+              if (saveButton) {
+                saveButton.addEventListener('click', function () {
+                  saveTriggered = true;
+                });
+              }
+              form.addEventListener('submit', function (event) {
+                if (!saveTriggered) {
+                  return true;
+                }
+                var payload = serializeRows();
+                if (payload === null) {
+                  event.preventDefault();
+                  return false;
+                }
+                payloadInput.value = JSON.stringify(payload);
+                return true;
+              });
+            }
+
+            tableBody.innerHTML = '';
+            if (currentRules.length) {
+              currentRules.forEach(function (rule) {
+                createRow(rule);
+              });
+            } else {
+              ensureAtLeastOneRow();
+            }
+          })();
+        </script>
+      </div>
+    </metal:content>
+  </body>
+</html>
+

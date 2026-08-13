@@ -1,0 +1,13 @@
+.sticker {
+  width: 30mm;
+  padding: 2mm;
+  box-sizing: border-box;
+  overflow: visible;
+  display: block;
+  margin: 0 auto;
+}
+.qrcode {
+  width: 100%;
+  height: auto;
+  display: block;
+}

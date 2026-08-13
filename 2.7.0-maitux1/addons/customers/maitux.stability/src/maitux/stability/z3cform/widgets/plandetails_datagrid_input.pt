@@ -1,0 +1,154 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      tal:omit-tag="">
+
+  <table class="table table-hover table-responsive table-sm table-borderless datagridwidget-table-view"
+         data-mode="row"
+         tal:attributes="data-extra view/extra; id view/id_prefix">
+    <thead>
+      <tr>
+        <tal:block repeat="column view/columns">
+          <th class="header"
+              tal:define="cssclass string:header cell-${repeat/column/number};
+                     cssclass python: cssclass + (column['mode'] == 'hidden' and ' datagridwidget-hidden-data' or '')"
+              tal:attributes="class cssclass">
+            <span tal:content="column/label">title</span>
+            <span class="required"
+                  tal:condition="column/required" title="Required" i18n:domain="plone" i18n:attributes="title title_required">&nbsp;</span>
+            <span class="formHelp" tal:condition="column/description" tal:content="column/description">Description</span>
+          </th>
+        </tal:block>
+        <th class="header" tal:condition="view/allow_insert"></th>
+        <th class="header" tal:condition="view/allow_delete"></th>
+        <th class="header" tal:condition="view/allow_reorder"></th>
+        <th class="header" tal:condition="view/allow_reorder"></th>
+      </tr>
+    </thead>
+    <tbody class="datagridwidget-body"
+           data-auto-append="false"
+           data-plan-details="1"
+           tal:attributes="data-name_prefix view/name_prefix; data-id_prefix view/id_prefix">
+      <tal:block repeat="widget view/widgets">
+        <tr tal:define="idx python:widget.name.split('.')[-1]"
+            tal:attributes="class python:'%s row-%d%s' % (widget.klass, repeat['widget'].number(), widget.mode=='hidden' and ' hidden' or '');
+                            data-index idx;"
+            tal:condition="python:view._includeRow(widget.name) and idx != 'AA'">
+          <metal:block define-macro="widget-row">
+            <div tal:replace="structure widget/render"></div>
+          </metal:block>
+        </tr>
+      </tal:block>
+    </tbody>
+  </table>
+  <input type="hidden" tal:replace="structure view/counterMarker" />
+  <button type="button" class="btn btn-sm btn-outline-secondary mb-2" id="stability-plan-details-add-row">Add row</button>
+  <script type="text/javascript" src="" tal:attributes="src string:${view/portal_url}/++resource++senaite.core.z3cform.static/datagrid.js"></script>
+  <link rel="stylesheet" href="" type="text/css" media="screen" tal:attributes="href string:${view/portal_url}/++resource++senaite.core.z3cform.static/datagrid.css"/>
+  <script type="text/javascript">
+  (function () {
+    function fixUidReferenceWidgetAttrs(datagrid) {
+      if (!datagrid) return;
+      var widgets = datagrid.querySelectorAll(".senaite-uidreference-widget-input,.senaite-queryselect-widget-input");
+      for (var i = 0; i < widgets.length; i++) {
+        var w = widgets[i];
+        var field = w.querySelector("[name]");
+        var name = field && field.name ? field.name : null;
+        if (!name) continue;
+        var id = name.replace(/\./g, "-");
+        w.setAttribute("data-name", JSON.stringify(name));
+        w.setAttribute("data-id", JSON.stringify(id));
+      }
+    }
+
+    function sanitizeTemplateRow(datagrid) {
+      if (!datagrid) return;
+      var tt = datagrid.querySelector("tr[data-index='TT']");
+      if (!tt) return;
+      var widgets = tt.querySelectorAll(".senaite-uidreference-widget-input,.senaite-queryselect-widget-input");
+      for (var i = 0; i < widgets.length; i++) {
+        var w = widgets[i];
+        if (w.dataset && w.dataset.planTemplateSanitized === "1") continue;
+        var isUid = w.classList.contains("senaite-uidreference-widget-input");
+        var isQs = w.classList.contains("senaite-queryselect-widget-input");
+        var field = w.querySelector("[name]");
+        var name = field && field.name ? field.name : null;
+        if (!name) continue;
+        w.dataset.planTemplateSanitized = "1";
+        w.dataset.planReactKlass = isUid ? "senaite-uidreference-widget-input" : (isQs ? "senaite-queryselect-widget-input" : "");
+        w.classList.remove("senaite-uidreference-widget-input");
+        w.classList.remove("senaite-queryselect-widget-input");
+        while (w.firstChild) w.removeChild(w.firstChild);
+        var input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = "";
+        w.appendChild(input);
+        var id = name.replace(/\./g, "-");
+        w.setAttribute("data-name", JSON.stringify(name));
+        w.setAttribute("data-id", JSON.stringify(id));
+      }
+    }
+
+    function restoreRowWidgets(row) {
+      if (!row) return;
+      var widgets = row.querySelectorAll("[data-plan-react-klass]");
+      for (var i = 0; i < widgets.length; i++) {
+        var w = widgets[i];
+        var klass = w.dataset ? w.dataset.planReactKlass : null;
+        if (klass) {
+          w.classList.add(klass);
+        }
+      }
+    }
+
+    function reindex(e) {
+      var datagrid = e.detail.datagrid;
+      if (!datagrid || !datagrid.dataset || datagrid.dataset.planDetails !== "1") return;
+      if (!window.widgets || !window.widgets.datagrid) return;
+      if (typeof window.widgets.datagrid.update_order_index !== "function") return;
+      window.widgets.datagrid.update_order_index(datagrid);
+      fixUidReferenceWidgetAttrs(datagrid);
+    }
+
+    function addRow() {
+      if (!window.widgets || !window.widgets.datagrid) return;
+      var datagrid = document.querySelector(".datagridwidget-body[data-plan-details='1']");
+      if (!datagrid) return;
+      var grid = window.widgets.datagrid;
+      var rows = datagrid.querySelectorAll("tr[data-index]:not([data-index='TT'])");
+      var newtr = grid.create_new_row(datagrid);
+      restoreRowWidgets(newtr);
+      if (rows.length) {
+        datagrid.insertBefore(newtr, rows[rows.length - 1].nextSibling);
+      } else {
+        var tt = datagrid.querySelector("tr[data-index='TT']");
+        datagrid.insertBefore(newtr, tt);
+      }
+      grid.update_order_index(datagrid);
+      grid.trigger_custom_event("datagrid:row_added", {datagrid: datagrid, row: newtr});
+    }
+
+    function init() {
+      var datagrid = document.querySelector(".datagridwidget-body[data-plan-details='1']");
+      if (!datagrid) return;
+      fixUidReferenceWidgetAttrs(datagrid);
+      sanitizeTemplateRow(datagrid);
+      document.body.addEventListener("datagrid:row_added", reindex);
+      document.body.addEventListener("datagrid:row_removed", reindex);
+      var btn = document.getElementById("stability-plan-details-add-row");
+      if (btn && !btn.__bound) {
+        btn.__bound = true;
+        btn.addEventListener("click", addRow);
+      }
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", init);
+    } else {
+      init();
+    }
+  })();
+  </script>
+</html>

@@ -1,0 +1,119 @@
+<?xml version="1.0"?>
+<dc-workflow xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+             workflow_id="senaite_stockbatch_workflow"
+             title="Stock Batch Workflow"
+             description=""
+             state_variable="review_state"
+             initial_state="active"
+             manager_bypass="False"
+             i18n:domain="maitux.stock">
+
+  <permission>View</permission>
+  <permission>Access contents information</permission>
+  <permission>Modify portal content</permission>
+  <permission>Delete objects</permission>
+
+  <!-- *** STATES *** -->
+
+  <state state_id="active" title="Active" i18n:attributes="title" purge="True">
+    <description>Batch is active</description>
+    <exit-transition transition_id="expire"/>
+    <exit-transition transition_id="destroy"/>
+
+    <permission-map name="View" acquired="True"/>
+    <permission-map name="Access contents information" acquired="True"/>
+    <permission-map name="Modify portal content" acquired="False">
+      <permission-role>LabClerk</permission-role>
+      <permission-role>LabManager</permission-role>
+      <permission-role>Manager</permission-role>
+      <permission-role>Owner</permission-role>
+    </permission-map>
+    <permission-map name="Delete objects" acquired="True"/>
+  </state>
+
+  <state state_id="expired" title="Expired" i18n:attributes="title" purge="True">
+    <description>Batch is expired and can only be destroyed</description>
+    <exit-transition transition_id="destroy"/>
+
+    <permission-map name="View" acquired="True"/>
+    <permission-map name="Access contents information" acquired="True"/>
+    <permission-map name="Modify portal content" acquired="False">
+      <permission-role>LabClerk</permission-role>
+      <permission-role>LabManager</permission-role>
+      <permission-role>Manager</permission-role>
+      <permission-role>Owner</permission-role>
+    </permission-map>
+    <permission-map name="Delete objects" acquired="True"/>
+  </state>
+
+  <state state_id="destroyed" title="Destroyed" i18n:attributes="title" purge="True">
+    <description>Batch was destroyed</description>
+
+    <permission-map name="View" acquired="True"/>
+    <permission-map name="Access contents information" acquired="True"/>
+    <permission-map name="Modify portal content" acquired="False"/>
+    <permission-map name="Delete objects" acquired="False"/>
+  </state>
+
+  <!-- *** TRANSITIONS *** -->
+
+  <transition transition_id="expire" title="Expire" new_state="expired"
+              trigger="USER" before_script="" after_script=""
+              i18n:attributes="title">
+    <guard>
+      <guard-permission>Modify portal content</guard-permission>
+    </guard>
+  </transition>
+
+  <transition transition_id="destroy" title="Destroy" new_state="destroyed"
+              trigger="USER" before_script="" after_script=""
+              i18n:attributes="title">
+    <action url="" category="workflow" icon="">Destroy</action>
+    <guard>
+      <guard-permission>Modify portal content</guard-permission>
+    </guard>
+  </transition>
+
+  <!-- *** VARIABLES *** -->
+
+  <variable variable_id="action" for_catalog="False" for_status="True" update_always="True">
+    <description>Previous transition</description>
+    <default>
+      <expression>transition/getId|nothing</expression>
+    </default>
+    <guard/>
+  </variable>
+
+  <variable variable_id="actor" for_catalog="False" for_status="True" update_always="True">
+    <description>The ID of the user who performed the last transition</description>
+    <default>
+      <expression>user/getId</expression>
+    </default>
+    <guard/>
+  </variable>
+
+  <variable variable_id="comments" for_catalog="False" for_status="True" update_always="True">
+    <description>Comment about the last transition</description>
+    <default>
+      <expression>python:state_change.kwargs.get('comment', '')</expression>
+    </default>
+    <guard/>
+  </variable>
+
+  <variable variable_id="review_history" for_catalog="False" for_status="False" update_always="False">
+    <description>Provides access to workflow history</description>
+    <default>
+      <expression>state_change/getHistory</expression>
+    </default>
+    <guard/>
+  </variable>
+
+  <variable variable_id="time" for_catalog="False" for_status="True" update_always="True">
+    <description>When the previous transition was performed</description>
+    <default>
+      <expression>state_change/getDateTime</expression>
+    </default>
+    <guard/>
+  </variable>
+
+</dc-workflow>

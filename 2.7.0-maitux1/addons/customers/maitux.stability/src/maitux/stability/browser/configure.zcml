@@ -1,0 +1,115 @@
+﻿<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser">
+
+  <include package=".viewlets" />
+
+  <adapter
+      for="maitux.stability.interfaces.IStabilityPlans
+           senaite.core.interfaces.ISenaiteFormLayer
+           plone.dexterity.interfaces.IDexterityFTI"
+      provides="zope.publisher.interfaces.browser.IBrowserPage"
+      factory=".add.StabilityPlanAddView"
+      />
+
+  <browser:page
+      for="maitux.stability.interfaces.IStorageConditions"
+      name="view"
+      class=".view.StorageConditionsView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="maitux.stability.interfaces.IStorageConditions"
+      name="folder_view"
+      class=".view.StorageConditionsView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="maitux.stability.interfaces.IPackagingSpecifications"
+      name="view"
+      class=".view.PackagingSpecificationsView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="maitux.stability.interfaces.IPackagingSpecifications"
+      name="folder_view"
+      class=".view.PackagingSpecificationsView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="maitux.stability.interfaces.IStabilityPlanTemplates"
+      name="view"
+      class=".view.StabilityPlanTemplatesView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="maitux.stability.interfaces.IStabilityPlanTemplates"
+      name="folder_view"
+      class=".view.StabilityPlanTemplatesView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="maitux.stability.interfaces.IStabilityPlanTemplate"
+      name="create_plan"
+      class=".view.CreatePlanRedirectView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="maitux.stability.interfaces.IStabilityPlans"
+      name="view"
+      class=".view.StabilityPlansView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="maitux.stability.interfaces.IStabilityPlans"
+      name="folder_view"
+      class=".view.StabilityPlansView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="maitux.stability.interfaces.IStabilityPlans"
+      name="plan_template_defaults"
+      class=".view.PlanTemplateDefaultsView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="maitux.stability.interfaces.IStabilityPlans"
+      name="task_board"
+      class=".view.StabilityTaskBoardView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <!-- 椤甸潰娉ㄥ唽浣跨敤閫氱敤鍙敤鏉冮檺锛屽叿浣撶紪杈戞潈闄愬湪Python閫昏緫閲屼簩娆℃牎楠?-->
+  <browser:page
+      for="maitux.stability.interfaces.IStabilityPlans"
+      name="sample_placement"
+      class=".view.SamplePlacementView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="maitux.stability.interfaces.IStabilityPlans"
+      name="link_sample"
+      class=".view.LinkSampleView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+  <browser:page
+      for="maitux.stability.interfaces.IStabilityPlans"
+      name="create_sample"
+      class=".view.CreateSampleView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"/>
+
+</configure>
+

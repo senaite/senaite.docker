@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<layers>
+  <layer name="maitux.reviewerassignment"
+         interface="maitux.reviewerassignment.interfaces.IReviewerAssignmentLayer" />
+</layers>

@@ -1,0 +1,13 @@
+﻿<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="maitux.calcenhance">
+
+  <!-- Register GenericSetup profile -->
+  <include package=".profiles" />
+
+  <!-- Browser views/widgets (loaded later) -->
+  <!-- <include package=".browser" /> -->
+
+</configure>
+

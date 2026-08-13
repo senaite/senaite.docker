@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<object name="portal_types" meta_type="Plone Types Tool">
+  <object name="StabilityStudies" meta_type="Dexterity FTI"/>
+  <object name="StabilityStudy" meta_type="Dexterity FTI"/>
+  <object name="StorageConditions" meta_type="Dexterity FTI"/>
+  <object name="StorageCondition" meta_type="Dexterity FTI"/>
+  <object name="PackagingSpecifications" meta_type="Dexterity FTI"/>
+  <object name="PackagingSpecification" meta_type="Dexterity FTI"/>
+  <object name="StabilityPlanTemplates" meta_type="Dexterity FTI"/>
+  <object name="StabilityPlanTemplate" meta_type="Dexterity FTI"/>
+  <object name="StabilityPlans" meta_type="Dexterity FTI"/>
+  <object name="StabilityPlan" meta_type="Dexterity FTI"/>
+  <object name="StabilityTimepointTask" meta_type="Dexterity FTI"/>
+</object>

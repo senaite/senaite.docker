@@ -1,0 +1,42 @@
+﻿<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.instrument_acquisition">
+
+  <browser:page
+      name="instrument_acquisition_api_forward_test"
+      for="*"
+      class="maitux.instrument_acquisition.api.views.ForwardTestAPI"
+      permission="zope.Public"
+      />
+
+  <browser:page
+      name="instrument_acquisition_api_forward_history"
+      for="*"
+      class="maitux.instrument_acquisition.api.views.ForwardHistoryAPI"
+      permission="zope.Public"
+      />
+
+  <browser:page
+      name="instrument_acquisition_api_forward_status"
+      for="*"
+      class="maitux.instrument_acquisition.api.views.ForwardStatusAPI"
+      permission="zope.Public"
+      />
+
+  <browser:page
+      name="instrument_acquisition_api_templates_list"
+      for="*"
+      class="maitux.instrument_acquisition.api.views.TemplatesListAPI"
+      permission="zope.Public"
+      />
+
+  <browser:page
+      name="instrument_acquisition_api_manual_forward"
+      for="*"
+      class="maitux.instrument_acquisition.api.views.ManualForwardAPI"
+      permission="zope.Public"
+      />
+
+</configure>
+

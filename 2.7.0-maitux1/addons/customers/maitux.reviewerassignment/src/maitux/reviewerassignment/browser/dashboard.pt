@@ -1,0 +1,15 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="zh"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      metal:use-macro="context/main_template/macros/master">
+<body>
+<metal:title fill-slot="content-title">
+  <h1>审核工作表</h1>
+</metal:title>
+<metal:description fill-slot="content-description">
+  <p>默认页面已切换为审核工作表队列。</p>
+</metal:description>
+<metal:main fill-slot="content-core">
+  <p>如果你看到这个占位页，说明默认视图注册尚未生效。</p>
+</metal:main>
+</body>
+</html>

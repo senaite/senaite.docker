@@ -1,0 +1,21 @@
+.sticker {
+  width: 20mm;
+  height: 20mm;
+  padding: 1mm;
+  box-sizing: border-box;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+  font-size: 8pt;
+}
+.qrcode {
+  width: 100%;
+  height: 16mm;
+}
+.batch_id {
+  width: 100%;
+  margin-top: 1mm;
+  text-align: center;
+  font-weight: bold;
+  font-size: 8pt;
+  word-break: break-all;
+}
