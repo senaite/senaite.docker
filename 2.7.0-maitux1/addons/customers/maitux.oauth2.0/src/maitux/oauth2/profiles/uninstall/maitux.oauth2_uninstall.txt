@@ -1,1 +1,1 @@
-MAITUX 竹云统一登录 (OAuth 2.0) - uninstall
+MAITUX Bamboocloud SSO (OAuth 2.0) - uninstall

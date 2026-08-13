@@ -24,6 +24,7 @@ from zope.interface import alsoProvides
 
 from maitux.oauth2 import config
 from maitux.oauth2 import logger
+from maitux.oauth2 import TEXT_TYPE
 from maitux.oauth2 import safe_text
 from maitux.oauth2 import state as state_util
 from maitux.oauth2 import users
@@ -59,17 +60,11 @@ class BaseView(BrowserView):
         return self.portal.absolute_url()
 
     def is_secure(self):
-        url = self.request.get("ACTUAL_URL") or self.request.get("URL") or ""
-        if url.lower().startswith("https"):
-            return True
-        forwarded = self.request.get_header("X-Forwarded-Proto", "") or ""
-        return forwarded.lower() == "https"
+        return config.is_secure_request(self.request)
 
     def redirect_uri(self):
-        configured = (config.get("redirect_uri") or u"").strip()
-        if configured:
-            return configured
-        return u"%s/@@oauth2-callback" % self.portal_url
+        # Derived per site; see config.callback_url().
+        return config.callback_url(self.portal_url, self.request)
 
     def safe_came_from(self, candidate):
         """Never let ``came_from`` turn into an open redirect."""
@@ -224,7 +219,11 @@ class CallbackView(BaseView):
             return self.message_page(
                 u"统一登录失败", safe_text(exc), level="error", show_retry=True)
 
-        subject = config.first_claim(userinfo, "userid_claim")
+        subject, subject_key = config.first_claim_and_key(
+            userinfo, "userid_claim")
+        # Field NAMES only -- the values contain PII (mobile, email, real name).
+        logger.info("IdP userinfo returned fields %s; unique id taken from %r",
+                    sorted(userinfo.keys()), subject_key)
         if not subject:
             logger.error("No unique id in userinfo, available keys: %s",
                          sorted(userinfo.keys()))
@@ -282,6 +281,10 @@ class CallbackView(BaseView):
         cookie = self.request.get(state_util.STATE_COOKIE)
         param = self.request.form.get("state")
         if not cookie and not param:
+            if config.get("require_state"):
+                logger.warning(
+                    "Rejecting a callback without state (require_state is on)")
+                return None
             logger.info("Callback without state -- treating as IdP initiated login")
             return u""
         try:
@@ -352,13 +355,20 @@ class MessageView(BaseView):
     template = ViewPageTemplateFile("templates/message.pt")
 
     title = u""
-    message = u""
+    paragraphs = ()
     level = "info"
     show_retry = False
 
     def update(self, title, message, level="info", show_retry=False):
+        """``message`` is one paragraph, or a sequence of paragraphs.
+
+        Everything ends up escaped by the template -- never pass markup, and
+        never rely on it being rendered as HTML.
+        """
         self.title = title
-        self.message = message
+        if isinstance(message, (bytes, TEXT_TYPE)):
+            message = [message]
+        self.paragraphs = [safe_text(p) for p in message if p]
         self.level = level
         self.show_retry = show_retry
 
@@ -382,8 +392,8 @@ class PendingView(MessageView):
     def __call__(self):
         self.update(
             u"账号已创建，等待管理员分配权限",
-            u"您的账号已通过竹云统一登录成功创建，但尚未获得 LIMS 的使用权限。<br/>"
-            u"请联系 LIMS 管理员为您分配角色；分配完成后重新登录即可进入系统。",
+            [u"您的账号已通过竹云统一登录成功创建，但尚未获得 LIMS 的使用权限。",
+             u"请联系 LIMS 管理员为您分配角色；分配完成后重新登录即可进入系统。"],
             level="warning", show_retry=True)
         return self.template()
 
@@ -394,8 +404,8 @@ class DisabledView(MessageView):
     def __call__(self):
         self.update(
             u"账号已被禁用",
-            u"您的账号在 LIMS 中已停用（通常是因为竹云中该账号已停用、锁定或已离职）。<br/>"
-            u"如果您认为这是误操作，请联系 LIMS 管理员。",
+            [u"您的账号在 LIMS 中已停用（通常是因为竹云中该账号已停用、锁定或已离职）。",
+             u"如果您认为这是误操作，请联系 LIMS 管理员。"],
             level="error")
         return self.template()
 
@@ -425,11 +435,20 @@ class SyncUsersView(BaseView):
         dry_run = self.request.form.get("dry_run") in ("1", "true", "yes", "on")
         return self.dump(sync.sync_users(self.portal, dry_run=dry_run))
 
+    #: Refuse to authenticate the unattended trigger with a guessable secret.
+    MIN_TOKEN_LENGTH = 16
+
     def authorized(self):
         if getSecurityManager().checkPermission("Manage portal", self.portal):
             return True
         configured = (config.get("sync_token") or u"").strip()
         if not configured:
+            return False
+        if len(configured) < self.MIN_TOKEN_LENGTH:
+            logger.warning(
+                "Refusing token auth for @@oauth2-sync-users: the configured "
+                "sync_token is shorter than %s characters",
+                self.MIN_TOKEN_LENGTH)
             return False
         return state_util.compare(self.request.form.get("token") or u"", configured)
 

@@ -9,9 +9,13 @@
   <metal:content-core fill-slot="content-core">
     <div class="maitux-oauth2-message">
 
+      <!-- Deliberately NOT `structure`: some of these messages interpolate
+           values that came from the query string (e.g. the IdP's `error` and
+           `error_description` parameters), so they must stay escaped. -->
       <div tal:attributes="class view/css_class" role="alert">
         <h2 tal:content="view/title">标题</h2>
-        <p tal:content="structure view/message">说明</p>
+        <p tal:repeat="paragraph view/paragraphs"
+           tal:content="paragraph">说明</p>
       </div>
 
       <p class="maitux-oauth2-actions">

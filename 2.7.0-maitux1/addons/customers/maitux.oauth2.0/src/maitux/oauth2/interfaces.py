@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Interfaces / configuration schema for maitux.oauth2."""
 
+from plone.autoform import directives
 from plone.supermodel import model
 from senaite.core.interfaces import ISenaiteCore
 from zope import schema
@@ -318,6 +319,7 @@ class IOAuth2Settings(model.Schema):
             "redirect_login_form",
             "show_login_button",
             "sso_logout",
+            "require_state",
         ],
     )
 
@@ -352,6 +354,19 @@ class IOAuth2Settings(model.Schema):
         required=False,
     )
 
+    require_state = schema.Bool(
+        title=_(u"强制校验 state（会禁用竹云 Portal 入口）"),
+        description=_(
+            u"默认关闭。竹云 Portal 点图标进来的登录（场景 1）不带 state，"
+            u"所以必须允许无 state 的回调。代价是留下一点“强制登录”"
+            u"（login CSRF）面：恶意站点可以把一个合法 code 塞给受害者，"
+            u"把他登成另一个账号。如果不需要 Portal 入口（用户只从 LIMS "
+            u"地址进入），建议打开本开关，拒绝所有不带 state 的回调。"
+        ),
+        default=False,
+        required=False,
+    )
+
     # ------------------------------------------------------------------
     model.fieldset(
         "sync",
@@ -362,6 +377,7 @@ class IOAuth2Settings(model.Schema):
             "sync_org_id",
             "sync_page_size",
             "sync_deactivate_missing",
+            "sync_max_missing_percent",
             "sync_update_properties",
             "sync_token",
             "last_sync",
@@ -406,6 +422,18 @@ class IOAuth2Settings(model.Schema):
         required=False,
     )
 
+    sync_max_missing_percent = schema.Int(
+        title=_(u"允许缺失比例上限（%）"),
+        description=_(
+            u"安全保险。如果本地超过这个比例的统一登录账号在竹云用户列表里"
+            u"匹配不到，就不停用任何账号，只报错。防止“存的唯一 ID 和 EIAM "
+            u"的字段对不上”或“接口只返回了部分数据”时一次把所有人停用。"
+            u"填 100 = 关闭本保险。缺失数少于 5 个时不变。"
+        ),
+        default=50,
+        required=False,
+    )
+
     sync_update_properties = schema.Bool(
         title=_(u"同步姓名和邮箱"),
         default=True,
@@ -437,11 +465,14 @@ class IOAuth2Settings(model.Schema):
     )
 
     # ------------------------------------------------------------------
-    model.fieldset(
-        "internal",
-        label=_(u"内部"),
-        fields=["state_secret"],
-    )
+    #: The HMAC signing key must never be rendered into an HTML form: it is a
+    #: cryptographic secret, and editing it silently invalidates every login
+    #: that is currently in flight.  It stays a registry record, just not a
+    #: form field.
+    directives.omitted("state_secret")
+
+    #: Written by the sync job -- show them, but do not let anyone edit them.
+    directives.mode(last_sync="display", last_sync_result="display")
 
     state_secret = schema.TextLine(
         title=_(u"state 签名密钥"),

@@ -180,17 +180,33 @@ def resolve_user(portal, subject, username, fullname, email):
 
     existing = get_member(portal, candidate)
     if existing is not None:
+        bound = member_property(existing, PROP_SUBJECT, u"")
+        if bound and bound != subject:
+            # The local name is already taken by a *different* IdP identity.
+            # Deliberately refuse instead of inventing a name like "zs2":
+            # a silently generated id hides a real data problem and leaves an
+            # account nobody can attribute to a person.
+            logger.error(
+                "Refusing login: local name %s is already bound to IdP identity "
+                "%s, cannot use it for %s", candidate, bound, subject)
+            raise AccountError(
+                u"本地用户名 %s 已经绑定了另一个竹云账号，无法为当前用户创建账号。"
+                u"请管理员处理后重试（可重命名本地账号，或在插件配置里调整"
+                u"“登录名字段”/“本地用户名前缀”）。" % candidate)
         if config.get("link_existing_by_username"):
-            bound = member_property(existing, PROP_SUBJECT, u"")
-            if bound and bound != subject:
-                raise AccountError(
-                    u"本地用户 %s 已经绑定了另一个竹云账号，请联系管理员处理。" % candidate)
+            # Not bound to anyone yet: adopt the pre-existing local account
+            # (e.g. one that was created by hand before SSO was switched on).
             storage.set_userid(portal, subject, candidate)
             _touch(portal, candidate, subject, fullname, email)
             logger.info("Linked IdP identity %s to existing member %s",
                         subject, candidate)
             return candidate
-        candidate = _unique_username(portal, candidate)
+        logger.error(
+            "Refusing login: local member %s already exists and "
+            "link_existing_by_username is off", candidate)
+        raise AccountError(
+            u"本地已存在用户名 %s，且未开启“按用户名关联已有账号”，"
+            u"无法自动建号。请管理员处理。" % candidate)
 
     if not config.get("auto_create_user"):
         raise AccountError(
@@ -198,16 +214,6 @@ def resolve_user(portal, subject, username, fullname, email):
 
     return create_user(portal, subject, candidate, fullname, email)
 
-
-def _unique_username(portal, candidate):
-    suffix = 2
-    userid = candidate
-    while get_member(portal, userid) is not None:
-        userid = u"%s%s" % (candidate, suffix)
-        suffix += 1
-        if suffix > 500:  # pragma: no cover - runaway guard
-            raise AccountError(u"无法为该用户生成唯一的本地用户名")
-    return userid
 
 
 def create_user(portal, subject, userid, fullname, email):

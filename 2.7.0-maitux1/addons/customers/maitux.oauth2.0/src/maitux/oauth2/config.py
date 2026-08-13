@@ -135,6 +135,44 @@ def endpoint(name):
     return base_url() + path
 
 
+def is_secure_request(request):
+    """True when the browser is talking HTTPS, even behind a TLS terminator.
+
+    Zope does not honour ``X-Forwarded-Proto`` unless waitress is configured
+    with ``trusted_proxy``, so ``portal_url`` comes out as ``http://`` on a
+    site that is actually served over HTTPS through nginx.
+    """
+    if request is None:
+        return False
+    url = request.get("ACTUAL_URL") or request.get("URL") or ""
+    if url.lower().startswith("https"):
+        return True
+    try:
+        forwarded = request.get_header("X-Forwarded-Proto", "") or ""
+    except Exception:
+        forwarded = request.get("HTTP_X_FORWARDED_PROTO", "") or ""
+    return forwarded.split(",")[0].strip().lower() == "https"
+
+
+def callback_url(portal_url, request=None):
+    """The ``redirect_uri`` for this site.
+
+    Derived per site from ``portal_url`` so that one instance can host several
+    SENAITE sites, each with its own callback.  The registry value is only an
+    escape hatch for deployments where the derived URL is not reachable from
+    outside (it is a *per site* setting -- do not set it through the
+    container wide ``MAITUX_OAUTH2_REDIRECT_URI`` environment variable when
+    more than one site is installed).
+    """
+    configured = (get("redirect_uri") or u"").strip()
+    if configured:
+        return configured
+    url = portal_url or u""
+    if is_secure_request(request) and url.lower().startswith("http://"):
+        url = u"https://" + url[len("http://"):]
+    return u"%s/@@oauth2-callback" % url.rstrip("/")
+
+
 def claims(name):
     """Split a comma separated claim-name setting into a list."""
     raw = get(name) or u""
@@ -143,6 +181,16 @@ def claims(name):
 
 def first_claim(data, setting_name):
     """Return the first non-empty value in ``data`` for the configured claims."""
+    return first_claim_and_key(data, setting_name)[0]
+
+
+def first_claim_and_key(data, setting_name):
+    """Like :func:`first_claim` but also reports which key supplied the value.
+
+    Used to log which identity claim 竹云 actually returned, so that a
+    deployment can see at a glance whether ``external_id`` came through or the
+    fallback was used.
+    """
     for key in claims(setting_name):
         value = data.get(key)
         if value is None or isinstance(value, bool):
@@ -153,5 +201,5 @@ def first_claim(data, setting_name):
             value = u"%s" % value
         value = value.strip()
         if value:
-            return value
-    return u""
+            return value, key
+    return u"", None
