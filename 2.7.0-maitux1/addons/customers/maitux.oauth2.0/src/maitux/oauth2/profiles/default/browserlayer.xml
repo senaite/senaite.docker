@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<layers>
+  <layer name="maitux.oauth2.interfaces.IMaituxOAuth2Layer"
+         interface="maitux.oauth2.interfaces.IMaituxOAuth2Layer" />
+</layers>

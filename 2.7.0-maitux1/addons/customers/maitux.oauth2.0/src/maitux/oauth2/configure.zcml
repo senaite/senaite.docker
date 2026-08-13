@@ -1,0 +1,44 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="maitux.oauth2">
+
+  <include package="Products.Five" />
+  <include package="Products.GenericSetup" file="meta.zcml" />
+
+  <five:registerPackage package="." />
+
+  <include package=".browser" />
+
+  <!-- Kick out sessions of accounts the daily sync has disabled. -->
+  <subscriber
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot
+           zope.traversing.interfaces.IBeforeTraverseEvent"
+      handler=".subscribers.enforce_account_state"
+      />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="MAITUX 竹云统一登录 (OAuth 2.0)"
+      directory="profiles/default"
+      description="Bamboocloud IDaaS OAuth 2.0 single sign-on for SENAITE"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      post_handler=".setuphandlers.post_install"
+      />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="MAITUX 竹云统一登录 (uninstall)"
+      directory="profiles/uninstall"
+      description="Uninstalls MAITUX 竹云统一登录"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      post_handler=".setuphandlers.uninstall"
+      />
+
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      name="maitux.oauth2-hiddenprofiles"
+      />
+
+</configure>

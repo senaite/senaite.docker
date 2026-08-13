@@ -1,0 +1,7 @@
+include *.rst
+include *.md
+recursive-include src *.zcml
+recursive-include src *.pt
+recursive-include src *.xml
+recursive-include src *.txt
+global-exclude *.pyc

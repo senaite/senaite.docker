@@ -1,6 +1,0 @@
-[report]
-include =
-    src/senaite/*
-omit =
-    */test*
-    */upgrades/*

@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<object name="portal_controlpanel">
+  <configlet action_id="maitux-oauth2" remove="True" />
+</object>

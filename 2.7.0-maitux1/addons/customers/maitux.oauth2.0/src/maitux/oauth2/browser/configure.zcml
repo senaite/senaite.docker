@@ -1,0 +1,108 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.oauth2">
+
+  <!-- Step 1: start the authorisation-code flow -->
+  <browser:page
+      name="oauth2-login"
+      for="*"
+      class=".views.LoginView"
+      permission="zope2.Public"
+      layer="maitux.oauth2.interfaces.IMaituxOAuth2Layer"
+      />
+
+  <!-- Step 2: 竹云 calls us back with ?code=...&state=... -->
+  <browser:page
+      name="oauth2-callback"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".views.CallbackView"
+      permission="zope2.Public"
+      layer="maitux.oauth2.interfaces.IMaituxOAuth2Layer"
+      />
+
+  <!-- Administrator escape hatch: local login form, no SSO redirect -->
+  <browser:page
+      name="oauth2-local-login"
+      for="*"
+      class=".views.LocalLoginView"
+      permission="zope2.Public"
+      layer="maitux.oauth2.interfaces.IMaituxOAuth2Layer"
+      />
+
+  <!-- Informational pages -->
+  <browser:page
+      name="oauth2-message"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".views.MessageView"
+      permission="zope2.Public"
+      layer="maitux.oauth2.interfaces.IMaituxOAuth2Layer"
+      />
+
+  <browser:page
+      name="oauth2-pending"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".views.PendingView"
+      permission="zope2.Public"
+      layer="maitux.oauth2.interfaces.IMaituxOAuth2Layer"
+      />
+
+  <browser:page
+      name="oauth2-disabled"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".views.DisabledView"
+      permission="zope2.Public"
+      layer="maitux.oauth2.interfaces.IMaituxOAuth2Layer"
+      />
+
+  <!-- Daily user synchronisation (token protected, see the settings) -->
+  <browser:page
+      name="oauth2-sync-users"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".views.SyncUsersView"
+      permission="zope2.Public"
+      layer="maitux.oauth2.interfaces.IMaituxOAuth2Layer"
+      />
+
+  <!-- Overrides of the stock Plone login/logout plumbing.
+       They only take effect while our browser layer is installed. -->
+  <browser:page
+      name="require_login"
+      for="*"
+      class=".views.RequireLoginView"
+      permission="zope2.Public"
+      layer="maitux.oauth2.interfaces.IMaituxOAuth2Layer"
+      />
+
+  <!-- NOTE: `login` is deliberately NOT overridden.  Replacing Plone's login
+       FormWrapper is the one change that could lock every administrator out,
+       so the "send /login to 竹云 as well" option is implemented as a
+       traversal-time redirect in maitux.oauth2.subscribers instead. -->
+  <browser:page
+      name="logout"
+      for="*"
+      class=".views.LogoutView"
+      permission="zope2.Public"
+      layer="maitux.oauth2.interfaces.IMaituxOAuth2Layer"
+      />
+
+  <!-- Control panel -->
+  <browser:page
+      name="oauth2-controlpanel"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".controlpanel.OAuth2SettingsView"
+      permission="cmf.ManagePortal"
+      layer="maitux.oauth2.interfaces.IMaituxOAuth2Layer"
+      />
+
+  <!-- "竹云统一登录" button on the login form -->
+  <browser:viewlet
+      name="maitux.oauth2.login_button"
+      for="*"
+      manager="plone.app.layout.viewlets.interfaces.IPortalTop"
+      class=".viewlets.LoginButtonViewlet"
+      permission="zope2.Public"
+      layer="maitux.oauth2.interfaces.IMaituxOAuth2Layer"
+      />
+
+</configure>

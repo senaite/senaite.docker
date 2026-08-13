@@ -1,0 +1,16 @@
+<tal:block xmlns:tal="http://xml.zope.org/namespaces/tal"
+           xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+           omit-tag=""
+           i18n:domain="maitux.oauth2">
+
+  <div id="maitux-oauth2-login"
+       style="max-width:32rem;margin:1.5rem auto 0;text-align:center">
+    <a class="btn btn-primary btn-lg"
+       style="min-width:16rem"
+       tal:attributes="href view/login_url">竹云统一登录</a>
+    <p style="margin:.75rem 0 0;color:#6c757d;font-size:.875rem">
+      公司账号请点击上方按钮登录；下方表单仅供本地管理员使用。
+    </p>
+  </div>
+
+</tal:block>

@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<registry>
+  <records interface="maitux.oauth2.interfaces.IOAuth2Settings"
+           prefix="maitux.oauth2" />
+</registry>

@@ -1,0 +1,29 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="maitux.oauth2">
+<body>
+
+  <metal:content-core fill-slot="content-core">
+    <div class="maitux-oauth2-message">
+
+      <div tal:attributes="class view/css_class" role="alert">
+        <h2 tal:content="view/title">标题</h2>
+        <p tal:content="structure view/message">说明</p>
+      </div>
+
+      <p class="maitux-oauth2-actions">
+        <a class="btn btn-primary"
+           tal:condition="view/show_retry"
+           tal:attributes="href view/login_url">重新登录</a>
+        <a class="btn btn-secondary"
+           tal:attributes="href view/portal_url">返回首页</a>
+      </p>
+
+    </div>
+  </metal:content-core>
+
+</body>
+</html>

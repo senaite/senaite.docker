@@ -1,5 +1,0 @@
-============
-senaite.oidc
-============
-
-User documentation
