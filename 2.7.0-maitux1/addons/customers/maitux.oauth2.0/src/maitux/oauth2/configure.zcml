@@ -7,6 +7,17 @@
   <include package="Products.Five" />
   <include package="Products.GenericSetup" file="meta.zcml" />
 
+  <!-- Register the CMF permissions we reference before they get used.
+       Required because this package may be loaded from an [instance] zcml
+       slug, and site.zcml processes package-includes BEFORE
+       five:loadProducts, i.e. before Products.CMFCore has registered
+       cmf.ManagePortal, which the control panel page is protected by.
+       Without this the whole site fails to start with
+       ComponentLookupError: (IPermission, 'cmf.ManagePortal').
+       ZCML de-duplicates includes by file, so CMFCore loading its own
+       permissions later is unaffected. -->
+  <include package="Products.CMFCore" file="permissions.zcml" />
+
   <five:registerPackage package="." />
 
   <include package=".browser" />

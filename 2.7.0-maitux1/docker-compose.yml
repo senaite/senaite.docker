@@ -39,10 +39,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    # Versioned tag: building from this directory must NOT overwrite the
-    # rolling `:latest` image that ../latest builds, otherwise the pinned
-    # release and the rolling build clobber each other.
-    image: crpi-z99l88o2fu3lae8l.cn-hangzhou.personal.cr.aliyuncs.com/maitux/maitux-lims:2.7.0-maitux1
+    image: crpi-z99l88o2fu3lae8l.cn-hangzhou.personal.cr.aliyuncs.com/maitux/maitux-lims:latest
     container_name: maitux-lims
     restart: unless-stopped
     depends_on:
