@@ -47,6 +47,16 @@
       post_handler=".setuphandlers.uninstall"
       />
 
+  <genericsetup:upgradeStep
+      title="Create registry records for newly added settings"
+      description="Adds registry records for configuration options introduced after the initial install (require_state, sync_max_missing_percent)."
+      source="1"
+      destination="2"
+      handler=".setuphandlers.upgrade_registry"
+      sortkey="1"
+      profile="maitux.oauth2:default"
+      />
+
   <utility
       factory=".setuphandlers.HiddenProfiles"
       name="maitux.oauth2-hiddenprofiles"

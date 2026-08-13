@@ -103,8 +103,21 @@ def _create_pending_group(portal):
         logger.warning("Could not create group %s: %s", groupname, safe_text(exc))
 
 
+def upgrade_registry(context):
+    """Create records for settings added after the first release.
+
+    Registered as a GenericSetup upgrade step so a production site can pick up
+    new configuration options from the add-ons control panel, without anyone
+    having to open the settings page first.
+    """
+    missing = config.ensure_records()
+    logger.info("maitux.oauth2 upgrade: created %s registry record(s)%s",
+                len(missing), (": %s" % sorted(missing)) if missing else "")
+
+
 def post_install(context):
     portal = api.portal.get()
+    config.ensure_records()
     _add_memberdata_properties(portal)
     _create_pending_group(portal)
     _register_configlet(portal)

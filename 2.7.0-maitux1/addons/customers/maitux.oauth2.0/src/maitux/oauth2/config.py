@@ -100,8 +100,37 @@ def set_value(name, value):
     # on Python 2, where json.dumps() happily hands back a str.
     if isinstance(value, bytes):
         value = value.decode("utf-8", "replace")
-    setattr(records, name, value)
+    try:
+        setattr(records, name, value)
+    except Exception as exc:
+        # A record can be absent when the schema gained a field after the
+        # profile was installed.  Bookkeeping must never break the caller.
+        logger.warning("Could not store setting %s: %s", name, exc)
+        return False
     return True
+
+
+def ensure_records():
+    """Create registry records for schema fields added after installation.
+
+    ``plone.app.registry``'s control panel calls ``forInterface()`` *without*
+    ``check=False``, so a single missing record makes the whole settings page
+    raise ``KeyError``.  ``registerInterface()`` fills the gaps and -- per
+    plone.registry's own implementation -- explicitly retains the values of the
+    records that already exist, so this is safe on a configured site.
+
+    Returns the list of field names that were missing.
+    """
+    registry = queryUtility(IRegistry)
+    if registry is None:
+        return []
+    missing = [name for name in FIELDS
+               if (PREFIX + "." + name) not in registry.records]
+    if missing:
+        logger.info("Creating %s missing registry record(s): %s",
+                    len(missing), sorted(missing))
+        registry.registerInterface(IOAuth2Settings, prefix=PREFIX)
+    return missing
 
 
 def get_all():

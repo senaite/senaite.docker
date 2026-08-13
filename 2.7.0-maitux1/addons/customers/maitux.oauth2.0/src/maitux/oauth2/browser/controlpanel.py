@@ -6,6 +6,7 @@ from plone.app.registry.browser import controlpanel
 
 from maitux.oauth2 import _
 from maitux.oauth2 import config
+from maitux.oauth2.browser.views import disable_csrf
 from maitux.oauth2.interfaces import IOAuth2Settings
 
 
@@ -13,6 +14,17 @@ class OAuth2SettingsEditForm(controlpanel.RegistryEditForm):
     schema = IOAuth2Settings
     schema_prefix = "maitux.oauth2"
     label = _(u"竹云统一登录 (OAuth 2.0)")
+
+    def getContent(self):
+        # plone.app.registry's getContent() calls forInterface() WITHOUT
+        # check=False, so one schema field that has no registry record yet
+        # (i.e. a field added after this profile was installed) raises
+        # KeyError and 500s the whole settings page.  Self-heal instead of
+        # forcing a profile re-import.
+        if config.ensure_records():
+            # A legitimate ZODB write on a GET, on a Manage-portal-only page.
+            disable_csrf(self.request)
+        return super(OAuth2SettingsEditForm, self).getContent()
 
     @property
     def description(self):
