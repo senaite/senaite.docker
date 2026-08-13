@@ -53,6 +53,13 @@ output/projects/*
 output/evidence_packs/*
 !output/evidence_packs/.gitkeep
 
+# ── Docker 本地配置（.example 入库，实际生效的不入库，各机器可不同）──
+.env
+docker-compose.override.yml
+
+# ── 「直接安装」默认占位目录（未配置 SENAITE_ADDONS_DIR 时的挂载点）──
+data/senaite-addons/
+
 # ── IDE / 编辑器 ──
 .vscode/
 .idea/

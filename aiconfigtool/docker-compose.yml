@@ -1,0 +1,66 @@
+# ============================================================
+#  AiConfigTool v2.0 —— 一键启动
+#
+#    docker compose up -d --build      构建并启动（首次约 1~3 分钟）
+#    docker compose logs -f            看日志
+#    docker compose down               停止
+#
+#  启动后打开 http://localhost:8787
+#  单容器单端口：后端同源托管前端产物，不需要 nginx，也不需要反向代理。
+#
+#  本服务不依赖任何 Senaite 环境即可启动。站点是运行时配置的数据，
+#  连远程 Senaite（如 http://121.40.188.203/Maitux）开箱可用。
+#  要连 *本机* 用 Docker 跑的 Senaite（80/443 由其 nginx 容器发布）：
+#  host.docker.internal 走不通（实测 80 拿到空 502、443 是 TLS EOF，请求根本
+#  没到 Senaite 的 nginx），需接入同一 Docker 网络用容器名访问 ——
+#  见 docker-compose.override.yml.example，基础配置保持零依赖不变。
+# ============================================================
+
+name: aiconfigtool
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # 海外/内网环境改成 https://registry.npmjs.org 或私有源
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+        # 不用「直接安装」功能时设 false，镜像小 ~50MB
+        WITH_DOCKER_CLI: ${WITH_DOCKER_CLI:-true}
+    image: aiconfigtool:2.0.0
+    container_name: aiconfigtool
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      # 想沿用开发期的 5173，在 .env 里设 APP_PORT=5173
+      - "${APP_PORT:-8787}:8787"
+    volumes:
+      # 运行时数据（公司/站点/摸底快照/audit.db/日志），容器重建不丢
+      - ./data:/workspace/aiconfigtool/data
+      # 生成产物（Addon 源码包 / 证据包）
+      - ./output:/workspace/aiconfigtool/output
+      # 代码与文档模板：非开发人员可直接改宿主文件，改完 restart 生效
+      - ./templates:/workspace/aiconfigtool/templates
+
+      # ── 以下两行仅「直接安装到本机 Senaite」功能需要，不用则留空跑即可 ──
+      # ① 生成的 Addon 源码写入目标 Senaite 的 addons/customers。
+      #    容器内路径固定（install_service.py 硬编码 <root>/latest/addons/customers），
+      #    宿主侧用 SENAITE_ADDONS_DIR 指到你真正在跑的那套 Senaite 挂给 instance 的
+      #    ./addons/customers，否则源码写进去了而容器读的是别处，装了不生效。
+      #    默认是本项目下的占位空目录，不依赖任何外部路径存在。
+      - ${SENAITE_ADDONS_DIR:-./data/senaite-addons}:/workspace/latest/addons/customers
+      # ② 对目标 Senaite 容器执行 docker exec / restart / ps（容器内只有 CLI，
+      #    复用宿主 daemon）。⚠ 等于把宿主 Docker 控制权交给容器，按需保留。
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      # 让容器内可用 host.docker.internal 访问宿主机上的 Senaite / Ollama
+      # （Docker Desktop 自带，Linux 宿主靠这行补上）
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8787/api/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
