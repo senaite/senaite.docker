@@ -1,0 +1,45 @@
+<div class="diff"
+     i18n:domain="senaite.core"
+     tal:define="rows options/rows;">
+
+  <div tal:condition="not:nocall:rows"
+       class="nodiff">
+  </div>
+
+  <table tal:condition="nocall:rows"
+         class="table table-condensed table-borderless diff-table">
+    <tr tal:repeat="row rows">
+      <td>
+        <strong class="field"
+                i18n:translate=""
+                tal:content="row/label" />:
+      </td>
+      <td>
+        <div tal:repeat="d row/diffs"
+             class="diffline">
+
+          <tal:block tal:condition="row/is_interim_fields">
+            <div class="audit-interim-diff">
+              <div><strong>修改前</strong></div>
+              <div tal:replace="structure d/before_html" />
+              <div style="padding: 0.5em 0;"><strong>&rarr;</strong></div>
+              <div><strong>修改后</strong></div>
+              <div tal:replace="structure d/after_html" />
+            </div>
+          </tal:block>
+
+          <tal:block tal:condition="not:row/is_interim_fields">
+            <code class="value">
+              <span tal:content="d/before_text" />
+            </code>
+            <span style="padding: 0 1em;"> &rarr; </span>
+            <code class="value text-success"
+                  tal:content="d/after_text" />
+          </tal:block>
+
+        </div>
+      </td>
+    </tr>
+  </table>
+
+</div>

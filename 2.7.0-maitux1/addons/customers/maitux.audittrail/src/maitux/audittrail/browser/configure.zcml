@@ -1,0 +1,14 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.audittrail">
+
+  <browser:page
+      for="bika.lims.interfaces.IAuditable"
+      name="auditlog"
+      class="maitux.audittrail.browser.auditlog.AuditLogView"
+      permission="senaite.core.permissions.ViewLogTab"
+      layer="maitux.audittrail.interfaces.IAuditTrailLayer"
+      />
+
+</configure>
