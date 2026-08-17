@@ -1,0 +1,46 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="maitux.audittrail">
+
+  <include package=".browser" />
+
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      name="maitux.audittrail"
+      />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="Maitux 审计追踪增强"
+      directory="profiles/default"
+      description="增强 Calculation Interim Fields 在审计追踪页面的可读性"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:importStep
+      name="maitux.audittrail.setuphandler"
+      title="maitux.audittrail setup handler"
+      description="Install Maitux Audittrail registrations"
+      handler="maitux.audittrail.setuphandlers.setup_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="卸载 Maitux 审计追踪增强"
+      directory="profiles/uninstall"
+      description="卸载 maitux.audittrail 包"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:importStep
+      name="maitux.audittrail.uninstallhandler"
+      title="maitux.audittrail uninstall handler"
+      description="Uninstall Maitux Audittrail registrations"
+      handler="maitux.audittrail.setuphandlers.uninstall_handler">
+    <depends name="plone-various"/>
+  </genericsetup:importStep>
+
+</configure>
