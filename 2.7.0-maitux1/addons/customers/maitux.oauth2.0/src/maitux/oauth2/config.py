@@ -15,6 +15,8 @@ from zope.component import queryUtility
 from zope.schema import Bool
 from zope.schema import Int
 from zope.schema import List
+from zope.schema import Text
+from zope.schema import TextLine
 from zope.schema import getFieldsInOrder
 
 from maitux.oauth2 import logger
@@ -79,10 +81,19 @@ def get(name, default=_marker):
     if raw is not None:
         return _coerce(name, raw)
 
-    records = _records()
-    if records is not None:
-        value = getattr(records, name, None)
-        if value is not None:
+    registry = queryUtility(IRegistry)
+    if registry is not None:
+        key = PREFIX + "." + name
+        if key in registry.records:
+            # The record exists, so its value is authoritative -- including an
+            # empty one.  Falling back to the schema default here would make a
+            # deliberately cleared field impossible to clear (and would revive
+            # whatever value happened to be hard coded in the schema).
+            value = registry.records[key].value
+            if value is None and _is_text_field(name):
+                # Records created before missing_value was set to u"" hold a
+                # real None; treat it as empty rather than letting it leak out.
+                return u""
             return value
 
     if default is not _marker:
@@ -108,6 +119,49 @@ def set_value(name, value):
         logger.warning("Could not store setting %s: %s", name, exc)
         return False
     return True
+
+
+TEXT_FIELD_TYPES = (TextLine, Text)
+
+#: Values that are never a legitimate setting and only ever appear because of
+#: a None -> missing_value mismatch somewhere upstream.
+BOGUS_TEXT_VALUES = (None, u"None", u"none")
+
+
+def _is_text_field(name):
+    return isinstance(FIELDS.get(name), TEXT_FIELD_TYPES)
+
+
+def normalize_text_records():
+    """Replace bogus text values with an empty string.
+
+    Records created while these fields still had ``missing_value = None`` hold
+    a real ``None``.  Once ``missing_value`` became ``u""``, z3c.form stopped
+    recognising ``None`` as "empty" and rendered it through ``toUnicode()``,
+    i.e. as the literal string ``"None"`` -- which the next save then wrote
+    back as a real value.  A ``redirect_uri`` of ``"None"`` gets sent to the
+    IdP verbatim and breaks every login, so clean both forms up.
+
+    Returns the list of field names that were fixed.
+    """
+    registry = queryUtility(IRegistry)
+    if registry is None:
+        return []
+    fixed = []
+    for name in FIELDS:
+        if not _is_text_field(name):
+            continue
+        key = PREFIX + "." + name
+        if key not in registry.records:
+            continue
+        value = registry.records[key].value
+        if value in BOGUS_TEXT_VALUES:
+            registry.records[key].value = u""
+            fixed.append(name)
+    if fixed:
+        logger.warning("Normalised %s bogus text setting(s) to empty: %s",
+                       len(fixed), sorted(fixed))
+    return fixed
 
 
 def ensure_records():

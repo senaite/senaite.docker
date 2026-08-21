@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import time
 import traceback
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -21,6 +22,40 @@ from web.router import Router
 API_VERSION = "2.0.0"
 _STARTED_AT = time.time()
 
+# ── 前端静态产物托管 ──
+# 单容器部署时由本服务同源托管 frontend/dist，省掉额外的 web 服务器与反向代理。
+# 本地 vite dev 模式下产物目录不存在，静态分支自动跳过，行为与之前完全一致。
+_STATIC_TYPES = {
+    ".html": "text/html; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".mjs": "application/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".map": "application/json; charset=utf-8",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+    ".ttf": "font/ttf",
+    ".txt": "text/plain; charset=utf-8",
+}
+
+
+def default_static_dir() -> str | None:
+    """前端产物目录：优先环境变量，否则 backend/../frontend/dist；不存在则 None。"""
+    env = os.environ.get("AICONFIG_STATIC_DIR")
+    if env:
+        path = os.path.abspath(env)
+        return path if os.path.isdir(path) else None
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    path = os.path.abspath(os.path.join(backend_dir, "..", "frontend", "dist"))
+    return path if os.path.isdir(path) else None
+
 
 def build_router() -> Router:
     r = Router()
@@ -32,8 +67,8 @@ def build_router() -> Router:
     return r
 
 
-def _make_handler(audit_repo, log_writer, router):
-    """闭包注入 audit/log/router——最可靠的方式。"""
+def _make_handler(audit_repo, log_writer, router, static_dir=None):
+    """闭包注入 audit/log/router/static_dir——最可靠的方式。"""
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "AiConfigTool/" + API_VERSION
@@ -103,7 +138,20 @@ def _make_handler(audit_repo, log_writer, router):
                         if log_writer:
                             log_writer.error("server", "审计写入失败: " + str(ex))
 
-        def do_GET(self): self._dispatch("GET")
+        def do_GET(self):
+            # 静态资源不进审计（否则每个 js/css 都写一条记录），先于路由处理
+            if self._maybe_static():
+                return
+            self._dispatch("GET")
+
+        def do_HEAD(self):
+            # 探活/取头用：静态资源给头不给体；API 不提供 HEAD
+            if self._maybe_static(send_body=False):
+                return
+            self.send_response(405)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
         def do_POST(self): self._dispatch("POST")
         def do_PUT(self): self._dispatch("PUT")
         def do_DELETE(self): self._dispatch("DELETE")
@@ -114,6 +162,44 @@ def _make_handler(audit_repo, log_writer, router):
             self.send_header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.end_headers()
+
+        def _maybe_static(self, send_body=True):
+            """非 /api 的 GET/HEAD 用前端产物响应，找不到文件则回退 index.html（SPA 路由）。
+
+            返回 False 表示不该由静态分支处理（/api 路径，或没有产物目录——
+            本地 vite dev 模式即走这条，前端由 vite 自己伺服）。
+            """
+            if not static_dir:
+                return False
+            path = urlparse(self.path).path
+            if path.startswith("/api"):
+                return False
+
+            rel = path.lstrip("/")
+            target = os.path.normpath(os.path.join(static_dir, rel)) if rel else ""
+            # 防目录穿越：normpath 之后必须仍落在产物目录内
+            inside = target and (
+                target == static_dir or target.startswith(static_dir + os.sep)
+            )
+            if not inside or not os.path.isfile(target):
+                target = os.path.join(static_dir, "index.html")
+                rel = "index.html"
+            if not os.path.isfile(target):
+                return False
+
+            with open(target, "rb") as handle:
+                data = handle.read()
+            self.send_response(200)
+            self.send_header("Content-Type", _STATIC_TYPES.get(
+                os.path.splitext(target)[1].lower(), "application/octet-stream"))
+            self.send_header("Content-Length", str(len(data)))
+            # 带 hash 的构建产物可长缓存，index.html 必须每次校验（否则发版后拿旧壳）
+            self.send_header("Cache-Control", "public, max-age=31536000, immutable"
+                             if rel.startswith("assets/") else "no-cache")
+            self.end_headers()
+            if send_body:
+                self.wfile.write(data)
+            return True
 
         def _read_body(self):
             n = int(self.headers.get("Content-Length") or 0)
@@ -161,6 +247,8 @@ def main():
     parser = argparse.ArgumentParser(description="AiConfigTool backend server")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8787)
+    parser.add_argument("--static-dir", default=None,
+                        help="前端构建产物目录；缺省自动探测 frontend/dist，探测不到则只提供 API")
     args = parser.parse_args()
 
     from infrastructure.audit_repository import AuditRepository
@@ -171,11 +259,13 @@ def main():
     log.info("server", "启动 AiConfigTool v" + API_VERSION)
     log.cleanup()
 
-    Handler = _make_handler(audit, log, router)
+    static_dir = os.path.abspath(args.static_dir) if args.static_dir else default_static_dir()
+    Handler = _make_handler(audit, log, router, static_dir)
     httpd = ThreadingHTTPServer((args.host, args.port), Handler)
     print("AiConfigTool backend on http://%s:%d" % (args.host, args.port))
     print("  SQLite: data/audit.db")
     print("  Logs:   data/logs/")
+    print("  前端:   %s" % (static_dir or "未托管（vite dev 模式，或产物未构建）"))
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

@@ -40,6 +40,7 @@ class IOAuth2Settings(model.Schema):
             "redirect_uri",
             "verify_ssl",
             "request_timeout",
+            "use_system_proxy",
         ],
     )
 
@@ -52,8 +53,9 @@ class IOAuth2Settings(model.Schema):
 
     provider_url = schema.TextLine(
         title=_(u"竹云 IDaaS 地址"),
-        description=_(u"例如 https://passport.innocarepharma.com ，不要带结尾斜杠。"),
+        description=_(u"客户提供。不要带结尾斜杠（带了也会被自动去掉）。"),
         default=u"https://passport.innocarepharma.com",
+        missing_value=u"",
         required=False,
     )
 
@@ -61,19 +63,27 @@ class IOAuth2Settings(model.Schema):
         title=_(u"AppId"),
         description=_(u"竹云为本应用分配的 AppId。仅用于记录与排查，登录流程不使用。"),
         default=u"20260804155456579-E219-3F7069E8F",
+        missing_value=u"",
         required=False,
     )
 
     client_id = schema.TextLine(
         title=_(u"ClientId"),
+        description=_(u"客户提供。"),
         default=u"3UZLLHBzzxb4uZeKH2GGRxbtZMkqFjaY",
+        missing_value=u"",
         required=False,
     )
 
     client_secret = schema.Password(
         title=_(u"ClientSecret"),
-        description=_(u"建议通过环境变量 MAITUX_OAUTH2_CLIENT_SECRET 注入，避免写入数据库。"),
+        description=_(
+            u"安全起见，本框从不回显已保存的值。"
+            u"**留空保存 = 保持原值不变**；要修改就直接填新的。"
+            u"也可以用环境变量 MAITUX_OAUTH2_CLIENT_SECRET 注入，避免写进数据库。"
+        ),
         default=u"lAI4L84uKn0MMOnw9qlIYiXSJ9mny4KObo4NrAjy45vxoy46uixB4NfLTyRlGy3h",
+        missing_value=u"",
         required=False,
     )
 
@@ -81,6 +91,7 @@ class IOAuth2Settings(model.Schema):
         title=_(u"scope"),
         description=_(u"竹云标准授权码模式固定为 get_user_info。"),
         default=u"get_user_info",
+        missing_value=u"",
         required=False,
     )
 
@@ -91,6 +102,7 @@ class IOAuth2Settings(model.Schema):
             u"留空则自动使用 <站点地址>/@@oauth2-callback 。"
         ),
         default=u"",
+        missing_value=u"",
         required=False,
     )
 
@@ -104,6 +116,19 @@ class IOAuth2Settings(model.Schema):
     request_timeout = schema.Int(
         title=_(u"接口超时（秒）"),
         default=15,
+        required=False,
+    )
+
+    use_system_proxy = schema.Bool(
+        title=_(u"使用系统 HTTP 代理访问身份源"),
+        description=_(
+            u"默认关闭，建议保持关闭。"
+            u"本镜像的 ENV 里带有给**构建时**下载包用的 "
+            u"HTTP_PROXY，urllib 会自动读取它。而身份源通常在内网、"
+            u"需要直连；走了代理会得到莫名的 HTTP 502。"
+            u"只有当身份源确实必需经过代理时才打开。"
+        ),
+        default=False,
         required=False,
     )
 
@@ -126,30 +151,35 @@ class IOAuth2Settings(model.Schema):
     authorize_path = schema.TextLine(
         title=_(u"授权页"),
         default=u"/api/v1/oauth2/authorize",
+        missing_value=u"",
         required=False,
     )
 
     token_path = schema.TextLine(
         title=_(u"换取 Access Token"),
         default=u"/api/v1/oauth2/token",
+        missing_value=u"",
         required=False,
     )
 
     userinfo_path = schema.TextLine(
         title=_(u"获取用户信息"),
         default=u"/api/v1/oauth2/userinfo",
+        missing_value=u"",
         required=False,
     )
 
     introspect_path = schema.TextLine(
         title=_(u"检查 Token 有效性"),
         default=u"/api/v1/oauth2/introspect",
+        missing_value=u"",
         required=False,
     )
 
     idp_logout_path = schema.TextLine(
         title=_(u"竹云全局退出"),
         default=u"/api/v1/logout",
+        missing_value=u"",
         required=False,
     )
 
@@ -157,12 +187,14 @@ class IOAuth2Settings(model.Schema):
         title=_(u"EIAM 鉴权接口"),
         description=_(u"用户定时同步使用，client_credentials 模式。"),
         default=u"/api/v2/tenant/token",
+        missing_value=u"",
         required=False,
     )
 
     eiam_users_path = schema.TextLine(
         title=_(u"EIAM 用户列表接口"),
         default=u"/api/v2/tenant/users",
+        missing_value=u"",
         required=False,
     )
 
@@ -188,6 +220,7 @@ class IOAuth2Settings(model.Schema):
             u"取不到时退回竹云用户 ID（id）。"
         ),
         default=u"external_id,id",
+        missing_value=u"",
         required=False,
     )
 
@@ -195,18 +228,21 @@ class IOAuth2Settings(model.Schema):
         title=_(u"登录名字段"),
         description=_(u"用于生成 LIMS 本地用户名，可填多个用英文逗号分隔。"),
         default=u"userName,user_name,preferred_username,id",
+        missing_value=u"",
         required=False,
     )
 
     fullname_claim = schema.TextLine(
         title=_(u"姓名字段"),
         default=u"name,fullname",
+        missing_value=u"",
         required=False,
     )
 
     email_claim = schema.TextLine(
         title=_(u"邮箱字段"),
         default=u"email,mail",
+        missing_value=u"",
         required=False,
     )
 
@@ -214,6 +250,7 @@ class IOAuth2Settings(model.Schema):
         title=_(u"本地用户名前缀"),
         description=_(u"例如填 sso_ 后，竹云的 zhangsan 会创建为 sso_zhangsan。留空表示不加前缀。"),
         default=u"",
+        missing_value=u"",
         required=False,
     )
 
@@ -221,6 +258,7 @@ class IOAuth2Settings(model.Schema):
         title=_(u"缺省邮箱域名"),
         description=_(u"竹云未返回邮箱时，用 <用户名>@<该域名> 占位（Plone 要求邮箱非空）。"),
         default=u"sso.local",
+        missing_value=u"",
         required=False,
     )
 
@@ -274,6 +312,7 @@ class IOAuth2Settings(model.Schema):
             u"或把他移出本组，即视为已授权。"
         ),
         default=u"oauth2-pending",
+        missing_value=u"",
         required=False,
     )
 
@@ -331,19 +370,29 @@ class IOAuth2Settings(model.Schema):
     )
 
     redirect_login_form = schema.Bool(
-        title=_(u"本地登录页也自动跳转"),
+        title=_(u"/login 也直接跳转（纯统一登录）"),
         description=_(
-            u"开启后连 /login 也会跳到竹云，即“纯统一登录”模式。"
-            u"管理员仍可通过 <站点地址>/@@oauth2-local-login 打开本地登录页"
-            u"（该入口会在浏览器上种一个 1 小时的豁免 Cookie）。"
+            u"默认开启。开启后连 /login 也直接跳到身份源，"
+            u"用户永远看不到本地登录表单，也不需要多点一次按钮。"
+            u"关闭后是“混合模式”：/login 仍是本地表单，上方多一个登录按钮。"
+            u"两种模式下管理员都可以用 "
+            u"<站点地址>/@@oauth2-local-login 打开本地登录页"
+            u"（该入口会种一个 1 小时的豁免 Cookie）。"
         ),
-        default=False,
+        default=True,
         required=False,
     )
 
     show_login_button = schema.Bool(
-        title=_(u"在登录页显示“竹云统一登录”按钮"),
-        default=True,
+        title=_(u"在本地登录页额外显示统一登录按钮"),
+        description=_(
+            u"默认关闭，因为上方默认已经是“/login 也直接跳转”，"
+            u"用户根本到不了本地登录页。"
+            u"只有关掉那个开关、故意跑“混合模式”（一部分人用 SSO、"
+            u"一部分人用本地账号）时才需要开它。"
+            u"管理员豁免页上不会显示这个按钮。"
+        ),
+        default=False,
         required=False,
     )
 
@@ -398,6 +447,7 @@ class IOAuth2Settings(model.Schema):
             u"EIAM 用户列表中与“唯一 ID 字段”对应的字段名，可填多个用英文逗号分隔。"
         ),
         default=u"external_id,user_id",
+        missing_value=u"",
         required=False,
     )
 
@@ -405,6 +455,7 @@ class IOAuth2Settings(model.Schema):
         title=_(u"限定组织 ID"),
         description=_(u"留空表示同步全部用户。"),
         default=u"",
+        missing_value=u"",
         required=False,
     )
 
@@ -447,6 +498,7 @@ class IOAuth2Settings(model.Schema):
             u"留空则只允许已登录的管理员手动触发。"
         ),
         default=u"",
+        missing_value=u"",
         required=False,
     )
 
@@ -454,6 +506,7 @@ class IOAuth2Settings(model.Schema):
         title=_(u"上次同步时间"),
         description=_(u"只读，由系统写入。"),
         default=u"",
+        missing_value=u"",
         required=False,
     )
 
@@ -461,6 +514,7 @@ class IOAuth2Settings(model.Schema):
         title=_(u"上次同步结果"),
         description=_(u"只读，由系统写入。"),
         default=u"",
+        missing_value=u"",
         required=False,
     )
 
@@ -478,5 +532,6 @@ class IOAuth2Settings(model.Schema):
         title=_(u"state 签名密钥"),
         description=_(u"安装时自动生成，用于给防 CSRF 的 state 参数签名。不要手工清空。"),
         default=u"",
+        missing_value=u"",
         required=False,
     )

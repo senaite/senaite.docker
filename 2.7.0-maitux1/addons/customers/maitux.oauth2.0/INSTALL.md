@@ -98,9 +98,9 @@ docker compose -f docker-compose.yml up -d --build
 
 配置页：`站点地址/@@oauth2-controlpanel`（控制面板 → 附加产品配置）。
 
-**正常情况下只需要勾一个开关**：把“启用统一登录”打开。
-客户给的 AppId / ClientId / ClientSecret / 竹云地址已经是预置默认值，
-接口路径、scope、字段映射也都有默认值，都不用填。
+需要手填的只有四项：**竹云 IDaaS 地址、ClientId、ClientSecret**，再把
+**“启用统一登录”勾上**。接口路径、scope、字段映射都有可用默认值，
+不用动（换非竹云的 IdP 才需要改）。
 
 回调地址（redirect_uri）**不用填** —— 插件按当前站点自动推导，
 并且会识别 nginx 终止 TLS 的情况（读 `X-Forwarded-Proto`）自动用 https。
@@ -117,16 +117,33 @@ docker compose -f docker-compose.yml up -d --build
 > 否则所有站点被强行用同一个值。环境变量只适合全局性的东西，
 > 比如单站点部署时用 `MAITUX_OAUTH2_CLIENT_SECRET` 把密钥从 ZODB 里拿出来。
 
-### 已经预填好的客户参数
+### 已预置的客户参数（生产环境 = 竹云）
+
+下面四项已经是代码里的 schema 默认值，**全新安装后不用填**：
 
 | 配置项 | 值 |
 |---|---|
-| AppId | `20260804155456579-E219-3F7069E8F` |
+| 竹云 IDaaS 地址 | `https://passport.innocarepharma.com`（客户说可能有误，以实际为准） |
+| AppId | `20260804155456579-E219-3F7069E8F`（仅记录，登录流程不用） |
 | ClientId | `3UZLLHBzzxb4uZeKH2GGRxbtZMkqFjaY` |
-| ClientSecret | `lAI4L84uKn0…Gy3h` |
-| 竹云地址 | `https://passport.innocarepharma.com` |
+| ClientSecret | `lAI4L84uKn0MMOnw9qlIYiXSJ9mny4KObo4NrAjy45vxoy46uixB4NfLTyRlGy3h` |
+
+接口路径、`scope=get_user_info`、字段映射也全部预置为竹云的值，
+与官方文档逐字一致（见第 10 节对照表）。
+
+> 密钥作为默认值意味着它在 git 里。如果要收紧，把
+> `interfaces.py` 里 `client_secret` 的 `default` 改成 `u""`，部署时用
+> `MAITUX_OAUTH2_CLIENT_SECRET` 环境变量注入。
+
+**ClientSecret 输入框的行为**：它从不回显已保存的值（避免密钥出现在 HTML 里）。
+**留空保存 = 保持原值不变**，要改就直接填新的。（若不做这个处理，
+改任何其他设置点保存都会把密钥冲成空。）
 
 `enabled` 默认是 **关闭** 的，确认参数无误后再打开。
+
+> 任何字段清空并保存后就是真的空，页面不会再把默认值显回来
+> （z3c.form 本来会在值等于 missing_value 时回退到 `field.default`，
+> 控制面板的 `updateWidgets()` 把这个行为纠正了）。
 
 ## 4. 需要在竹云侧登记的回调地址
 
@@ -157,16 +174,27 @@ location = /api/sso/callback {
 
 ## 5. 登录行为
 
+三种状态，**互斥**，不会出现“本地登录 + 统一登录同时在一个页面”：
+
+| 状态 | 用户看到的 |
+|---|---|
+| 总开关**关闭** | 原生 SENAITE 登录页，一点没变 |
+| 总开关**开启**（默认） | 任何页面、包括 `/login`，全部 302 直接跳竹云，**根本看不到本地表单** |
+| 开启 + 管理员豁免 | 只有原生本地表单，无 SSO 按钮 |
+
+具体入口：
+
 | 场景 | 结果 |
 |---|---|
-| 竹云 Portal 点图标（带 code，无 state） | 直接走回调登录 |
-| 匿名访问 LIMS 任意需要登录的页面 | 自动跳竹云授权页（`auto_redirect`） |
-| 打开 `/login` | 默认仍是本地登录表单，上方多一个“竹云统一登录”按钮 |
-| 打开 `/login` 也想跳竹云 | 打开 `redirect_login_form` |
-| **管理员本地登录** | `站点地址/@@oauth2-local-login`（种 1 小时豁免 Cookie） |
+| 竹云 Portal 点图标（带 code、无 state） | 直接走回调登录 |
+| 匿名访问任意需登录的页面 | 自动跳竹云授权页（`auto_redirect`，默认开） |
+| 打开 `/login` | 也直接跳竹云（`redirect_login_form`，默认开） |
+| **管理员本地登录** | `站点地址/@@oauth2-local-login` —— 种一个 1 小时的**豁免 Cookie**，只影响这个浏览器，统一登录本身一直开着 |
+| 灰度上线（一部分人 SSO、一部分本地） | 关掉 `redirect_login_form` + 开启 `show_login_button` |
 
-> `login` 视图**没有**被覆盖，只有 `require_login` 被覆盖。这是刻意的：替换
-> Plone 的登录表单是唯一可能把所有管理员锁在门外的改动。
+> `login` 视图**没有**被覆盖，只有 `require_login` 被覆盖；`/login` 的跳转是在
+> traversal 时做的。这是刻意的：替换 Plone 的登录 FormWrapper 是唯一可能把所有
+> 管理员锁在门外的改动。
 
 ## 6. 账号状态与授权
 
@@ -272,3 +300,54 @@ docker compose logs -f instance | grep maitux.oauth2
 
 **万一被锁在外面**：`https://<域名>/<站点id>/@@oauth2-local-login`
 永远可以打开本地登录表单；再不行就把 `enabled` 用环境变量置为 `false` 重启。
+
+## 10. 与竹云官方文档的对照（默认值来源）
+
+**生产环境是竹云,所有默认值以竹云官方文档为准。** 参考文档:
+<https://open.bccastle.com/development/>
+
+| 配置项 | 默认值 | 竹云文档原文 |
+|---|---|---|
+| 授权页 | `/api/v1/oauth2/authorize` | `GET  {your_domain}/api/v1/oauth2/authorize` |
+| 换取 Access Token | `/api/v1/oauth2/token` | `POST {your_domain}/api/v1/oauth2/token` |
+| 获取用户信息 | `/api/v1/oauth2/userinfo` | `GET  {your_domain}/api/v1/oauth2/userinfo` |
+| 检查 Token 有效性 | `/api/v1/oauth2/introspect` | `POST {your_domain}/api/v1/oauth2/introspect` |
+| 全局退出 | `/api/v1/logout` | `GET  {your_domain}/api/v1/logout` |
+| EIAM 鉴权 | `/api/v2/tenant/token` | `POST {your_domain}/api/v2/tenant/token` |
+| EIAM 用户列表 | `/api/v2/tenant/users` | `GET  {your_domain}/api/v2/tenant/users` |
+| `scope` | `get_user_info` | 文档:「此值固定为 get_user_info」 |
+| 唯一 ID 字段 | `external_id,id` | 需求:外部 ID 作唯一 ID;userinfo 无 external_id 时退回 `id` |
+| 同步比对字段 | `external_id,user_id` | EIAM 用户列表同时返回 `external_id` 和 `user_id` |
+
+**token 端点的客户端认证方式**:竹云文档明确要求
+「使用 client_id 和 client_secret 进行 basic64 认证,格式为 base64(client_id:client_secret)」,
+本插件就是**只发 HTTP Basic**,与文档完全一致。
+
+**未实现的接口**(按需求,确认不需要):刷新 Token、撤销 Token。
+`introspect` 有配置项但代码中未调用,预留。
+
+### 兼容其他统一登录(次要目标)
+
+竹云优先。其他 IdP 属于「能兼容就兼容」,不影响竹云的前提下支持:
+
+| 部分 | 可移植性 |
+|---|---|
+| 登录链路(authorize / token / userinfo / logout) | ✅ 端点路径、scope、claim 字段全部可配,标准授权码模式通用 |
+| state 防护、账号解析、待授权、停用拦截、控制面板 | ✅ 与身份源无关 |
+| token 端点认证方式 | ⚠️ 只发 HTTP Basic(竹云要求的方式)。若某 IdP 只接受 `client_secret_post`,需加约 10 行 |
+| 每日用户同步(离职处理) | ❌ 按竹云 EIAM 的响应结构写死(`{total, users:[...]}`、`disabled`/`locked`、`user_id`/`external_id`)。换 IdP 需要一个适配层;不适配时把「启用用户同步」关掉即可 |
+
+已实测可用的非竹云 IdP:**Casdoor**(仅改配置,登录链路全通;用户同步关闭)。
+对应配置见下表,仅供测试环境参考,**不要用于生产**:
+
+| 配置项 | Casdoor 的值 |
+|---|---|
+| 授权页 | `/login/oauth/authorize` |
+| 换取 Access Token | `/api/login/oauth/access_token` |
+| 获取用户信息 | `/api/userinfo` |
+| 全局退出 | `/api/logout` |
+| `scope` | `openid profile email` |
+| 唯一 ID 字段 | `sub` |
+| 登录名字段 | `preferred_username,name,sub` |
+| 姓名字段 | `displayName,name,fullname` |
+| 启用用户同步 | 关闭 |

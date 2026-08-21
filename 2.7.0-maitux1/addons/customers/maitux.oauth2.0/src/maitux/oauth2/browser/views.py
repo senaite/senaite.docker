@@ -197,7 +197,11 @@ class CallbackView(BaseView):
         if came_from is None:
             return self.message_page(
                 u"统一登录失败",
-                u"安全校验未通过（state 不匹配）。请从 LIMS 首页重新登录。",
+                [u"安全校验未通过（state 不匹配）。",
+                 u"最常见的原因是**登录停留太久**（超过 30 分钟），"
+                 u"次常见原因是直接手工访问了回调地址、"
+                 u"或浏览器阻止了 Cookie。",
+                 u"点下方“重新登录”重试即可。"],
                 level="error", show_retry=True)
 
         state_util.clear_cookie(request.response, state_util.STATE_COOKIE)

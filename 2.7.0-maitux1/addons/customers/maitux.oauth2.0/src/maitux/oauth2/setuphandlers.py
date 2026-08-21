@@ -111,13 +111,16 @@ def upgrade_registry(context):
     having to open the settings page first.
     """
     missing = config.ensure_records()
-    logger.info("maitux.oauth2 upgrade: created %s registry record(s)%s",
-                len(missing), (": %s" % sorted(missing)) if missing else "")
+    fixed = config.normalize_text_records()
+    logger.info("maitux.oauth2 upgrade: created %s record(s)%s, normalised %s",
+                len(missing), (": %s" % sorted(missing)) if missing else "",
+                sorted(fixed))
 
 
 def post_install(context):
     portal = api.portal.get()
     config.ensure_records()
+    config.normalize_text_records()
     _add_memberdata_properties(portal)
     _create_pending_group(portal)
     _register_configlet(portal)

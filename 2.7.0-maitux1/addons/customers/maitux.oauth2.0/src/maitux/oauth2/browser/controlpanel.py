@@ -15,13 +15,36 @@ class OAuth2SettingsEditForm(controlpanel.RegistryEditForm):
     schema_prefix = "maitux.oauth2"
     label = _(u"竹云统一登录 (OAuth 2.0)")
 
+    def updateWidgets(self, *args, **kwargs):
+        super(OAuth2SettingsEditForm, self).updateWidgets(*args, **kwargs)
+        # z3c.form falls back to `field.default` whenever the stored value
+        # equals missing_value (u"" for our text fields), so a field the admin
+        # deliberately cleared would come back showing the shipped default --
+        # even though the runtime correctly treats it as empty.  Make the form
+        # agree with what is actually stored.
+        content = self.getContent()
+        for name in list(self.widgets):
+            if getattr(content, name, None) == u"":
+                widget = self.widgets[name]
+                if widget.value not in (None, u""):
+                    widget.value = u""
+
+    def applyChanges(self, data):
+        # The password widget deliberately never renders its stored value, so
+        # `client_secret` arrives empty on every single save.  Treat "left
+        # blank" as "keep what is stored" -- otherwise saving any unrelated
+        # setting silently wipes the secret.
+        if not (data.get("client_secret") or u"").strip():
+            data.pop("client_secret", None)
+        return super(OAuth2SettingsEditForm, self).applyChanges(data)
+
     def getContent(self):
         # plone.app.registry's getContent() calls forInterface() WITHOUT
         # check=False, so one schema field that has no registry record yet
         # (i.e. a field added after this profile was installed) raises
         # KeyError and 500s the whole settings page.  Self-heal instead of
         # forcing a profile re-import.
-        if config.ensure_records():
+        if config.ensure_records() or config.normalize_text_records():
             # A legitimate ZODB write on a GET, on a Manage-portal-only page.
             disable_csrf(self.request)
         return super(OAuth2SettingsEditForm, self).getContent()

@@ -14,8 +14,10 @@ import ssl
 from six.moves.urllib.error import HTTPError
 from six.moves.urllib.error import URLError
 from six.moves.urllib.parse import urlencode
+from six.moves.urllib.request import HTTPSHandler
+from six.moves.urllib.request import ProxyHandler
 from six.moves.urllib.request import Request
-from six.moves.urllib.request import urlopen
+from six.moves.urllib.request import build_opener
 
 from maitux.oauth2 import logger
 from maitux.oauth2 import safe_text
@@ -57,8 +59,28 @@ def _ssl_context(verify_ssl):
     return context
 
 
+def _build_opener(verify_ssl, use_system_proxy):
+    """An opener that, by default, ignores the ambient HTTP proxy.
+
+    This image bakes ``HTTP_PROXY``/``HTTPS_PROXY`` into its ENV so that the
+    *build* can fetch packages.  ``urllib`` picks those up automatically, so
+    without this the identity provider -- which normally sits on the local
+    network and must be reached directly -- gets contacted through that proxy
+    and answers with a bewildering ``HTTP 502``.  Proxying authentication
+    traffic through a build-time proxy is never what anyone wants, so it has to
+    be asked for explicitly.
+    """
+    handlers = []
+    if not use_system_proxy:
+        handlers.append(ProxyHandler({}))       # empty mapping = no proxy
+    context = _ssl_context(verify_ssl)
+    if context is not None:
+        handlers.append(HTTPSHandler(context=context))
+    return build_opener(*handlers)
+
+
 def request_json(url, method="GET", form=None, headers=None, timeout=15,
-                 verify_ssl=True):
+                 verify_ssl=True, use_system_proxy=False):
     """Perform an HTTP request and decode the JSON body.
 
     Returns a ``(status, data)`` tuple.  ``data`` is the decoded JSON body, or
@@ -80,13 +102,10 @@ def request_json(url, method="GET", form=None, headers=None, timeout=15,
     # that GET-with-body or PUT stay possible.
     request.get_method = lambda: method
 
-    context = _ssl_context(verify_ssl) if url.lower().startswith("https") else None
+    opener = _build_opener(verify_ssl, use_system_proxy)
 
     try:
-        if context is not None:
-            response = urlopen(request, timeout=timeout, context=context)
-        else:
-            response = urlopen(request, timeout=timeout)
+        response = opener.open(request, timeout=timeout)
         status = response.getcode()
         raw = response.read()
         response.close()

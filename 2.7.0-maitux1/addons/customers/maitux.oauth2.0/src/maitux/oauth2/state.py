@@ -22,7 +22,13 @@ from maitux.oauth2 import logger
 
 STATE_COOKIE = "maitux_oauth2_state"
 BYPASS_COOKIE = "maitux_oauth2_bypass"
-COOKIE_MAX_AGE = 900  # 5 minute code lifetime + slack
+#: How long a started login may stay unfinished.  The authorisation code
+#: itself expires much sooner (5 minutes on 竹云), but a user who opens the
+#: login page and only comes back later must not be met with a scary
+#: "security check failed" page -- 15 minutes turned out to be too tight in
+#: practice.  This is only the anti-CSRF nonce window; the cookie is cleared
+#: as soon as the callback is processed.
+COOKIE_MAX_AGE = 1800
 
 
 def _as_bytes(value):
@@ -102,7 +108,11 @@ def read_state(cookie_value, state_param):
     Raises ``ValueError`` when the state does not check out.
     """
     if not cookie_value:
-        raise ValueError(u"state cookie 丢失（浏览器禁用了 Cookie？）")
+        # An expired cookie is simply not sent, so this covers both "took too
+        # long" and "cookies are blocked" -- name both, the user cannot tell.
+        raise ValueError(
+            u"state cookie 不在请求里：登录停留超过 %d 分钟已失效，"
+            u"或浏览器阻止了 Cookie" % (COOKIE_MAX_AGE // 60))
     if not state_param:
         raise ValueError(u"回调缺少 state 参数")
 

@@ -1,0 +1,52 @@
+# ============================================================
+#  构建上下文排除项
+#  说明：data/ 与 output/ 一律不进镜像（含密钥与生成产物），
+#        运行时由 docker-compose.yml 的 bind mount 提供。
+# ============================================================
+
+# ── 版本控制 / 文档 ──
+.git/
+.gitignore
+.dockerignore
+README.md
+Dockerfile
+docker-compose.yml
+docker-compose.override.yml
+docker-compose.override.yml.example
+.env
+
+# ── 运行时数据（含 config.json 里的 API Key，绝不能烘进镜像层）──
+data/
+
+# ── 生成产物 ──
+output/
+
+# ── 前端 ──
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/*.tsbuildinfo
+.eslintcache
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# ── 测试（运行镜像不需要）──
+tests/
+
+# ── IDE / 操作系统 ──
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.log

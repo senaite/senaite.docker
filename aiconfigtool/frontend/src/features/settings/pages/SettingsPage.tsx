@@ -164,7 +164,7 @@ export default function SettingsPage() {
                   style={{ width: '100%' }}
                 />
               </Form.Item>
-              <Button icon={<ThunderboltOutlined />} loading={testingO} onClick={testOllama}>测试连通性并拉取模型</Button>
+              <Button icon={<ThunderboltOutlined />} loading={testingO} onClick={() => testOllama()}>测试连通性并拉取模型</Button>
             </Card>
           )}
 
