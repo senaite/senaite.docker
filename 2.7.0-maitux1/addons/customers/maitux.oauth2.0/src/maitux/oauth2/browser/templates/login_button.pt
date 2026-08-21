@@ -3,14 +3,16 @@
            omit-tag=""
            i18n:domain="maitux.oauth2">
 
-  <div id="maitux-oauth2-login"
-       style="max-width:32rem;margin:1.5rem auto 0;text-align:center">
+  <!-- Only ever rendered in "hybrid mode", i.e. when 「/login 也直接跳转」 is
+       switched off AND 「登录页显示统一登录按钮」 is switched on.  With the
+       default configuration users never reach the local form at all, and the
+       administrator bypass shows the local form on its own, so the two kinds
+       of login are never offered side by side. -->
+
+  <div style="max-width:32rem;margin:1.5rem auto 0;text-align:center">
     <a class="btn btn-primary btn-lg"
        style="min-width:16rem"
        tal:attributes="href view/login_url">竹云统一登录</a>
-    <p style="margin:.75rem 0 0;color:#6c757d;font-size:.875rem">
-      公司账号请点击上方按钮登录；下方表单仅供本地管理员使用。
-    </p>
   </div>
 
 </tal:block>

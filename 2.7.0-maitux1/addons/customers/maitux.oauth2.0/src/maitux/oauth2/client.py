@@ -50,6 +50,7 @@ class BCastleClient(object):
         self.client_secret = config.get("client_secret") or u""
         self.timeout = config.get("request_timeout") or 15
         self.verify_ssl = bool(config.get("verify_ssl"))
+        self.use_system_proxy = bool(config.get("use_system_proxy"))
 
     # -- helpers ------------------------------------------------------
 
@@ -67,6 +68,7 @@ class BCastleClient(object):
             headers=headers,
             timeout=self.timeout,
             verify_ssl=self.verify_ssl,
+            use_system_proxy=self.use_system_proxy,
         )
         error = _error_from(data, status)
         if error is not None:

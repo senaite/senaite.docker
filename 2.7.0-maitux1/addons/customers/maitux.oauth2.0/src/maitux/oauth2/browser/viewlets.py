@@ -12,6 +12,7 @@ from plone.app.layout.viewlets.common import ViewletBase
 from six.moves.urllib.parse import urlencode
 
 from maitux.oauth2 import config
+from maitux.oauth2.state import BYPASS_COOKIE
 
 LOGIN_VIEW_NAMES = ("login", "login_form", "require_login", "logged_out",
                     "failsafe_login_form")
@@ -21,13 +22,19 @@ class LoginButtonViewlet(ViewletBase):
     index = ViewPageTemplateFile("templates/login_button.pt")
 
     def available(self):
-        if not config.is_enabled() or not config.get("show_login_button"):
+        if not config.is_enabled():
+            return False
+        if not config.get("show_login_button"):
             return False
         if not api.user.is_anonymous():
             return False
+        # The administrator bypass exists precisely to get a plain local form;
+        # offering the SSO button there would put both kinds of login on one
+        # page, which is exactly what we do not want.
+        if self.request.get(BYPASS_COOKIE):
+            return False
         url = (self.request.get("ACTUAL_URL") or u"").rstrip("/")
-        name = url.rsplit("/", 1)[-1]
-        return name in LOGIN_VIEW_NAMES
+        return url.rsplit("/", 1)[-1] in LOGIN_VIEW_NAMES
 
     def login_url(self):
         portal_url = api.portal.get().absolute_url()
