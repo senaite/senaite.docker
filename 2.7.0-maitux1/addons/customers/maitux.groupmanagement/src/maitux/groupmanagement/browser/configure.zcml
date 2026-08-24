@@ -1,0 +1,66 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.groupmanagement">
+
+  <!--
+    确保 "Plone Site Setup: Users and Groups" 权限在 browser:page 之前注册。
+
+    browser:page 的 permission= 属性会在 ZCML 执行期通过
+    AccessControl.security.protectClass 做 IPermission 查找。
+    该权限由 Products.CMFPlone 在 controlpanel/permissions.zcml 中注册
+    （含 Manager / Site Administrator 角色授予），但 add-on 的加载顺序
+    不保证一定在 CMFPlone 之后（autoinclude 顺序问题），因此这里显式
+    引入 CMFPlone 的权限文件，确保注册先于本文件的视图执行。
+
+    不要在本文件重复 <permission> 注册：与 CMFPlone 的注册参数不一致
+    会触发 ConfigurationConflictError。此 include 与 CMFPlone 自身
+    后续的加载重复时按 discriminator 去重，不会冲突。
+    （与 plone.restapi 处理 ComponentLookupError 的方式一致）
+  -->
+  <include package="Products.CMFPlone" file="controlpanel/permissions.zcml" />
+
+  <!--
+    覆盖 senaite.core 的 @@lims-setup：
+    在本 add-on 的浏览器层（IMaituxGroupManagementLayer）激活时，
+    该注册比 senaite.core 的（layer=ISenaiteCore）更具体，优先被选中。
+  -->
+  <browser:page
+      name="lims-setup"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".setupview.SetupView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="maitux.groupmanagement.interfaces.IMaituxGroupManagementLayer"
+      />
+
+  <!-- 独立组管理总览（无 Manager 角色、无删除组） -->
+  <browser:page
+      name="maitux-group-management"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".groupsoverview.GroupManagementView"
+      permission="plone.app.controlpanel.UsersAndGroups"
+      template="templates/groupsoverview.pt"
+      layer="maitux.groupmanagement.interfaces.IMaituxGroupManagementLayer"
+      />
+
+  <!-- 组属性 / 新建组 -->
+  <browser:page
+      name="maitux-group-details"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".groupdetails.GroupDetailsView"
+      permission="plone.app.controlpanel.UsersAndGroups"
+      template="templates/groupdetails.pt"
+      layer="maitux.groupmanagement.interfaces.IMaituxGroupManagementLayer"
+      />
+
+  <!-- 组成员管理 -->
+  <browser:page
+      name="maitux-group-membership"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".groupmembership.GroupMembershipView"
+      permission="plone.app.controlpanel.UsersAndGroups"
+      template="templates/groupmembership.pt"
+      layer="maitux.groupmanagement.interfaces.IMaituxGroupManagementLayer"
+      />
+
+</configure>
