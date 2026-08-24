@@ -5,7 +5,19 @@
   <!-- R5：覆盖 senaite.core 已注册的同名 vocabulary
        （senaite.core.vocabularies.hazard_categories）。
        必须写在 overrides.zcml（覆盖语义），不能写在 configure.zcml（冲突语义）。
-       configure.zcml 中通过 <includeOverrides package="." /> 显式加载本文件。 -->
+
+       本文件的加载方式：buildout 的 [instance] 段里写
+           zcml += maitux.hazardcategories-overrides
+       recipe 会生成 package-includes/NNN-maitux.hazardcategories-overrides.zcml，
+       再由 site.zcml 的
+           <includeOverrides files="package-includes/*-overrides.zcml" />
+       以站点级 includepath 加载。只有这个层级的 includepath 才是 senaite.core
+       注册路径的前缀，覆盖才会生效。
+
+       注意：不要在本包的 configure.zcml 里用 <includeOverrides package="." />
+       来加载本文件。不带 file= 时 zope 默认取 configure.zcml，该文件已被处理过，
+       整条指令是空操作；就算补上 file="overrides.zcml"，includepath 也太深，
+       不是 senaite.core 注册路径的前缀，会变成 ConfigurationConflictError。 -->
   <utility
       factory=".utils.EditableHazardCategoriesVocabulary"
       provides="zope.schema.interfaces.IVocabularyFactory"

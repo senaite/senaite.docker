@@ -69,6 +69,4 @@
       name="maitux.hazardcategories.vocabularies.ForAR"
       />
 
-  <includeOverrides package="." />
-
 </configure>
