@@ -1,0 +1,74 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="maitux.hazardcategories">
+
+  <i18n:registerTranslations directory="locales" />
+
+  <include package="Products.Five" />
+  <include package="Products.GenericSetup" file="meta.zcml" />
+  <include package="Products.CMFCore" file="permissions.zcml" />
+
+  <five:registerPackage package="." />
+
+  <include package=".content" />
+  <include package=".browser" />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="Maitux Hazard Categories"
+      directory="profiles/default"
+      description="Editable hazard categories add-on"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      post_handler=".setuphandlers.post_install"
+      />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="Maitux Hazard Categories (uninstall)"
+      directory="profiles/uninstall"
+      description="Uninstalls maitux.hazardcategories"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      post_handler=".setuphandlers.uninstall"
+      />
+
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      provides="Products.CMFPlone.interfaces.INonInstallable"
+      name="maitux.hazardcategories-hiddenprofiles"
+      />
+
+  <subscriber
+      for="zope.processlifetime.IProcessStarting"
+      handler=".setuphandlers.on_process_starting"
+      />
+
+  <utility
+      factory=".utils.UsageScopeVocabulary"
+      provides="zope.schema.interfaces.IVocabularyFactory"
+      name="maitux.hazardcategories.vocabularies.UsageScope"
+      />
+
+  <utility
+      factory=".utils.EditableHazardCategoriesVocabulary"
+      provides="zope.schema.interfaces.IVocabularyFactory"
+      name="maitux.hazardcategories.vocabularies.EditableHazardCategories"
+      />
+
+  <utility
+      factory=".utils.HazardCategoriesForReferenceVocabulary"
+      provides="zope.schema.interfaces.IVocabularyFactory"
+      name="maitux.hazardcategories.vocabularies.ForReference"
+      />
+
+  <utility
+      factory=".utils.HazardCategoriesForARVocabulary"
+      provides="zope.schema.interfaces.IVocabularyFactory"
+      name="maitux.hazardcategories.vocabularies.ForAR"
+      />
+
+  <includeOverrides package="." />
+
+</configure>

@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<rolemap>
+  <roles>
+    <role name="MethodAdministrator"/>
+    <role name="InstrumentAdministrator"/>
+    <role name="InventoryAdministrator"/>
+    <role name="StabilityAdministrator"/>
+    <role name="StabilityInventoryAdministrator"/>
+    <role name="BusinessSystemAdministrator"/>
+    <role name="ITSystemEngineer"/>
+  </roles>
+  <!-- 权限授权由 setuphandlers 以代码方式执行（BASE_PERMISSIONS + 专属片段），
+       GenericSetup rolemap 导入器要求 <permissions> 节点必须存在（可空） -->
+  <permissions>
+  </permissions>
+</rolemap>

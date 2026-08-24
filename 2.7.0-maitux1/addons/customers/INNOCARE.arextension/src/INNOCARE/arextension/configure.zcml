@@ -1,0 +1,34 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="INNOCARE.arextension">
+
+  <i18n:registerTranslations directory="locales" />
+
+  <include package="Products.GenericSetup" file="meta.zcml" />
+
+  <include package=".extenders" />
+
+  <!-- URS-025 样品编号：为 ID Server 提供 deptCode（部门简码）变量 -->
+  <adapter factory=".idserver.ARIdServerVariables" />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="INNOCARE.arextension"
+      directory="profiles/default"
+      description="Installs the INNOCARE.arextension package"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      post_handler=".setuphandlers.post_install_setup"
+      />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="INNOCARE.arextension (uninstall)"
+      directory="profiles/uninstall"
+      description="Uninstalls INNOCARE.arextension"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      post_handler=".setuphandlers.uninstall_handler"
+      />
+
+</configure>

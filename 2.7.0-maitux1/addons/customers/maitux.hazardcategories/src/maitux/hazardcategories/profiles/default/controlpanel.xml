@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<object name="portal_controlpanel">
+  <configlet title="Hazard categories"
+             action_id="maitux-hazardcategories"
+             appId="maitux.hazardcategories"
+             category="Products"
+             condition_expr=""
+             icon_expr=""
+             url_expr="string:${portal_url}/@@hazardcategories-controlpanel"
+             visible="True">
+    <permission>Manage portal</permission>
+  </configlet>
+</object>

@@ -1,0 +1,30 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      i18n:domain="maitux.hazardcategories"
+      xml:lang="en"
+      lang="en"
+      metal:use-macro="context/main_template/macros/master">
+<body>
+<metal:block fill-slot="content-core">
+
+  <h1 class="documentFirstHeading" i18n:translate="heading_hazard_categories">Hazard categories</h1>
+
+  <p class="documentDescription" i18n:translate="description_hazard_categories_maintenance">
+    维护 Reference Definition / Reference Sample 中可勾选的 Hazard categories 列表。
+    点击<strong>「+ 新增一行」</strong>添加记录，直接在表格内编辑各字段。
+    修改后点击每行的<strong>「保存」</strong>或上方的<strong>「保存所有更改」</strong>。
+    每行字段含义：<code>CODE</code> 编号（唯一）、<code>Name</code> 英文名称、<code>Common</code> 通用名、<code>Pictogram</code> 图标路径。
+  </p>
+
+  <div id="hazard-categories-app"
+       tal:attributes="data-portal-url python:context.absolute_url().rpartition('/')[0] if '/' in context.absolute_url().rpartition('/')[0] else context.absolute_url().rpartition('/hazard_categories')[0]"></div>
+
+  <script type="text/javascript"
+          tal:content="structure python:view.javascript()">
+  </script>
+
+</metal:block>
+</body>
+</html>

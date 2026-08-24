@@ -1,0 +1,44 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="maitux.roles">
+
+  <i18n:registerTranslations directory="locales" />
+
+  <five:registerPackage package="." />
+
+  <include package="Products.Five" />
+  <include package="Products.GenericSetup" file="meta.zcml" />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="Maitux Roles &amp; Accounts"
+      directory="profiles/default"
+      description="Business roles, groups and accounts"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      post_handler=".setuphandlers.post_install"
+      />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="Maitux Roles &amp; Accounts (uninstall)"
+      directory="profiles/uninstall"
+      description="Uninstalls maitux.roles"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      post_handler=".setuphandlers.uninstall"
+      />
+
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      provides="Products.CMFPlone.interfaces.INonInstallable"
+      name="maitux.roles-hiddenprofiles"
+      />
+
+  <subscriber
+      for="zope.processlifetime.IProcessStarting"
+      handler=".setuphandlers.on_process_starting"
+      />
+
+</configure>

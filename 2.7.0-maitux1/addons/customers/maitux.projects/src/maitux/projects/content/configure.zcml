@@ -1,0 +1,19 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="maitux.projects">
+
+  <class class=".projects.Projects">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".project.Project">
+    <require
+        permission="zope2.View"
+        interface="maitux.projects.interfaces.IProject"
+        />
+  </class>
+
+</configure>

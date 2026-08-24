@@ -1,0 +1,57 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="maitux.projects">
+
+  <i18n:registerTranslations directory="locales" />
+
+  <include package="Products.Five" />
+  <include package="Products.GenericSetup" file="meta.zcml" />
+
+  <include package=".content" />
+  <include package=".browser" />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="Maitux Projects"
+      directory="profiles/default"
+      description="Project Management (仿 SENAITE Batches)"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      post_handler=".setuphandlers.post_install"
+      />
+
+  <genericsetup:importStep
+      name="maitux.projects.setuphandler"
+      title="maitux.projects setup handler"
+      description="Runs maitux.projects setuphandler steps"
+      handler=".setuphandlers.setup_handler"
+      />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="Maitux Projects (uninstall)"
+      directory="profiles/uninstall"
+      description="Uninstalls maitux.projects"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      post_handler=".setuphandlers.uninstall"
+      />
+
+  <utility
+      factory=".setuphandlers.HiddenProfiles"
+      provides="Products.CMFPlone.interfaces.INonInstallable"
+      name="maitux.projects-hiddenprofiles"
+      />
+
+  <subscriber
+      for="zope.lifecycleevent.interfaces.IObjectAddedEvent
+           maitux.projects.interfaces.IProject"
+      handler=".setuphandlers.on_project_added"
+      />
+
+  <subscriber
+      for="zope.processlifetime.IProcessStarting"
+      handler=".setuphandlers.on_process_starting"
+      />
+
+</configure>

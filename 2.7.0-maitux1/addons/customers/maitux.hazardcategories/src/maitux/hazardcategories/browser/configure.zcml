@@ -1,0 +1,27 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.hazardcategories">
+
+  <browser:page
+      name="hazardcategories-controlpanel"
+      for="*"
+      class=".controlpanel.HazardCategoriesListingView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.hazardcategories.interfaces.IHazardCategories"
+      name="folder_view"
+      class=".controlpanel.HazardCategoriesListingView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.hazardcategories.interfaces.IHazardCategories"
+      name="view"
+      class=".controlpanel.HazardCategoriesListingView"
+      permission="zope2.View"
+      />
+
+</configure>
