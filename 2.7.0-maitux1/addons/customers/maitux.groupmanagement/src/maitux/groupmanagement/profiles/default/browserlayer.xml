@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<layers>
+  <layer
+      name="maitux.groupmanagement"
+      interface="maitux.groupmanagement.interfaces.IMaituxGroupManagementLayer"
+      />
+</layers>
