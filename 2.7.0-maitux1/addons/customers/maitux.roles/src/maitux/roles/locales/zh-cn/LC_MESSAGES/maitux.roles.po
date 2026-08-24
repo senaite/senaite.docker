@@ -1,0 +1,37 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: maitux.roles\n"
+"POT-Creation-Date: 2026-08-20 00:00+0000\n"
+"PO-Revision-Date: 2026-08-20 00:00+0000\n"
+"Last-Translator: Admin <admin@example.com>\n"
+"Language-Team: zh-cn <admin@example.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"Language-Code: zh-cn\n"
+"Language-Name: Simplified Chinese\n"
+"Preferred-Encodings: utf-8 latin1\n"
+"Domain: maitux.roles\n"
+
+
+msgid "Method Administrator"
+msgstr "方法管理员"
+
+msgid "Instrument Administrator"
+msgstr "仪器管理员"
+
+msgid "Inventory Administrator"
+msgstr "库存管理员"
+
+msgid "Stability Administrator"
+msgstr "稳定性管理员"
+
+msgid "Stability-Inventory Administrator"
+msgstr "稳定性库存管理员"
+
+msgid "Business System Administrator"
+msgstr "业务系统管理员"
+
+msgid "IT System Engineer"
+msgstr "IT系统工程师"

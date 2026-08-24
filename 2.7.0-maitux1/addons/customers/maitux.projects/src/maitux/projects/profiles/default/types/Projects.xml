@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object name="Projects" meta_type="Dexterity FTI"
+        i18n:domain="maitux.projects"
+        xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+        purge="True">
+
+  <property name="title" i18n:translate="">Projects</property>
+  <property name="description" i18n:translate=""></property>
+
+  <property name="icon_expr">string:${portal_url}/++plone++senaite.core.static/assets/icons/batch.svg</property>
+  <property name="factory">Projects</property>
+  <property name="add_view_expr">string:${folder_url}/++add++Projects</property>
+  <property name="immediate_view">base_view</property>
+
+  <property name="global_allow">True</property>
+  <property name="filter_content_types">True</property>
+  <property name="allowed_content_types">
+    <element value="Project" />
+  </property>
+
+  <property name="allow_discussion">False</property>
+  <property name="default_view">base_view</property>
+  <property name="view_methods">
+    <element value="base_view"/>
+    <element value="folder_view"/>
+    <element value="projects_listing"/>
+    <element value="view"/>
+  </property>
+  <property name="default_view_fallback">False</property>
+
+  <property name="add_permission">cmf.AddPortalContent</property>
+
+  <property name="schema">maitux.projects.content.projects.IProjectsSchema</property>
+  <property name="klass">maitux.projects.content.projects.Projects</property>
+
+  <property name="behaviors">
+    <element value="plone.app.dexterity.behaviors.metadata.IBasic"/>
+    <element value="plone.app.referenceablebehavior.referenceable.IReferenceable" />
+  </property>
+
+  <alias from="(Default)" to="(dynamic view)"/>
+  <alias from="edit" to="@@edit"/>
+  <alias from="sharing" to="@@sharing"/>
+  <alias from="view" to="(selected layout)"/>
+
+</object>

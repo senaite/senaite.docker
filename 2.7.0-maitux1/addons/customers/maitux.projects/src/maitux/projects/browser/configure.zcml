@@ -1,0 +1,45 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.projects">
+
+  <browser:page
+      for="maitux.projects.interfaces.IProjects"
+      name="base_view"
+      class="maitux.projects.browser.controlpanel.ProjectsListingView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.projects.interfaces.IProjects"
+      name="view"
+      class="maitux.projects.browser.controlpanel.ProjectsListingView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.projects.interfaces.IProjects"
+      name="folder_view"
+      class="maitux.projects.browser.controlpanel.ProjectsListingView"
+      permission="zope2.View"
+      />
+
+  <browser:page
+      for="maitux.projects.interfaces.IProjects"
+      name="projects_listing"
+      class="maitux.projects.browser.controlpanel.ProjectsListingView"
+      permission="zope2.View"
+      />
+
+  <!-- Analysis Requests of a single Project (复刻 Batches 的
+       <batch>/analysisrequests，见 senaite.core/browser/batches/configure.zcml)。
+       点击 Projects 列表中的 Project ID / 标题即进入该页面。 -->
+  <browser:page
+      for="maitux.projects.interfaces.IProject"
+      name="analysisrequests"
+      class="maitux.projects.browser.analysisrequests.ProjectAnalysisRequestsView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+</configure>

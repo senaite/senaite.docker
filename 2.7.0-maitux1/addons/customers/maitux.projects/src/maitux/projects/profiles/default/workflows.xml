@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<object name="portal_workflow" meta_type="Plone Workflow Tool" purge="False">
+  <bindings>
+    <type type_id="Project">
+      <bound-workflow workflow_id="senaite_batch_workflow"/>
+    </type>
+    <type type_id="Projects">
+      <bound-workflow workflow_id="senaite_one_state_workflow"/>
+    </type>
+  </bindings>
+</object>

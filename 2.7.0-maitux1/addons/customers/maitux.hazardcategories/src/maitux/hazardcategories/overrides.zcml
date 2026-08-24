@@ -1,0 +1,15 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="maitux.hazardcategories">
+
+  <!-- R5：覆盖 senaite.core 已注册的同名 vocabulary
+       （senaite.core.vocabularies.hazard_categories）。
+       必须写在 overrides.zcml（覆盖语义），不能写在 configure.zcml（冲突语义）。
+       configure.zcml 中通过 <includeOverrides package="." /> 显式加载本文件。 -->
+  <utility
+      factory=".utils.EditableHazardCategoriesVocabulary"
+      provides="zope.schema.interfaces.IVocabularyFactory"
+      name="senaite.core.vocabularies.hazard_categories"
+      />
+
+</configure>

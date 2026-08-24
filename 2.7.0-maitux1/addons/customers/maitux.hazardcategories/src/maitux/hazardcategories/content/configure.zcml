@@ -1,0 +1,19 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="maitux.hazardcategories">
+
+  <class class=".hazardcategories.HazardCategories">
+    <require
+        permission="zope2.View"
+        interface="zope.interface.Interface"
+        />
+  </class>
+
+  <class class=".hazardcategory.HazardCategory">
+    <require
+        permission="zope2.View"
+        interface="maitux.hazardcategories.interfaces.IHazardCategory"
+        />
+  </class>
+
+</configure>
