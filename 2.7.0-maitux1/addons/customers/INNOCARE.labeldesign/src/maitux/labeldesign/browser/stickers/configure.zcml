@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone">
+
+  <plone:static
+      directory="templates"
+      type="stickers"
+      name="maitux.labeldesign"
+      />
+
+  <!-- ADD(2026-08-21) - 注册库存标签模板适配器。
+       for 用容器接口 IStockBatches（与 stockbatch_print 打印入口一致），
+       使 stockbatch_print 能枚举并选用本 addon 的库存标签模板。 -->
+  <adapter
+      factory="maitux.labeldesign.browser.stickers.adapters.StockBatchLabelTemplates"
+      for="maitux.stock.interfaces.IStockBatches"
+      provides="senaite.core.interfaces.stickers.IGetStickerTemplates"
+      />
+
+</configure>

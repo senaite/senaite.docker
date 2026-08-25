@@ -1,0 +1,18 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.labeldesign">
+
+  <include package=".stickers" />
+
+  <!-- ADD(2026-08-21) - 样品标签打印视图。
+       for 用 "*"，通过 ?uids= 传入样品/AR 编号，打印样品标签 ④⑤。 -->
+  <browser:page
+      for="*"
+      name="sample_print_labels"
+      class="maitux.labeldesign.browser.sampleprint.SampleLabelPrintView"
+      template="sampleprint.pt"
+      permission="zope2.View"
+      />
+
+</configure>
