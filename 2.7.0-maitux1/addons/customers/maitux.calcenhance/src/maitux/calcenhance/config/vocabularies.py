@@ -4,4 +4,5 @@
 ADDITIONAL_RESULT_TYPES = (
     ("list", "List (array)"),
     ("calculated", "Calculated"),
+    ("calculatedlist", "Calculated List"),
 )
