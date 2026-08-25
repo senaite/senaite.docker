@@ -40,11 +40,6 @@
       name="maitux.hazardcategories-hiddenprofiles"
       />
 
-  <subscriber
-      for="zope.processlifetime.IProcessStarting"
-      handler=".setuphandlers.on_process_starting"
-      />
-
   <utility
       factory=".utils.UsageScopeVocabulary"
       provides="zope.schema.interfaces.IVocabularyFactory"

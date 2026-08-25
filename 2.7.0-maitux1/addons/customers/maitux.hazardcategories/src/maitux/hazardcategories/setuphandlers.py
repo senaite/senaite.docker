@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import threading
-
 from bika.lims import api
 from plone import api as ploneapi
 from Products.CMFPlone.interfaces import INonInstallable
@@ -39,51 +37,12 @@ DEFAULT_LAYOUT = "hazardcategories-controlpanel"
 SIDEBAR_DEPTH = 2
 PROFILE_ID = "profile-%s:default" % PROJECTNAME
 
-_INSTALL_LOCK = threading.Lock()
-_INSTALL_DONE = False
-
 
 @implementer(INonInstallable)
 class HiddenProfiles(object):
 
     def getNonInstallableProfiles(self):
         return ["maitux.hazardcategories:uninstall"]
-
-
-def on_process_starting(event):
-    try:
-        from zope.component import provideHandler
-        from ZPublisher.interfaces import IPubAfterTraversal
-        provideHandler(_on_first_request, (IPubAfterTraversal,))
-        logger.info("on_process_starting: registered first-request hook "
-                    "(IPubAfterTraversal)")
-    except Exception as exc:
-        logger.warn("on_process_starting hook registration failed: %s", exc)
-
-
-def _on_first_request(event):
-    global _INSTALL_DONE
-    if _INSTALL_DONE:
-        return
-    with _INSTALL_LOCK:
-        if _INSTALL_DONE:
-            return
-        try:
-            request = getattr(event, "request", None)
-            if request is None:
-                return
-            portal = api.get_portal()
-            if portal is None:
-                return
-            run_install_steps(portal)
-            import transaction
-            transaction.commit()
-            _INSTALL_DONE = True
-            logger.info("First-request install hook: steps committed successfully")
-        except Exception as exc:
-            logger.warn("First-request install hook failed: %s", exc)
-            import traceback
-            logger.warn(traceback.format_exc())
 
 
 def post_install(context):
