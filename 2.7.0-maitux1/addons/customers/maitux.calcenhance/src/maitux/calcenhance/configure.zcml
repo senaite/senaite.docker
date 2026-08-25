@@ -12,7 +12,7 @@
   so any XML placed under profiles/default would have been ignored. -->
   <genericsetup:registerProfile
       name="default"
-      title="MAITUX Calculation Enhancement"
+      title="Maitux Calculation Enhancement"
       description="Adds List and Calculated interim field types"
       directory="profiles/default"
       provides="Products.GenericSetup.interfaces.EXTENSION"
@@ -20,8 +20,8 @@
 
   <genericsetup:registerProfile
       name="uninstall"
-      title="MAITUX Calculation Enhancement (uninstall)"
-      description="Remove MAITUX Calculation Enhancement settings"
+      title="Maitux Calculation Enhancement (uninstall)"
+      description="Remove Maitux Calculation Enhancement settings"
       directory="profiles/uninstall"
       provides="Products.GenericSetup.interfaces.EXTENSION"
       />

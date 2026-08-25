@@ -1,9 +1,32 @@
-# MAITUX Calculation Enhancement for SENAITE LIMS
+# Maitux Calculation Enhancement for SENAITE LIMS
 
 为 SENAITE LIMS 的计算公式（Calculation）模块增加三种新的 Interim Field 控件类型，支持 HPLC 含量测定、装量差异、杂质含量等复杂计算场景。
 
-**版本：** 1.3.1
+**版本：** 1.4.0
 **兼容：** SENAITE 2.x（实测 2.7.0 / Plone 5.2 / Python 2.7）
+
+---
+
+## 1.4.0 更新概要（2026-08-25）
+
+### 命名空间
+
+包名由 `medai.*` 改为产品统一的 **`maitux.*`**：`maitux.calcenhance` /
+`maitux.worksheet`。已有环境的 ZODB 需要一次迁移（4 条 profile 记录、
+2 个 quickinstaller 对象、1 条 registry key），脚本见 `ISSUES.md` ISSUE-028。
+全新环境从零安装即可，无需迁移。
+
+### TIME_ELAPSED_HOURS 新增第三个参数：基准时间
+
+```
+TIME_ELAPSED_HOURS([时间数组], 小数位数, 基准时间)
+```
+
+基准时间可以来自**另一个分析**。溶液稳定性要的是「距对照品进样多少小时」，
+而不是「距第一个质控点多少小时」—— 两者差一个常数，写错了整列都偏，
+而每个值看上去都很正常。详见下方章节。
+
+**向后兼容**：不传第三个参数时行为与 1.3.x 完全一致。
 
 ---
 
@@ -1035,6 +1058,74 @@ TIME_ELAPSED_HOURS: inconsistent timezone labels [u'CST', u'EST'] -- refusing to
 
 其它行为：`12:00 AM` / `12:00 PM` 分别是午夜与正午；秒数计入；`digits` 可调；
 跨日正常；无法解析的行为 `---` 而其余行照算；数组长度恒等于输入长度。
+
+### 第三个参数：从别处取基准时间
+
+```
+TIME_ELAPSED_HOURS([时间数组], 小数位数, 基准时间)
+```
+
+不传第三个参数时，t0 是**数组内最早的那个时间**，所以最早那行读数为 `0`。
+传了之后，t0 就是它 —— 而且**它可以来自另一个分析**：
+
+```
+imp_std1_inj_lookup = LOOKUP("imp_sys_suit","imp_std1_inj_time","imp_main_name","")
+imp_qc_stab_time    = TIME_ELAPSED_HOURS([imp_qc_inj_time], 1, [imp_std1_inj_lookup])
+```
+
+这才是溶液稳定性真正测量的东西：**距对照品进样多少小时**，而不是距第一个
+质控点多少小时。
+
+| | 第一针 | 第二针 | 第三针 | 第四针 |
+| -- | ---- | ---- | ---- | ---- |
+| 不传基准（距首个质控点） | 0.0 | 35.1 | 55.4 | 78.6 |
+| **传基准（距对照品进样）** | **34.0** | **69.1** | **89.4** | **112.6** |
+
+两者**差一个常数**。写错了整列都偏，而每个值看上去都很正常 —— 这种错
+最难在复核时发现。
+
+### 负数是有意保留的
+
+某一行早于基准时间，结果就是**负数**，不会被抹平也不会变成 `---`：
+
+```
+[34.0, -36.2, 89.4, 112.6]
+```
+
+它说的是「有一针的进样时间早于它所参照的对照品」—— 实验室里不可能发生，
+所以那是**录入错误**。藏起来不如摆出来。日志里会点名具体是哪一行：
+
+```
+maitux.calcenhance: TIME_ELAPSED_HOURS on imp_qc_stability produced 1
+negative hour(s): row 2 = u'2026-5-11 8:00'. Those rows are timestamped
+BEFORE the reference (base u'2026-5-12 20:13'), which cannot happen --
+check the entered times.
+```
+
+### 基准解析不出来就给 `---`，不回退
+
+基准时间无法解析时**整列返回 `---`**，而不是悄悄退回「数组内最早时间」：
+
+```
+TIME_ELAPSED_HOURS: base u'2026/5/12 20:13' is not a parsable timestamp
+-- refusing to fall back to the array minimum
+```
+
+你明确指定了基准却读不出来，这时候换一个 t0 会算出一组**看着合理但口径
+错误**的数。答不上来就说答不上来。
+
+**最常见的触发原因就是斜杠日期**（见上文格式表）。基准字段来自别的分析时，
+那个源字段的格式同样要是连字符。
+
+### 时区规则对基准同样生效
+
+基准的时区标识必须和数组一致，否则照样拒绝相减。
+
+### 不需要再往数组里塞一行
+
+在此之前，要拿到「距对照品进样」这个口径，只能把对照品的进样时间**当作一行
+数据塞进质控数组**。那行会连带出现在同一张表的其它列里（一个面积、一个
+回收率），将来做 RSD 或限度判定时就是个真实的污染源。有了基准参数就不必了。
 
 ---
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# MAITUX Calculation Enhancement Add-on
+# Maitux Calculation Enhancement Add-on
 
 from maitux.calcenhance.patches import allow_locked_writes  # noqa: F401
 from maitux.calcenhance.patches import apply_patches

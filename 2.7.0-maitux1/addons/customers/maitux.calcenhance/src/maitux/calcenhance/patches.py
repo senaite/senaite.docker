@@ -1923,30 +1923,75 @@ def _patch_listing_set_field_deferred(event=None):
 def _patch_setupdata_import():
     """ISSUE-001: XLSX setup-data importer fixes.
 
-    Core bug (senaite/core/exportimport/setupdata/__init__.py):
-      1. Analysis_Services.Import always created a NEW AnalysisService
-         per spreadsheet row (_createObjectByType(..., tmpID())) and
-         never called the official check_keyword()/get_by_keyword()
-         uniqueness helpers, so re-importing a keyword that already
-         exists silently produced a duplicate service with the same
-         keyword (samples then hit the outdated definition).
-      2. Methods.Import / Calculations.Import / Analysis_Services.Import
-         wrote Method <-> Calculation relations to the DEPRECATED
+    Core bugs (senaite/core/exportimport/setupdata/__init__.py):
+
+      1. Every importer created a NEW object per spreadsheet row
+         (_createObjectByType(..., tmpID()) / api.create(...)) and never
+         looked for an existing one, so re-importing a sheet into a
+         database that already held that data silently produced same-named
+         duplicates.  All five importers patched here now upsert.
+
+         Duplicates are not merely untidy: core's get_object() returns
+         None when a title matches more than one object, and its callers
+         answer None with `continue`.  So a single duplicated Department
+         makes every Analysis Category that references it vanish from the
+         import without raising anything -- which is how this site ended
+         up with two Departments of the same title and no way to notice.
+
+      2. Method <-> Calculation relations were written to the DEPRECATED
          single-valued 'Calculation' field, while the active model (and
          AnalysisService.get_methods_calculations()) reads the
-         multi-valued 'Calculations' field (1:N).  The importer now
-         writes and reads the plural field.
+         multi-valued 'Calculations' field (1:N).
 
-    Both are fixed here in the addon by monkey-patching the importer
-    classes; senaite.core is left untouched.
+         Renaming the field is not enough.  Import order is the physical
+         sheet order in the workbook, and Methods normally precedes
+         Calculations, so the Calculation a Method row names does not
+         exist yet when that row is processed.  Core's fallback --
+         back-filling from Calculations.Import -- only matches a Method
+         whose title equals the Calculation's title, a convention nobody
+         follows.  The link is therefore established from BOTH sides here,
+         so it lands whichever sheet comes first.
+
+         self.defer() cannot carry this field: solve_deferred() appends
+         the resolved OBJECT to the field's current value, but
+         Method.setCalculations() runs filter(api.is_uid, value) and drops
+         anything that is not a 32-character uid.  The deferred link would
+         be a silent no-op.
+
+      3. Analysis_Services.Import ran no keyword validation at all.
+         Uniqueness is now handled by the upsert; the character-set rule
+         is still enforced.  Core's check_keyword() is deliberately NOT
+         used: on top of uniqueness it rejects any keyword that appears in
+         a Calculation formula, and in a setup import `[as_keyword]` in a
+         formula is the intended way to express a cross-analysis
+         dependency, not a conflict.  Applying that rule here would make
+         legitimate services disappear.
+
+      4. The interim-field loaders mangled the boolean columns.
+         `get_interim_fields()` reads
+
+             "hidden": ("hidden" in row and row["hidden"]) and True or False
+
+         but the sheet holds the STRING 'FALSE', and every non-empty
+         string is truthy -- so one import hides every interim field in
+         the workbook.  Worse, `report`, `apply_wide` and `locked` are
+         never read at all, so importing over an existing Calculation
+         silently drops all three on every field.  Measured on the live
+         site before this fix: 1239 unintended value changes across 27
+         Calculations.  Core parses only cross_referenceable correctly.
+
+    All of this is done by monkey-patching the importer classes;
+    senaite.core is left untouched.
     """
     import re
     import sys as _sys
 
     try:
+        from senaite.core.exportimport.setupdata import Analysis_Categories
         from senaite.core.exportimport.setupdata import Analysis_Services
         from senaite.core.exportimport.setupdata import Calculations
         from senaite.core.exportimport.setupdata import Float
+        from senaite.core.exportimport.setupdata import Lab_Departments
         from senaite.core.exportimport.setupdata import Methods
         from senaite.core.exportimport.setupdata import read_file
     except Exception as _sde_err:
@@ -1961,13 +2006,12 @@ def _patch_setupdata_import():
     from Products.Archetypes.event import ObjectInitializedEvent
     from Products.CMFCore.utils import getToolByName
     from Products.CMFPlone.utils import _createObjectByType
-    from Products.CMFPlone.utils import safe_unicode
     from bika.lims import api
     from bika.lims import logger
-    from bika.lims.api.analysisservice import check_keyword
-    from bika.lims.api.analysisservice import get_by_keyword
     from bika.lims.utils import tmpID
     from pkg_resources import resource_filename
+    from senaite.core.api.analysisservice import RX_SERVICE_KEYWORD
+    from senaite.core.catalog import CONTACT_CATALOG
     from senaite.core.catalog import SETUP_CATALOG
     from senaite.core.idserver import renameAfterCreation
     from zope.event import notify
@@ -1976,105 +2020,457 @@ def _patch_setupdata_import():
     _sys.stderr.flush()
 
     # ------------------------------------------------------------------
-    # Methods.Import — write the ACTIVE multi-valued 'Calculations' field
+    # shared helpers
+    # ------------------------------------------------------------------
+    def _u(value):
+        """Everything to unicode.
+
+        get_rows() hands back utf-8 `str`, object titles come back as
+        either, and Py2 compares the two by codepoint -- which is how a
+        title match silently fails on every non-ASCII name.
+        """
+        if isinstance(value, str):
+            return value.decode("utf-8", "replace")
+        if value is None:
+            return u""
+        if not isinstance(value, unicode):
+            return unicode(value)
+        return value
+
+    def _label(value):
+        """Unicode back to utf-8, for log messages."""
+        return _u(value).encode("utf-8")
+
+    def _to_bool(value, default=False):
+        """Read a spreadsheet truth value as a boolean.
+
+        These columns arrive as the STRINGS 'TRUE'/'FALSE', and every
+        non-empty string is truthy in Python.  Core's
+
+            "hidden": ("hidden" in row and row["hidden"]) and True or False
+
+        therefore reads hidden='FALSE' as True and hides every interim
+        field in the workbook -- one import is enough to make an entire
+        result form disappear.  Core gets this right for
+        cross_referenceable and nowhere else.
+        """
+        if value is None or value == "":
+            return default
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return bool(value)
+        return _u(value).strip().lower() in (u"true", u"1", u"yes", u"x",
+                                             u"y")
+
+    def _read_interim(row, owner_column):
+        """One interim-field dict from one spreadsheet row.
+
+        Beyond the boolean parsing above, core's loaders simply never read
+        `report`, `apply_wide` or `locked` -- the keys are absent from the
+        dict they build, so importing over an existing Calculation drops
+        those three settings on every field.  They are carried through
+        here whenever the sheet has the column.
+        """
+        interim = {
+            "keyword": row["keyword"],
+            "title": row.get("title", ""),
+            # core hard-codes this; left alone deliberately
+            "type": "int",
+            "value": row.get("value", ""),
+            "unit": row.get("unit", "") or "",
+            "hidden": _to_bool(row.get("hidden")),
+        }
+        if row.get("result_type"):
+            interim["result_type"] = row["result_type"]
+        if row.get("formula"):
+            interim["formula"] = row["formula"]
+        for col in ("report", "apply_wide", "locked", "cross_referenceable"):
+            if col in row:
+                interim[col] = _to_bool(row[col])
+        return interim
+
+    def _match(container, portal_type, title=None, keyword=None):
+        """Objects of `portal_type` in `container` matching title/keyword.
+
+        Walks the folder instead of querying the catalog on purpose:
+        objects created earlier in the same import are not reliably
+        indexed yet, and the `title` index raises UnicodeDecodeError on
+        non-ASCII values in this Py2 stack.  A stale index here would mean
+        a duplicate object instead of an update.  These containers hold
+        tens of objects, so the walk costs nothing.
+        """
+        want = _u(title if keyword is None else keyword).strip()
+        if not want:
+            return []
+        found = []
+        for obj in container.objectValues():
+            try:
+                if api.get_portal_type(obj) != portal_type:
+                    continue
+                got = obj.getKeyword() if keyword is not None else obj.Title()
+                if _u(got).strip() == want:
+                    found.append(obj)
+            except Exception:
+                continue
+        return found
+
+    def _upsert(container, portal_type, sheet, title=None, keyword=None):
+        """Return (obj_or_None, is_new) for this row.
+
+        More than one match is reported and the first is used -- the only
+        alternative is creating yet another duplicate, which is how the
+        situation arose in the first place.
+        """
+        found = _match(container, portal_type, title=title, keyword=keyword)
+        if not found:
+            return None, True
+        if len(found) > 1:
+            logger.warn(
+                "maitux.calcenhance: %s '%s' matches %d existing objects "
+                "(%s); updating the first. Duplicates make core's "
+                "get_object() return None, which silently drops every row "
+                "referencing this one -- please clean them up."
+                % (sheet, _label(title if keyword is None else keyword),
+                   len(found), ", ".join(o.getId() for o in found)))
+        return found[0], False
+
+    def _present(row, spec):
+        """Build edit kwargs from the columns the sheet actually has.
+
+        get_rows() builds its dict with zip(headers, values), so a column
+        the sheet does not contain is simply absent -- and row.get(name,
+        default) then yields the default.  Core feeds those defaults
+        straight into edit(), which is harmless while creating and
+        destructive while updating: re-importing a Methods sheet with no
+        MethodID column would blank every MethodID.
+
+        `spec` is a list of (kwarg, column, converter); a converter of
+        None passes the raw value through.
+        """
+        out = {}
+        for kwarg, column, conv in spec:
+            if column not in row:
+                continue
+            value = row[column]
+            out[kwarg] = conv(value) if conv else value
+        return out
+
+    def _link_method_calculation(method, calculation):
+        """Add `calculation` to method.Calculations, idempotently.
+
+        Uids from end to end, because Method.setCalculations() filters its
+        argument through api.is_uid.  Returns True if newly linked.
+        """
+        if not method or not calculation:
+            return False
+        try:
+            uid = api.get_uid(calculation)
+            current = [u for u in (method.getRawCalculations() or [])
+                       if api.is_uid(u)]
+            if uid in current:
+                return False
+            method.setCalculations(current + [uid])
+            return True
+        except Exception as err:
+            logger.warn(
+                "maitux.calcenhance: could not link a calculation to method "
+                "'%s': %s" % (_label(api.get_title(method)), err))
+            return False
+
+    def _methods_sheet_pairs(importer):
+        """[(method_title, calculation_title)] read straight off the sheet.
+
+        Read from the workbook rather than through the driver, so it does
+        not matter whether the Methods sheet has been processed yet.  This
+        is what lets the Method <-> Calculation link be made from the
+        Calculations side as well.
+        """
+        pairs = []
+        try:
+            worksheet = importer.workbook["Methods"]
+        except Exception:
+            return pairs
+        if worksheet is None:
+            return pairs
+        try:
+            for row in importer.get_rows(3, worksheet=worksheet):
+                title = row.get("title")
+                calc_title = row.get("Calculation_title")
+                if title and calc_title:
+                    pairs.append((title, calc_title))
+        except Exception as err:
+            logger.warn("maitux.calcenhance: could not read the Methods "
+                        "sheet: %s" % err)
+        return pairs
+
+    # ------------------------------------------------------------------
+    # Lab_Departments — upsert
+    # ------------------------------------------------------------------
+    def patched_departments_import(self):
+        container = api.get_senaite_setup().departments
+        cat = getToolByName(self.context, CONTACT_CATALOG)
+        lab_contacts = [o.getObject() for o in cat(portal_type="LabContact")]
+        for row in self.get_rows(3):
+            title = row.get("title")
+            if not title:
+                continue
+
+            obj, is_new = _upsert(container, "Department", "Department",
+                                  title=title)
+            values = _present(row, [("title", "title", None),
+                                    ("description", "description", None)])
+            if is_new:
+                obj = api.create(container, "Department", **values)
+            else:
+                api.edit(obj, check_permissions=False, **values)
+
+            username = row.get("LabContact_Username")
+            manager = None
+            for contact in lab_contacts:
+                if contact.getUsername() == username:
+                    manager = contact
+                    break
+            if manager:
+                obj.setManager(manager.UID())
+            elif username:
+                logger.info("Department: lookup of '%s' in LabContacts"
+                            "/Username failed." % username)
+
+    # Mark the plain function BEFORE binding it to the class.  In Py2
+    # `SomeClass.Import` yields an instancemethod, and setting an
+    # attribute on one raises AttributeError -- reads pass through to
+    # im_func, writes do not.  Doing it the other way round aborts the
+    # whole patch run on the first marker, leaving every later importer
+    # unpatched and the idempotency guard permanently False.
+    patched_departments_import._maitux_issue001 = True
+    Lab_Departments.Import = patched_departments_import
+
+    # ------------------------------------------------------------------
+    # Analysis_Categories — upsert
+    # ------------------------------------------------------------------
+    def patched_categories_import(self):
+        container = self.context.setup.analysiscategories
+        setup_tool = getToolByName(self.context, SETUP_CATALOG)
+        for row in self.get_rows(3):
+            title = row.get("title")
+            if not title:
+                logger.warning("Error in in {}. Missing Title field."
+                               .format(self.sheetname))
+                continue
+
+            department_title = row.get("Department_title", None)
+            if not department_title:
+                logger.warning("Error in {}. Department field missing."
+                               .format(self.sheetname))
+                continue
+
+            department = self.get_object(setup_tool, "Department",
+                                         title=department_title)
+            if not department:
+                # get_object() also answers None when the title matches
+                # more than one Department, so say which case this is
+                # instead of blaming the spreadsheet.
+                dupes = _match(api.get_senaite_setup().departments,
+                               "Department", title=department_title)
+                if len(dupes) > 1:
+                    logger.warning(
+                        "maitux.calcenhance: Analysis Category '%s' skipped: "
+                        "Department '%s' exists %d times (%s). Core resolves "
+                        "an ambiguous title to None. Remove the duplicates "
+                        "and import again."
+                        % (_label(title), _label(department_title),
+                           len(dupes), ", ".join(o.getId() for o in dupes)))
+                else:
+                    logger.warning("Error in {}. Department '{}' is wrong."
+                                   .format(self.sheetname, department_title))
+                continue
+
+            obj, is_new = _upsert(container, "AnalysisCategory",
+                                  "Analysis Category", title=title)
+            values = _present(row, [("title", "title", None),
+                                    ("description", "description", None),
+                                    ("comments", "comments", None)])
+            values["department"] = department
+            if is_new:
+                api.create(container, "AnalysisCategory", **values)
+            else:
+                api.edit(obj, check_permissions=False, **values)
+
+    patched_categories_import._maitux_issue001 = True
+    Analysis_Categories.Import = patched_categories_import
+
+    # ------------------------------------------------------------------
+    # Methods — upsert, and link to the ACTIVE multi-valued field
     # ------------------------------------------------------------------
     def patched_methods_import(self):
         folder = self.context.methods
         bsc = getToolByName(self.context, SETUP_CATALOG)
         for row in self.get_rows(3):
-            if row['title']:
-                calculation = self.get_object(
-                    bsc, 'Calculation', row.get('Calculation_title'))
+            if not row.get("title"):
+                continue
+
+            calculation = self.get_object(
+                bsc, "Calculation", row.get("Calculation_title"))
+            obj, is_new = _upsert(folder, "Method", "Method",
+                                  title=row["title"])
+            if is_new:
                 obj = _createObjectByType("Method", folder, tmpID())
-                obj.edit(
-                    title=row['title'],
-                    description=row.get('description', ''),
-                    Instructions=row.get('Instructions', ''),
-                    ManualEntryOfResults=row.get('ManualEntryOfResults', True),
-                    # ISSUE-001: write the ACTIVE multi-valued field.
-                    # The single-valued 'Calculation' field is deprecated
-                    # (XXX: HIDDEN -> TO BE REMOVED in method.py).
-                    Calculations=[calculation.UID()] if calculation else [],
-                    MethodID=row.get('MethodID', ''),
-                    Accredited=row.get('Accredited', True),
+
+            obj.edit(**_present(row, [
+                ("title", "title", None),
+                ("description", "description", None),
+                ("Instructions", "Instructions", None),
+                ("ManualEntryOfResults", "ManualEntryOfResults", None),
+                ("MethodID", "MethodID", None),
+                ("Accredited", "Accredited", None),
+            ]))
+
+            # Only touch Calculations when this row actually resolved one.
+            # Blanking it otherwise would wipe a link a later sheet -- or a
+            # person -- had already established, which is the very relation
+            # the import exists to build.
+            if calculation:
+                _link_method_calculation(obj, calculation)
+            elif row.get("Calculation_title"):
+                logger.info(
+                    "maitux.calcenhance: calculation '%s' for method '%s' "
+                    "does not exist yet; the link will be made from the "
+                    "Calculations sheet."
+                    % (_label(row.get("Calculation_title")),
+                       _label(row["title"])))
+
+            if row.get("MethodDocument"):
+                path = resource_filename(
+                    self.dataset_project,
+                    "setupdata/%s/%s" % (self.dataset_name,
+                                         row["MethodDocument"])
                 )
-                # Obtain all created methods
-                methods_brains = bsc.searchResults({'portal_type': 'Method'})
-                # If a the new method has the same MethodID as a created method, remove MethodID value.
-                for methods in methods_brains:
-                    if methods.getObject().get('MethodID', '') != '' and methods.getObject.get('MethodID', '') == obj['MethodID']:
-                        obj.edit(MethodID='')
+                try:
+                    file_data = read_file(path)
+                    obj.setMethodDocument(file_data)
+                except Exception as msg:
+                    logger.warning(
+                        "%s Error on sheet: %s" % (msg, self.sheetname))
 
-                if row['MethodDocument']:
-                    path = resource_filename(
-                        self.dataset_project,
-                        "setupdata/%s/%s" % (self.dataset_name,
-                                             row['MethodDocument'])
-                    )
-                    try:
-                        file_data = read_file(path)
-                        obj.setMethodDocument(file_data)
-                    except Exception as msg:
-                        logger.warning(
-                            msg[0] + " Error on sheet: " + self.sheetname)
-
+            if is_new:
                 obj.unmarkCreationFlag()
                 renameAfterCreation(obj)
                 notify(ObjectInitializedEvent(obj))
 
+    patched_methods_import._maitux_issue001 = True
     Methods.Import = patched_methods_import
-    Methods.Import._maitux_issue001 = True
 
     # ------------------------------------------------------------------
-    # Calculations.Import — assign default calcs via setCalculations
+    # Calculations.get_interim_fields — parse the boolean columns, and
+    # carry report / apply_wide / locked through
+    # ------------------------------------------------------------------
+    def patched_get_interim_fields(self):
+        sheetname = "Calculation Interim Fields"
+        worksheet = self.workbook[sheetname]
+        if not worksheet:
+            return
+        self.interim_fields = {}
+        for row in self.get_rows(3, worksheet=worksheet):
+            calc_title = row["Calculation_title"]
+            self.interim_fields.setdefault(calc_title, []).append(
+                _read_interim(row, "Calculation_title"))
+
+    patched_get_interim_fields._maitux_issue001 = True
+    Calculations.get_interim_fields = patched_get_interim_fields
+
+    # ------------------------------------------------------------------
+    # Analysis_Services.load_interim_fields — same treatment.  This sheet
+    # has no `hidden` column in core's version, so it never hit the
+    # inverted boolean, but it drops the other three just the same.
+    # ------------------------------------------------------------------
+    def patched_load_interim_fields(self):
+        sheetname = "AnalysisService InterimFields"
+        worksheet = self.workbook[sheetname]
+        if not worksheet:
+            return
+        self.service_interims = {}
+        for row in self.get_rows(3, worksheet=worksheet):
+            service_title = row["Service_title"]
+            self.service_interims.setdefault(service_title, []).append(
+                _read_interim(row, "Service_title"))
+
+    patched_load_interim_fields._maitux_issue001 = True
+    Analysis_Services.load_interim_fields = patched_load_interim_fields
+
+    # ------------------------------------------------------------------
+    # Calculations — upsert, and link back to Methods from this side
     # ------------------------------------------------------------------
     def patched_calculations_import(self):
         self.get_interim_fields()
         container = self.context.setup.calculations
+        bsc = getToolByName(self.context, SETUP_CATALOG)
+        method_pairs = _methods_sheet_pairs(self)
+
         for row in self.get_rows(3):
             calc_title = row.get("title")
             if not calc_title:
                 continue
+
             calc_interims = self.interim_fields.get(calc_title, [])
-            formula = row.get("Formula")
+            formula = row.get("Formula") or ""
             keywords = re.compile(r"\[([^\.^\]]+)\]").findall(formula)
             interim_keys = [k["keyword"] for k in calc_interims]
             dep_keywords = [k for k in keywords if k not in interim_keys]
 
-            obj = api.create(container, "Calculation",
-                             title=calc_title,
-                             description=row.get("description"),
-                             InterimFields=calc_interims,
-                             Formula=formula)
+            obj, is_new = _upsert(container, "Calculation", "Calculation",
+                                  title=calc_title)
+            if is_new:
+                # api.create() routes unknown kwargs through setattr, so
+                # the legacy capitalised aliases still land.
+                obj = api.create(container, "Calculation",
+                                 title=calc_title,
+                                 description=row.get("description"),
+                                 InterimFields=calc_interims,
+                                 Formula=formula)
+            else:
+                # api.edit() filters kwargs through get_fields(), and the
+                # Dexterity schema names are lower case (`formula`,
+                # `interim_fields`).  'Formula' and 'InterimFields' are
+                # property aliases, not fields, so passing them here would
+                # be silently dropped -- go through the setters instead.
+                api.edit(obj, check_permissions=False,
+                         **_present(row, [
+                             ("title", "title", None),
+                             ("description", "description", None),
+                         ]))
+                obj.setInterimFields(calc_interims)
+                obj.setFormula(formula)
 
             for kw in dep_keywords:
                 self.defer(src_obj=obj,
                            src_field="dependent_services",
                            dest_catalog=SETUP_CATALOG,
                            dest_query={"portal_type": "AnalysisService",
-                                       "getKeyword": kw}
-                           )
+                                       "getKeyword": kw})
 
-        # Now we have the calculations registered, try to assign default calcs
-        # to methods
-        sheet = self.workbook["Methods"]
-        bsc = getToolByName(self.context, SETUP_CATALOG)
-        for row in self.get_rows(3, sheet):
-            if row.get("title", "") and row.get("Calculation_title", ""):
-                meth = self.get_object(bsc, "Method", row.get("title"))
-                # ISSUE-001: read/write the ACTIVE multi-valued field
-                if meth and not meth.getCalculations():
-                    calctit = safe_unicode(
-                        row["Calculation_title"]).encode("utf-8")
-                    calc = self.get_object(bsc, "Calculation", calctit)
-                    if calc:
-                        meth.setCalculations([calc.UID()])
+            # Link every Method whose sheet row names this Calculation.
+            # Matches on the Calculation_title column rather than on
+            # Method title == Calculation title, which is what core
+            # assumed and nobody writes.
+            want = _u(calc_title).strip()
+            for method_title, wanted_calc in method_pairs:
+                if _u(wanted_calc).strip() != want:
+                    continue
+                method = self.get_object(bsc, "Method", method_title)
+                if not method:
+                    continue
+                if _link_method_calculation(method, obj):
+                    logger.info(
+                        "maitux.calcenhance: linked calculation '%s' to "
+                        "method '%s'"
+                        % (_label(calc_title), _label(method_title)))
 
+    patched_calculations_import._maitux_issue001 = True
     Calculations.Import = patched_calculations_import
-    Calculations.Import._maitux_issue001 = True
 
     # ------------------------------------------------------------------
-    # Analysis_Services.Import — upsert by keyword + plural read
+    # Analysis_Services — upsert by keyword
     # ------------------------------------------------------------------
     def patched_as_import(self):
         self.load_interim_fields()
@@ -2085,29 +2481,20 @@ def _patch_setupdata_import():
                 continue
 
             keyword = row['Keyword']
-            # ISSUE-001: never silently create a duplicate Analysis
-            # Service for a keyword that already exists.  Update the
-            # existing object instead (upsert).
-            existing = get_by_keyword(keyword, full_objects=True)
-            if existing:
-                obj = existing[0]
-                is_new = False
-                if len(existing) > 1:
-                    logger.warning(
-                        "maitux.calcenhance: %d Analysis Services found for "
-                        "keyword '%s'; updating the first one"
-                        % (len(existing), keyword))
-            else:
-                # Validate the keyword before creating a new service
-                # (charset, uniqueness, calculation formula conflicts)
-                error = check_keyword(keyword)
-                if error:
-                    logger.warning(
-                        "maitux.calcenhance: skipping Analysis Service '%s': %s"
-                        % (row['title'], error))
-                    continue
+            # Character set only -- see the note on check_keyword() in this
+            # function's docstring for why the rest of it is not applied.
+            if re.findall(RX_SERVICE_KEYWORD, keyword or ""):
+                raise ValueError(
+                    "maitux.calcenhance: Analysis Service '%s' has an "
+                    "invalid keyword %r -- only letters, digits, '-' and "
+                    "'_' are allowed. Refusing to import a service that no "
+                    "formula could ever reference."
+                    % (_label(row['title']), keyword))
+
+            obj, is_new = _upsert(folder, "AnalysisService",
+                                  "Analysis Service", keyword=keyword)
+            if is_new:
                 obj = _createObjectByType("AnalysisService", folder, tmpID())
-                is_new = True
 
             MTA = {
                 'days': self.to_int(row.get('MaxTimeAllowed_days', 0), 0),
@@ -2185,9 +2572,8 @@ def _patch_setupdata_import():
             deferredcalculation = self.get_object(
                 bsc, 'Calculation', row.get('Calculation_title'))
             usedefaultcalculation = False if deferredcalculation else True
-            # ISSUE-001: read the ACTIVE multi-valued field of the default
-            # method.  The deprecated single-valued getCalculation() is
-            # never populated by the importer anymore.
+            # Read the ACTIVE multi-valued field of the default method; the
+            # deprecated singular getCalculation() is never populated.
             _calculation = deferredcalculation if deferredcalculation else None
             if not _calculation and defaultmethod:
                 method_calcs = defaultmethod.getCalculations()
@@ -2240,8 +2626,8 @@ def _patch_setupdata_import():
         self.load_result_options()
         self.load_service_uncertainties()
 
+    patched_as_import._maitux_issue001 = True
     Analysis_Services.Import = patched_as_import
-    Analysis_Services.Import._maitux_issue001 = True
 
     return True
 
@@ -3439,23 +3825,56 @@ def _evaluate_calculatedlist_interims(self, only=None):
             return dt, (m.group(7) or u"").strip().upper()
         return None, None
 
-    def _time_elapsed_hours(times, digits=1):
-        """Hours since the earliest timestamp in the array, one per row.
+    def _time_elapsed_hours(times, digits=1, base=None):
+        """Hours since a reference moment, one per row.
 
-        Takes the whole array (an array-path function) because t0 is the
-        minimum over all of them -- a per-element view cannot know it.
-        The earliest row therefore reads 0.
+        Without `base`, t0 is the earliest timestamp in the array itself, so
+        the earliest row reads 0.  With `base` -- typically a timestamp
+        looked up from another analysis -- that becomes t0 instead:
+
+            TIME_ELAPSED_HOURS([imp_qc_inj_time], 1, [imp_std1_inj_lookup])
+
+        which is what a stability series actually measures: hours since the
+        reference standard was injected, not since the first QC point.  The
+        two differ by a constant, so getting it wrong offsets the whole
+        column while every value still looks plausible.
+
+        A row earlier than t0 yields a NEGATIVE number, deliberately.  It
+        says an injection was recorded before the reference it is measured
+        from, which cannot happen in the lab -- so it is a data-entry error,
+        and blanking it or clamping it to zero would hide the one thing
+        worth seeing.  Every such row is named in the log.
+
+        A `base` that cannot be parsed returns "---" rather than quietly
+        falling back to the array minimum.  Silently switching t0 would
+        produce a series measured from the wrong moment that reads as
+        perfectly ordinary.
 
         Inconsistent timezone labels are refused rather than subtracted:
         across a daylight-saving change the same wall-clock difference is
-        not the same elapsed time (ISSUE-007)."""
+        not the same elapsed time (ISSUE-007).  `base` is held to the same
+        rule as the array."""
         import sys as _te_sys
-        if isinstance(digits, list):
+        if isinstance(digits, (list, tuple)):
             digits = digits[0] if digits else 1
+        if isinstance(base, (list, tuple)):
+            base = base[0] if base else None
         if not isinstance(times, (list, tuple)):
             times = [times]
         parsed = [_parse_dt(t) for t in times]
         labels = set(z for dt, z in parsed if dt is not None)
+
+        base_dt = None
+        if base not in (None, "", u"", _PLACEHOLDER):
+            base_dt, base_label = _parse_dt(base)
+            if base_dt is None:
+                _te_sys.stderr.write(
+                    "maitux:   TIME_ELAPSED_HOURS: base %r is not a parsable "
+                    "timestamp -- refusing to fall back to the array "
+                    "minimum\n" % (base,))
+                return [_PLACEHOLDER] * len(times)
+            labels.add(base_label)
+
         if len(labels) > 1:
             _te_sys.stderr.write(
                 "maitux:   TIME_ELAPSED_HOURS: inconsistent timezone labels %s -- refusing to subtract\n"
@@ -3466,16 +3885,31 @@ def _evaluate_calculatedlist_interims(self, only=None):
             _te_sys.stderr.write(
                 "maitux:   TIME_ELAPSED_HOURS: no parsable timestamp in %d value(s)\n" % len(times))
             return [_PLACEHOLDER] * len(times)
-        t0 = min(valid)
+        t0 = base_dt if base_dt is not None else min(valid)
         out = []
-        for dt, z in parsed:
+        negatives = []
+        for index in range(len(parsed)):
+            dt, z = parsed[index]
             if dt is None:
                 out.append(_PLACEHOLDER)
                 continue
             d = dt - t0
             hours = (d.days * 86400.0 + d.seconds
                      + d.microseconds / 1000000.0) / 3600.0
+            if hours < 0:
+                negatives.append((index + 1, times[index]))
             out.append(_round_half_up(hours, digits))
+        if negatives:
+            from bika.lims import logger as _te_logger
+            _te_logger.warn(
+                "maitux.calcenhance: TIME_ELAPSED_HOURS on %s produced %d "
+                "negative hour(s): %s. Those rows are timestamped BEFORE "
+                "the reference (%s), which cannot happen -- check the "
+                "entered times."
+                % (getattr(self, "id", "?"), len(negatives),
+                   ", ".join("row %d = %r" % (n, v) for n, v in negatives),
+                   ("base %r" % (base,)) if base_dt is not None
+                   else "the earliest row"))
         return out
 
     def _coalesce_conflict(row_index, chosen, disagreeing):
