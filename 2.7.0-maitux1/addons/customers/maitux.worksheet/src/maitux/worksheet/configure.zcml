@@ -1,0 +1,34 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="maitux.worksheet">
+
+  <!-- GenericSetup profiles. These must be registered from *this* package:
+  `directory` is resolved relative to the package the directive is read from,
+  so declaring them in profiles/configure.zcml pointed the profile at
+  profiles/profiles/default, which does not exist. The profile then carried no
+  import steps at all and registry.xml was never read. -->
+  <genericsetup:registerProfile
+      name="default"
+      title="MAITUX Worksheet AS-Grouped Mode"
+      description="Adds AS-grouped rendering mode to Worksheet results view"
+      directory="profiles/default"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="MAITUX Worksheet AS-Grouped Mode (uninstall)"
+      description="Remove MAITUX Worksheet AS-Grouped settings"
+      directory="profiles/uninstall"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <!-- Upgrade steps -->
+  <include package=".upgrades" />
+
+  <!-- Browser views/widgets -->
+  <include package=".browser" />
+
+</configure>

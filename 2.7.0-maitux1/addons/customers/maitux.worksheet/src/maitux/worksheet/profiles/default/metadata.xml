@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<metadata>
+  <version>1001</version>
+  <dependencies>
+    <dependency>profile-senaite.core:default</dependency>
+    <dependency>profile-maitux.calcenhance:default</dependency>
+  </dependencies>
+</metadata>

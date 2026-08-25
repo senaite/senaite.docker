@@ -1,0 +1,313 @@
+<!--
+  AS-Grouped table fragment.  Rendered by AnalysesGroupedView.contents_table()
+  and injected into the manage_results page in place of the ReactJS listing.
+
+  SAVING is not done by this form.  Editable cells carry data-uid /
+  data-keyword / data-row-index and are collected by as_grouped.js into the
+  native listing endpoint (<worksheet>/as_grouped/set_fields), which is what
+  drives IDataManager.set() and, with it, the recalculation of dependent
+  analyses.  A custom save adapter would bypass the calculation engine.
+
+  Hence the editable controls deliberately carry NO name attribute: they must
+  not be posted to workflow_action, or a stale DOM value could overwrite a
+  freshly recalculated one.
+
+  The form only carries the workflow transitions (Submit / Unassign / Reject),
+  which keep using the native workflow_action adapters.  as_grouped.js flushes
+  pending edits before letting the form submit, mirroring what the native
+  listing does in ajax_do_transition_for().
+-->
+<div xmlns="http://www.w3.org/1999/xhtml"
+     xmlns:tal="http://xml.zope.org/namespaces/tal"
+     xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+     i18n:domain="maitux.worksheet"
+     class="as-grouped-listing"
+     tal:attributes="data-save-url view/get_save_url">
+
+  <link rel="stylesheet" type="text/css"
+        tal:attributes="href string:${context/portal_url}/++resource++maitux.worksheet.static/as_grouped.css" />
+
+  <form method="post" class="as-grouped-form"
+        tal:attributes="action view/get_workflow_action_url">
+
+    <input type="hidden" name="_authenticator"
+           tal:replace="structure context/@@authenticator/authenticator" />
+    <input type="hidden" name="redirect_url"
+           tal:attributes="value view/get_redirect_url" />
+    <input type="hidden" name="uids"
+           tal:attributes="value view/get_all_uids" />
+
+    <tal:empty condition="not: view/get_as_groups">
+      <div class="alert alert-warning">
+        <i class="fas fa-info-circle"></i>
+        <span i18n:translate="">No analyses found in this worksheet.</span>
+      </div>
+    </tal:empty>
+
+    <!-- ============================= AS groups ============================= -->
+    <tal:groups repeat="group view/get_as_groups">
+
+      <div class="panel panel-default as-group-panel">
+
+        <div class="panel-heading as-group-header">
+          <span class="as-group-keyword" tal:content="group/keyword">KW</span>
+          <span class="as-group-title" tal:content="group/title">AS Title</span>
+          <small class="text-muted as-group-meta">
+            <span tal:replace="python:len(group['samples'])">0</span>
+            <span i18n:translate="">sample(s)</span>
+          </small>
+        </div>
+
+        <div class="panel-body as-group-body">
+
+          <tal:no_samples condition="not: group/samples">
+            <div class="alert alert-info as-group-empty">
+              <span i18n:translate="">
+                No sample data for this Analysis Service.
+              </span>
+            </div>
+          </tal:no_samples>
+
+          <tal:has_samples condition="group/samples">
+            <table class="table table-bordered table-condensed as-group-table">
+
+              <thead>
+                <tr>
+                  <th class="col-select">
+                    <input type="checkbox" class="as-select-all"
+                           title="Select/deselect all rows in this table" />
+                  </th>
+                  <th class="col-sample-id" i18n:translate="">Sample</th>
+                  <th class="col-result" i18n:translate="">Result</th>
+                  <th class="col-method" i18n:translate="">Method</th>
+                  <th class="col-instrument" i18n:translate="">Instrument</th>
+                  <th tal:repeat="col group/interim_columns"
+                      tal:attributes="class python:'col-interim col-interim-%s' % col['render_type']">
+                    <span tal:content="col/title">IF Title</span>
+                    <small class="text-muted"
+                           tal:condition="python:col['render_type'] in ('readonly', 'readonlylist')"
+                           i18n:translate="">(auto)</small>
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tal:sample repeat="sample group/samples">
+                  <tal:rows repeat="row sample/display_rows">
+                    <tr tal:attributes="class python:row['_is_first'] and 'as-row as-row-first' or 'as-row as-row-sub';
+                                        data-block sample/block_id">
+
+                      <!-- Row selection: gates which analyses the workflow
+                           transitions (Submit / Unassign / Reject) act on,
+                           exactly like the checkbox column in Classic (native
+                           `uids` param on workflow_action).
+
+                           Starts UNCHECKED, and as_grouped.js ticks the row as
+                           soon as any of its cells is edited, mirroring
+                           listing.coffee's updateEditableField: "Select the
+                           whole row if an editable field changed its value".
+
+                           It does NOT gate Save: Save posts the edit queue, so
+                           an edited row is saved even if later unticked.  That
+                           is the native contract too (ajax_save iterates
+                           ajax_save_queue, not the selection). -->
+                      <tal:first_row condition="row/_is_first">
+                        <td class="as-select-cell as-span-cell"
+                            tal:attributes="rowspan python:sample['row_count']">
+                          <input type="checkbox" class="as-row-select"
+                                 tal:attributes="data-uid row/uid | nothing" />
+                        </td>
+                      </tal:first_row>
+
+                      <!-- Sample ID: spans every expanded row of this sample -->
+                      <tal:first_row condition="row/_is_first">
+                        <td class="sample-cell as-span-cell"
+                            tal:attributes="rowspan python:sample['row_count']">
+                          <span tal:content="sample/sample_id">Sample-001</span>
+                          <!-- Service info + audit trail overlay: same link
+                               senaite.core.site.js already intercepts
+                               site-wide (a.overlay_panel), so no new JS is
+                               needed for this to open as a modal. -->
+                          <a tal:condition="python:view.get_service_info_url(group, row)"
+                             class="overlay_panel as-info-link"
+                             tal:attributes="href python:view.get_service_info_url(group, row)"
+                             tabindex="-1"
+                             title="Analysis Service info / audit trail">
+                            <i class="fas fa-info-circle"></i>
+                          </a>
+                        </td>
+                      </tal:first_row>
+
+                      <!-- ============================ Result ============================
+                           Scalar columns belong to the analysis, not to a list
+                           element, so they span the sample block instead of being
+                           repeated (and left editable!) on every expanded row.
+                      -->
+                      <td class="col-result as-span-cell"
+                          tal:condition="row/_is_first"
+                          tal:attributes="rowspan python:sample['row_count']">
+                        <tal:first condition="row/_is_first">
+                          <input tal:condition="row/result_editable|nothing"
+                                 type="text"
+                                 class="as-input as-input-numeric"
+                                 data-keyword="Result"
+                                 tal:attributes="value row/Result | nothing;
+                                                 data-uid row/uid | nothing;" />
+                          <span tal:condition="not: row/result_editable|nothing"
+                                class="as-readonly"
+                                data-keyword="Result"
+                                tal:attributes="data-uid row/uid | nothing;"
+                                tal:content="row/Result | nothing">&mdash;</span>
+
+                          <!-- Out-of-range flag: same computation as the
+                               native _folder_item_out_of_range(), rendered as
+                               our own icon (see the comment in views.py on
+                               why the native item["after"]["Result"] HTML
+                               isn't reused as-is). -->
+                          <i tal:condition="row/result_hard_fail|nothing"
+                             class="fas fa-exclamation-triangle as-out-of-range as-out-of-range-hard"
+                             title="Result out of range"></i>
+                          <i tal:condition="row/result_shoulder_warning|nothing"
+                             class="fas fa-exclamation-circle as-out-of-range as-out-of-range-shoulder"
+                             title="Result in shoulder range"></i>
+
+                          <!-- Fields this view does not render, but which the
+                               native Submit adapter would otherwise reset:
+                               get_form_value() falls back to "" when the key
+                               is missing from the form, and the adapter then
+                               calls the setter unconditionally.
+                               (Remarks is NOT preserved here on purpose: its
+                               setter is a no-op on empty values, while a
+                               non-empty one would append a duplicate entry to
+                               the remarks history on every submit.) -->
+                          <input type="hidden"
+                                 tal:attributes="name python:'Uncertainty.%s:records' % row.get('uid', '');
+                                                 value python:row.get('Uncertainty') or '';" />
+                          <input type="hidden"
+                                 tal:attributes="name python:'DetectionLimitOperand.%s:records' % row.get('uid', '');
+                                                 value python:row.get('DetectionLimitOperand') or '';" />
+                        </tal:first>
+                      </td>
+
+                      <!-- ============================ Method ============================ -->
+                      <td class="col-method as-span-cell"
+                          tal:condition="row/_is_first"
+                          tal:attributes="rowspan python:sample['row_count']">
+                        <tal:first condition="row/_is_first">
+                          <select tal:condition="row/method_editable|nothing"
+                                  class="as-select"
+                                  data-keyword="Method"
+                                  tal:attributes="data-uid row/uid | nothing;">
+                            <option value="">&mdash;</option>
+                            <option tal:repeat="mc python:view.get_method_choices(row)"
+                                    tal:attributes="value mc/ResultValue;
+                                                    selected python:row.get('Method', '') == mc['ResultValue'] and 'selected' or None;"
+                                    tal:content="mc/ResultText">Method</option>
+                          </select>
+                          <span tal:condition="not: row/method_editable|nothing"
+                                class="as-readonly"
+                                tal:content="row/Method | nothing">&mdash;</span>
+                        </tal:first>
+                      </td>
+
+                      <!-- ========================== Instrument ========================== -->
+                      <td class="col-instrument as-span-cell"
+                          tal:condition="row/_is_first"
+                          tal:attributes="rowspan python:sample['row_count']">
+                        <tal:first condition="row/_is_first">
+                          <select tal:condition="row/instrument_editable|nothing"
+                                  class="as-select"
+                                  data-keyword="Instrument"
+                                  tal:attributes="data-uid row/uid | nothing;">
+                            <option value="">&mdash;</option>
+                            <option tal:repeat="ic python:view.get_instrument_choices(row)"
+                                    tal:attributes="value ic/ResultValue;
+                                                    selected python:row.get('Instrument', '') == ic['ResultValue'] and 'selected' or None;"
+                                    tal:content="ic/ResultText">Instrument</option>
+                          </select>
+                          <span tal:condition="not: row/instrument_editable|nothing"
+                                class="as-readonly"
+                                tal:content="row/Instrument | nothing">&mdash;</span>
+                        </tal:first>
+                      </td>
+
+                      <!-- ======================== Interim fields ========================
+                           A list interim gets one cell per expanded row: that is
+                           the whole point of the layout, each element lines up
+                           with its peers across columns.
+
+                           A scalar interim belongs to the analysis as a whole, so
+                           it spans the block exactly like Result / Method.  Giving
+                           it a cell on every row would render one editable input
+                           per row for a single stored value.
+                      -->
+                      <tal:interims repeat="col group/interim_columns">
+                        <tal:cell define="kw col/keyword;
+                                          is_list col/is_list;
+                                          val python:row['interim'].get(kw, '');
+                                          cell_uid python:row['interim_uid'].get(kw, '');
+                                          editable python:row['interim_editable'].get(kw, False);
+                                          row_index python:str(row['_row_idx']) if col['is_list'] else None;
+                                          css python:'as-cell as-cell-%s' % col['render_type']">
+
+                          <td tal:condition="python:is_list or row['_is_first']"
+                              tal:attributes="class python:is_list and css or (css + ' as-span-cell');
+                                              rowspan python:None if is_list else sample['row_count']">
+                            <input tal:condition="editable"
+                                   type="text"
+                                   class="as-input as-input-numeric"
+                                   tal:attributes="value val;
+                                                   data-uid cell_uid;
+                                                   data-keyword kw;
+                                                   data-row-index row_index;" />
+                            <span tal:condition="not: editable"
+                                  class="as-readonly"
+                                  tal:attributes="data-uid cell_uid;
+                                                  data-keyword kw;
+                                                  data-row-index row_index;"
+                                  tal:content="val">&mdash;</span>
+                          </td>
+
+                        </tal:cell>
+                      </tal:interims>
+
+                    </tr>
+                  </tal:rows>
+                </tal:sample>
+              </tbody>
+
+            </table>
+          </tal:has_samples>
+        </div>
+      </div>
+
+    </tal:groups>
+
+    <!-- =========================== Action buttons ===========================
+         Save mirrors the native listing: hidden until something is edited,
+         and it never submits the form; as_grouped.js posts the queue.
+         The transition buttons are plain submits; the script intercepts them
+         to flush pending edits first.
+    -->
+    <tal:has_groups condition="view/get_as_groups">
+      <div class="as-group-actions">
+        <button type="button" hidden="hidden"
+                class="btn btn-success btn-sm as-save-button">
+          <span i18n:translate="">Save</span> <i class="fas fa-save"></i>
+        </button>
+        <button type="submit" name="workflow_action_id" value="submit"
+                class="btn btn-primary btn-sm" i18n:translate="">Submit</button>
+        <button type="submit" name="workflow_action_id" value="unassign"
+                class="btn btn-outline-secondary btn-sm" i18n:translate="">Unassign</button>
+        <button type="submit" name="workflow_action_id" value="reject"
+                class="btn btn-danger btn-sm" i18n:translate="">Reject</button>
+        <span class="as-save-status" role="status" aria-live="polite"></span>
+      </div>
+    </tal:has_groups>
+
+  </form>
+
+  <script type="text/javascript"
+          tal:attributes="src string:${context/portal_url}/++resource++maitux.worksheet.static/as_grouped.js"></script>
+
+</div>

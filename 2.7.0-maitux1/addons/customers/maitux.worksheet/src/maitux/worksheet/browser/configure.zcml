@@ -1,0 +1,58 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.worksheet">
+
+  <!-- AS-Grouped Worksheet layout view.
+
+  NOTE: Do NOT add a `template` attribute here.  With both `class` and
+  `template`, ZCML builds the view via SimpleViewClass(), which binds the
+  template to `index` and renders it from `simple.__call__`.  That `__call__`
+  is shadowed in the MRO by senaite.app.listing's ListingView.__call__, which
+  renders its own `self.template` (the ReactJS listing) instead, silently and
+  without any error.  The template is selected by the class itself.
+
+  This registration is also required by the layout dropdown: ManageResultsView
+  resolves the layout via api.get_view("as_grouped"), and the AJAX save
+  endpoint is reached by traversing <worksheet>/as_grouped/set_fields.
+  -->
+  <browser:page
+      name="as_grouped"
+      for="senaite.core.interfaces.IWorksheet"
+      class=".views.AnalysesGroupedView"
+      permission="zope2.View"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <!-- Register AS-Grouped in the worksheet layout vocabulary -->
+  <utility
+      name="maitux.worksheet.layout.as_grouped"
+      factory=".layouts.AsGroupedLayout"
+      provides="senaite.core.interfaces.IWorksheetLayouts"
+      />
+
+  <!-- NOTE: no "workflow_action_save" adapter is registered on purpose.
+  Results and interim fields are persisted through the native listing endpoint
+  (ajax_set_fields -> IDataManager.set), which is also what triggers the
+  recalculation of dependent analyses.  A custom save adapter would bypass the
+  calculation engine.  Submit/Unassign/Reject keep using the native
+  workflow_action adapters registered by senaite.core.
+  -->
+
+  <!-- NOTE: the AS-Grouped sample listings (as_grouped_lab_analyses /
+  as_grouped_field_analyses) are registered in overrides.zcml, not here.  They
+  use the senaite.core permission ManageAnalysisRequests, which is only
+  registered by five:loadProducts.  On the 8085 image the
+  package-includes/*-configure.zcml pass runs *before* five:loadProducts, so a
+  browser:page with a custom permission in this file fails at startup with
+  ComponentLookupError(IPermission, ...).  The *-overrides.zcml pass runs after
+  five:loadProducts, where the permission is already registered.
+  -->
+
+  <!-- Static resources -->
+  <browser:resourceDirectory
+      name="maitux.worksheet.static"
+      directory="static"
+      />
+
+</configure>
