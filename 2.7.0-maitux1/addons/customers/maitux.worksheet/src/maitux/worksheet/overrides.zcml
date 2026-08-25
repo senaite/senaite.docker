@@ -1,0 +1,66 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.worksheet">
+
+  <!-- Replace the stock sample analyses viewlets with ones that carry the
+  AS-Grouped / Classic switch.
+
+  These must live in overrides.zcml: name and manager match the registrations
+  in senaite.core (browser/viewlets/configure.zcml), and a plain configure.zcml
+  would be a duplicate-registration conflict rather than an override.
+
+  The subclasses change only which listing view renders the table; the title,
+  the collapse toggle and the available() test that hides an empty section are
+  all inherited, so they follow senaite.core as it changes.
+
+  The QC section is intentionally not overridden: it is a read-only listing
+  built from a different base class, so the wide-table problem does not arise
+  there.
+  -->
+  <browser:viewlet
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="senaite.core.samplesection.lab_analyses"
+      manager="senaite.core.browser.viewlets.interfaces.ISampleSection"
+      class=".browser.sample_viewlets.LabAnalysesGroupedViewlet"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      permission="zope2.View" />
+
+  <browser:viewlet
+      for="bika.lims.interfaces.IAnalysisRequest"
+      name="senaite.core.samplesection.field_analyses"
+      manager="senaite.core.browser.viewlets.interfaces.ISampleSection"
+      class=".browser.sample_viewlets.FieldAnalysesGroupedViewlet"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      permission="zope2.View" />
+
+  <!-- AS-Grouped listings for the analyses sections of a Sample.
+
+  Registered here (not browser/configure.zcml) because they use the
+  senaite.core permission ManageAnalysisRequests, which is registered by
+  five:loadProducts.  On the 8085 image the *-configure.zcml pass runs before
+  five:loadProducts, so the permission is not yet available there; this
+  *-overrides.zcml pass runs after it.
+
+  Same permission as the stock table_lab_analyses / table_field_analyses views
+  they stand in for (see bika/lims/browser/analysisrequest/configure.zcml), so
+  switching layout cannot widen who gets to see or edit results.  As with the
+  worksheet view above: no `template` attribute here.
+  -->
+  <browser:page
+      name="as_grouped_lab_analyses"
+      for="bika.lims.interfaces.IAnalysisRequest"
+      class=".browser.sample_views.LabAnalysesGroupedView"
+      permission="senaite.core.permissions.ManageAnalysisRequests"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+  <browser:page
+      name="as_grouped_field_analyses"
+      for="bika.lims.interfaces.IAnalysisRequest"
+      class=".browser.sample_views.FieldAnalysesGroupedView"
+      permission="senaite.core.permissions.ManageAnalysisRequests"
+      layer="senaite.core.interfaces.ISenaiteCore"
+      />
+
+</configure>

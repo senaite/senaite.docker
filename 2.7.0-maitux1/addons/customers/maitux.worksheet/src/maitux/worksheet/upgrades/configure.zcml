@@ -1,0 +1,18 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="maitux.worksheet">
+
+  <genericsetup:upgradeStep
+      title="Register the maitux.worksheet registry records"
+      description="Writes 'sample_analyses_layout' into the site registry so
+                   the SENAITE control panel can configure it and the sample
+                   view stops falling back to the hardcoded default."
+      source="1000"
+      destination="1001"
+      handler="maitux.worksheet.upgrades.import_registry"
+      sortkey="1"
+      profile="maitux.worksheet:default"
+      />
+
+</configure>

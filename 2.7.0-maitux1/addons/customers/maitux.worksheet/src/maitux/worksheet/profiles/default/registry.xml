@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<registry xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+          i18n:domain="maitux.worksheet">
+
+  <!-- Registering the interface is all it takes for the setting to appear in
+  /senaite-controlpanel: get_registry_interfaces() collects every schema that
+  extends ISenaiteRegistry and the control panel renders them. -->
+  <records interface="maitux.worksheet.registry.IMaituxWorksheetRegistry" />
+
+</registry>
