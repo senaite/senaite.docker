@@ -1,13 +1,27 @@
-﻿<configure
+<configure
     xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
     xmlns:plone="http://namespaces.plone.org/plone"
     i18n_domain="maitux.calcenhance">
 
-  <!-- Register GenericSetup profile -->
-  <include package=".profiles" />
+  <!-- Register GenericSetup profiles -->
+  <genericsetup:registerProfile
+      name="default"
+      title="MAITUX Calculation Enhancement"
+      description="Adds List and Calculated interim field types"
+      directory="profiles/default"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="MAITUX Calculation Enhancement (uninstall)"
+      description="Remove MAITUX Calculation Enhancement settings"
+      directory="profiles/uninstall"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
 
   <!-- Browser views/widgets (loaded later) -->
   <!-- <include package=".browser" /> -->
 
 </configure>
-
