@@ -1,0 +1,14 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="maitux.calcenhance">
+
+  <!-- The auto-logoff viewlet that used to live here was removed: it
+  duplicated maitux.autologoff, which registers its own viewlet on the
+  same manager (IPortalFooter).  Keeping both would have been a ZCML
+  conflict once the namespaces were unified, and an inactivity timer is
+  not a calculation-engine concern.
+
+  static/interim_list_widget.js is still shipped here but registered
+  nowhere; it needs a browser:resourceDirectory before it does anything. -->
+
+</configure>

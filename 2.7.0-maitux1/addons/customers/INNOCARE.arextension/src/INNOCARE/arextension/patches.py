@@ -107,3 +107,46 @@ def patched_get_input_widget(self, fieldname, arnum=0, **kw):
 
 AnalysisRequestAddView.get_input_widget = patched_get_input_widget
 logger.info("Patched AnalysisRequestAddView.get_input_widget to hide right-cell widget label")
+
+
+# ---------------------------------------------------------------------------
+# 去除 AR 接收（receive）前的强制“采样日期（Date Sampled）”校验
+# senaite 核心的 receive 守卫位于
+#   bika.lims.workflow.analysisrequest.guards.guard_receive
+# 其逻辑是：只有当 sample.getDateSampled() 有值时，guard_handler 才放行
+# “receive” 过渡，否则“样品接收”动作不显示。
+# 本项目未启用采样流程，接收入口不应强制要求录入采样日期，故恒放行。
+# guard_handler 在每次求值时通过 getattr(模块, 'guard_receive') 取函数，
+# 因此只要替换该模块属性即可生效。
+# ---------------------------------------------------------------------------
+from bika.lims.workflow.analysisrequest import guards as _ar_workflow_guards
+
+# 保留原方法引用，便于排查/回退
+_original_ar_guard_receive = _ar_workflow_guards.guard_receive
+
+
+def patched_ar_guard_receive(sample):
+    """允许在未填写采样日期的情况下接收 AR"""
+    return True
+
+
+_ar_workflow_guards.guard_receive = patched_ar_guard_receive
+logger.info("Patched guard_receive -> always True (Date Sampled not required for receive)")
+
+
+# ---------------------------------------------------------------------------
+# 隐藏 AR 编辑/查看页顶部“无法接收/请设置采样日期”的黄色提示横幅
+# 来源：senaite.core.browser.viewlets.sample.not_sampled.NotSampledViewlet
+# 该视图在“未接收 且 未填 DateSampled”时无条件展示，会误导操作者，
+# 本项目未启用采样流程，故直接置为不显示。
+# ---------------------------------------------------------------------------
+from senaite.core.browser.viewlets.sample.not_sampled import NotSampledViewlet
+
+
+def patched_not_sampled_is_visible(self):
+    """隐藏未采集提示横幅"""
+    return False
+
+
+NotSampledViewlet.is_visible = patched_not_sampled_is_visible
+logger.info("Patched NotSampledViewlet.is_visible -> False (hide 'not sampled' warning banner)")

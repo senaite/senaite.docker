@@ -1,0 +1,211 @@
+/* maitux.worksheet - AS-Grouped worksheet layout */
+
+/* ------------------------------- Panels ------------------------------- */
+.as-group-panel {
+  margin-bottom: 20px;
+  border: 1px solid #c8cdd3;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+}
+
+.as-group-header {
+  background: linear-gradient(180deg, #e9eef3, #dce3ea);
+  border-bottom: 2px solid #2c6fad;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.as-group-keyword {
+  background: #2c6fad;
+  color: #fff;
+  padding: 3px 10px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: Consolas, monospace;
+  letter-spacing: 0.5px;
+}
+
+.as-group-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a3a5c;
+}
+
+.as-group-meta {
+  margin-left: auto;
+  font-size: 11px;
+}
+
+.as-group-body {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.as-group-empty {
+  margin: 0;
+  border-radius: 0;
+}
+
+/* ------------------------------- Table -------------------------------- */
+.as-group-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 0;
+}
+
+.as-group-table thead th {
+  background: #f5f6f8;
+  border-bottom: 2px solid #c0c6ce;
+  padding: 7px 10px;
+  font-weight: 600;
+  font-size: 11px;
+  color: #444;
+  white-space: nowrap;
+}
+
+.as-group-table tbody td {
+  padding: 5px 8px;
+  border-bottom: 1px solid #e8eaed;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.as-group-table tbody tr.as-row-first td {
+  border-top: 1px solid #d6dae0;
+}
+
+.as-group-table tbody tr:hover {
+  background: #f2f5f9;
+}
+
+/* Column widths */
+.col-select     { width: 30px; text-align: center; }
+.col-sample-id  { width: 110px; }
+.col-result     { width: 90px; }
+.col-method     { width: 130px; }
+.col-instrument { width: 130px; }
+.col-interim    { min-width: 80px; }
+
+.as-select-cell {
+  text-align: center;
+  vertical-align: top;
+  background: #f7f8fa;
+}
+
+.sample-cell {
+  font-weight: 600;
+  color: #1a3a5c;
+  background: #f7f8fa;
+  vertical-align: top;
+}
+
+/* Service-info / audit-trail overlay link, next to the sample id */
+.as-info-link {
+  margin-left: 4px;
+  color: #6c8aa8;
+  text-decoration: none;
+}
+
+.as-info-link:hover {
+  color: #2c6fad;
+}
+
+/* Out-of-range flags on the Result cell */
+.as-out-of-range {
+  margin-left: 5px;
+}
+
+.as-out-of-range-hard {
+  color: #b02a37;
+}
+
+.as-out-of-range-shoulder {
+  color: #d9a441;
+}
+
+/* ------------------------------ Controls ------------------------------ */
+.as-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  border: 1px solid #c8cdd3;
+  border-radius: 2px;
+  font-family: Consolas, monospace;
+  font-size: 12px;
+  background: #fff;
+}
+
+.as-input-numeric {
+  text-align: right;
+}
+
+.as-input:focus,
+.as-select:focus {
+  border-color: #2c6fad;
+  outline: none;
+  box-shadow: 0 0 3px rgba(44, 111, 173, 0.25);
+}
+
+.as-select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px;
+  border: 1px solid #c8cdd3;
+  border-radius: 2px;
+  font-size: 11px;
+  background: #fff;
+}
+
+.as-readonly {
+  color: #888;
+  font-style: italic;
+}
+
+/* Edited but not yet persisted */
+.as-input.as-dirty {
+  border-color: #d9a441;
+  background: #fffdf5;
+}
+
+/* Row currently being saved */
+.as-row-saving {
+  opacity: 0.55;
+}
+
+/* Value refreshed by the last save round-trip */
+.as-readonly.as-refreshed {
+  animation: as-flash 0.9s ease-out;
+}
+
+@keyframes as-flash {
+  from { background: #fff3cd; }
+  to   { background: transparent; }
+}
+
+/* ------------------------------ Actions ------------------------------- */
+.as-group-actions {
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 1px solid #c0c6ce;
+  border-radius: 4px;
+  background: #f5f6f8;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.as-save-status {
+  font-size: 12px;
+  color: #666;
+}
+
+.as-save-status.as-error {
+  color: #b02a37;
+  font-weight: 600;
+}

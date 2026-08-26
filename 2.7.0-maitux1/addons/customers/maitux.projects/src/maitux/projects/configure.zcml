@@ -49,9 +49,4 @@
       handler=".setuphandlers.on_project_added"
       />
 
-  <subscriber
-      for="zope.processlifetime.IProcessStarting"
-      handler=".setuphandlers.on_process_starting"
-      />
-
 </configure>

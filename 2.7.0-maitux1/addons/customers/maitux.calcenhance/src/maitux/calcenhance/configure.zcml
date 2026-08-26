@@ -1,13 +1,51 @@
-﻿<configure
+<configure
     xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
     xmlns:plone="http://namespaces.plone.org/plone"
     i18n_domain="maitux.calcenhance">
 
-  <!-- Register GenericSetup profile -->
-  <include package=".profiles" />
+  <!-- GenericSetup profiles. These must be registered from *this* package:
+  `directory` is resolved relative to the package the directive is read from,
+  so declaring them in profiles/configure.zcml pointed the profile at
+  profiles/profiles/default, which does not exist. The profile id also became
+  maitux.calcenhance.profiles:default and the profile carried no import steps,
+  so any XML placed under profiles/default would have been ignored. -->
+  <genericsetup:registerProfile
+      name="default"
+      title="Maitux Calculation Enhancement"
+      description="Adds List and Calculated interim field types"
+      directory="profiles/default"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
 
-  <!-- Browser views/widgets (loaded later) -->
-  <!-- <include package=".browser" /> -->
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="Maitux Calculation Enhancement (uninstall)"
+      description="Remove Maitux Calculation Enhancement settings"
+      directory="profiles/uninstall"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <!-- The set_field patch (see patches._patch_listing_set_field) needs
+  senaite.app.listing.ajax, which imports senaite.core at module scope.
+  apply_patches() runs while this package is being imported and can get
+  there first on a cold start, leaving the patch silently absent, so the
+  attempt is repeated once the ZODB is open and every product is loaded.
+  Both attempts are idempotent; whichever wins, the other is a no-op. -->
+  <subscriber
+      for="zope.processlifetime.IDatabaseOpenedWithRoot"
+      handler=".patches._patch_listing_set_field_deferred"
+      />
+
+  <!-- ISSUE-001: the setupdata importer patches (patches._patch_setupdata_import)
+  import senaite.core.exportimport.setupdata, which can also fail on a cold
+  start.  The same deferred retry applies. -->
+  <subscriber
+      for="zope.processlifetime.IDatabaseOpenedWithRoot"
+      handler=".patches._patch_setupdata_import_deferred"
+      />
+
+  <!-- Browser views/widgets -->
+  <include package=".browser" />
 
 </configure>
-

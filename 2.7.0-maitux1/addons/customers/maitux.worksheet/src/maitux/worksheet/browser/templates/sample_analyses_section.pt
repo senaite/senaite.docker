@@ -1,0 +1,79 @@
+<!--
+  Sample analyses section with an AS-Grouped / Classic switch.
+
+  Kept deliberately close to senaite.core's sampleanalyses.pt: same structure,
+  same collapse behaviour, same ids.  The only addition is the layout switch
+  next to the section title.
+-->
+<div class="analysis-listing-table"
+     xmlns:tal="http://xml.zope.org/namespaces/tal"
+     xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+     tal:condition="python:view.available()"
+     tal:define="id string:table-${view/capture|other}-analyses;
+                 collapsed python:view.is_collapsed();
+                 grouped python:view.is_grouped();
+                 portal context/@@plone_portal_state/portal"
+     i18n:domain="maitux.worksheet">
+  <div class="row mb-4">
+    <div class="col-sm-12">
+
+      <!-- Analysis listing title and icon -->
+      <h3 tal:define="icon view/icon_name|nothing;
+                      title view/title|nothing"
+          class="d-inline-block"
+          tal:condition="title">
+        <img tal:condition="icon|nothing"
+             tal:attributes="src string:${portal/absolute_url}/senaite_theme/icon/${icon}"/>
+        <span class="align-middle" i18n:translate="" tal:content="title"/>
+      </h3>
+
+      <!-- Toggle Button -->
+      <a href="#" class="text-decoration-none ml-2"
+         data-toggle="collapse"
+         tal:attributes="data-target string:#${id}">
+        <i tal:condition="collapsed" class="toggle-icon fas fa-toggle-off"></i>
+        <i tal:condition="not: collapsed" class="toggle-icon fas fa-toggle-on"></i>
+      </a>
+
+      <!-- Layout switch.  The active one is rendered as plain text: there is
+           nowhere to navigate to, and it makes the current state obvious. -->
+      <span class="ml-3 maitux-layout-switch">
+        <tal:grouped condition="grouped">
+          <span class="badge badge-primary" i18n:translate="">AS-Grouped</span>
+          <a class="badge badge-light border"
+             tal:attributes="href python:view.get_switch_url('classic')"
+             i18n:translate="">Classic</a>
+        </tal:grouped>
+        <tal:classic condition="not: grouped">
+          <a class="badge badge-light border"
+             tal:attributes="href python:view.get_switch_url('as_grouped')"
+             i18n:translate="">AS-Grouped</a>
+          <span class="badge badge-secondary" i18n:translate="">Classic</span>
+        </tal:classic>
+      </span>
+
+      <!-- Analysis listing table -->
+      <div tal:attributes="id id;
+                           class python:'collapse' if collapsed else 'show'">
+        <span tal:replace="structure python:view.contents_table()"/>
+      </div>
+
+      <!-- Toggle JS -->
+      <script type="text/javascript">
+       document.addEventListener("DOMContentLoaded", (event) => {
+         let id='<tal:id replace="id"></tal:id>';
+         let toggle_icon = $('a[data-target="#' + id + '"] i.toggle-icon');
+         $('#' + id).on('show.bs.collapse', function () {
+           toggle_icon.removeClass("fa-toggle-off");
+           toggle_icon.addClass("fa-toggle-on");
+         });
+         $('#' + id).on('hide.bs.collapse', function () {
+           toggle_icon.removeClass("fa-toggle-on");
+           toggle_icon.addClass("fa-toggle-off");
+         });
+       });
+      </script>
+
+    </div>
+  </div>
+</div>

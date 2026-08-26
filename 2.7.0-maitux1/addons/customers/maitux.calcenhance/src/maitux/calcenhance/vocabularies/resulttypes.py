@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 from senaite.core.config.vocabularies import RESULT_TYPES as CORE_RESULT_TYPES
 from maitux.calcenhance.config.vocabularies import ADDITIONAL_RESULT_TYPES
@@ -22,4 +22,3 @@ class ResultTypesVocabulary(object):
 
 
 ResultTypesVocabularyFactory = ResultTypesVocabulary()
-

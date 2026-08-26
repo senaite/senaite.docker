@@ -65,6 +65,7 @@ services:
       - ./blobstorage:/data/blobstorage
       - ./addons/customers:/opt/addons/customers
       - ./addons/customers/custom-addon.cfg:/home/senaite/senaitelims/custom-addon.cfg
+      - ./docker-entrypoint.sh:/docker-entrypoint.sh:ro
     networks:
       - maitux_lims_backend
 

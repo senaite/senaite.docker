@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import threading
 
 from bika.lims import api as bika_api
 from plone import api as ploneapi
@@ -655,16 +654,15 @@ def reindex_structure(folder):
                 len(targets), bika_api.get_path(folder))
 
 
-def uninstall_handler(context):
-    marker = "%s-uninstall.txt" % PROJECTNAME
-    if context.readDataFile(marker) is None:
-        return
-    logger.info("maitux.projects uninstall handler [BEGIN]")
+def uninstall(context):
+    logger.info("maitux.projects uninstall [BEGIN]")
+
     portal = (getattr(context, "getSite", lambda: None)()
               or _portal_from_context_or_global(context))
     if portal is None:
-        logger.warn("portal not available in uninstall_handler, skip")
+        logger.warn("portal not available in uninstall, skip")
         return
+
     setup_tool = _get_senaite_setup(portal)
     if setup_tool is not None:
         get_folders = getattr(setup_tool, "getSidebarFolders", None)
@@ -676,11 +674,8 @@ def uninstall_handler(context):
                 set_folders(tuple(folders))
                 logger.info(
                     "Removed '%s' from SENAITE sidebar folders", FOLDER_ID)
-    logger.info("maitux.projects uninstall handler [DONE]")
 
-
-def uninstall(context):
-    uninstall_handler(context)
+    logger.info("maitux.projects uninstall [DONE]")
 
 
 # ==============================================================================
@@ -815,54 +810,4 @@ def ensure_projects_workflow_initialized(portal):
             total, fixed)
 
 
-# ---------------------------------------------------------------------------
-# First-request hook: apply install steps on an already existing site
-# ---------------------------------------------------------------------------
-_INSTALL_LOCK = threading.Lock()
-_INSTALL_DONE = False
-
-
-def on_process_starting(event):
-    try:
-        from zope.component import provideHandler
-        from ZPublisher.interfaces import IPubAfterTraversal
-        provideHandler(_on_first_request, (IPubAfterTraversal,))
-        logger.info("maitux.projects: registered first-request hook "
-                    "(IPubAfterTraversal)")
-    except Exception as exc:
-        logger.warn("maitux.projects: hook registration failed: %s", exc)
-
-
-def _on_first_request(event):
-    global _INSTALL_DONE
-    if _INSTALL_DONE:
-        return
-    with _INSTALL_LOCK:
-        if _INSTALL_DONE:
-            return
-        try:
-            request = getattr(event, "request", None)
-            if request is None:
-                return
-            try:
-                from zope.globalrequest import getRequest, setRequest
-                if getRequest() is None:
-                    setRequest(request)
-            except Exception:
-                pass
-            portal = _portal_from_context_or_global()
-            if portal is None:
-                logger.warn("maitux.projects: portal not resolvable, "
-                            "retry next request")
-                return
-            with ploneapi.env.adopt_roles(["Manager"]):
-                run_install_steps(portal)
-            import transaction
-            transaction.commit()
-            _INSTALL_DONE = True
-            logger.info("maitux.projects: first-request hook committed")
-        except Exception as exc:
-            logger.warn("maitux.projects: first-request hook failed: %s", exc)
-            import traceback
-            logger.warn(traceback.format_exc())
 
