@@ -36,7 +36,7 @@ function git_fixture {
 git_fixture
 
 if [ -e "custom.cfg" ]; then
-  buildout -c custom.cfg -N
+  buildout -c custom.cfg -o -n
   find /data  -not -user senaite -exec chown senaite:senaite {} \+
   find /home/senaite -not -user senaite -exec chown senaite:senaite {} \+
   gosu senaite python /docker-initialize.py
