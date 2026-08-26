@@ -2,8 +2,68 @@
 
 为 SENAITE LIMS 的计算公式（Calculation）模块增加三种新的 Interim Field 控件类型，支持 HPLC 含量测定、装量差异、杂质含量等复杂计算场景。
 
-**版本：** 1.4.0
+**版本：** 1.4.1
 **兼容：** SENAITE 2.x（实测 2.7.0 / Plone 5.2 / Python 2.7）
+
+---
+
+## 1.4.1 更新概要（2026-08-26）
+
+### 修复：报告书遇到中文 Interim 值时整份渲染失败
+
+打印结果报告直接报错，一页 PDF 都出不来：
+
+```
+UnicodeEncodeError: 'ascii' codec can't encode characters
+                    in position 0-3: ordinal not in range(128)
+```
+
+`senaite.core` 的 `format_interim` 把所有 `result_type` 不是 `string` /
+`text` 的 interim 都交给 `formatDecimalMark`，而后者第一行
+`rawval = str(value)` 写在它自己的 try 之外。我们的 `list` /
+`calculatedlist` **本来就是装文本的** —— 杂质名（未知杂质）、溶剂名
+（甲醇）、占位符 `—`。`api.to_list()` 会把存储的 JSON 数组解成 unicode，
+`str()` 去按 ASCII 编码就当场崩掉。
+
+修复前实测：MaiLIMS 23 处、InnoCare 8 处、Care 6 处。
+
+同一函数往下几行给单位调用的 `format_supsub` 有同样的 `str(text)`，
+`μg/mL` 这类单位一样会崩，一并挡掉。
+
+**这是 Python 2 独有的问题。** 同一行代码在 Python 3 上是空操作，不会崩。
+SENAITE 2.x 上游在 Py3 上开发，那边复现不出来，所以没有往上游提的意义 ——
+这个修复只能留在我们这一层。
+
+**触发它的是我们自己。** core 的 `format_interim` 有个隐含假设「不是
+string/text，那就是数字」，这个假设对 core 自己成立；`list` /
+`calculatedlist` 是本包发明的 result type，是我们把输入域撑到了那个函数的
+设计范围之外。所以修在本包是责任归属清楚的，不是替 core 擦屁股。
+
+**行为保持**（这几条是刻意的分寸，不是顺手）：
+
+1. 小数点替换只对**真的是数值**的值生效，含 `< 2.1` / `> 2.1` 这两种
+   senaite.core 自己的 `test_manualuncertainty` 锁定的写法。对自由文本不再
+   套用 —— 否则 `Imp.A` 会被改写成 `Imp,A`
+2. 值在这里**不做 HTML 转义**：`results.pt` 用的是 `tal:content` 而非
+   `structure`，转两次会让 PDF 里冒出字面量 `&lt;br/&gt;`
+3. choices 映射两边都按 unicode 匹配（此前中文标签会静默变成空单元格，
+   不报错但也没内容），且按第一个冒号切分，标签里含冒号不再抛
+   `too many values to unpack`
+
+**为什么要改两个模块**：`senaite.impress` 是
+`from bika.lims.utils.analysis import format_interim`，在导入期就把名字绑
+死了。只重绑源模块的话，报告这条路 —— 唯一会崩的那条 —— 还是走老函数。
+两个模块都重绑，并按本包既有模式挂了一个 `IDatabaseOpenedWithRoot` 重试，
+兜住冷启动时 `senaite.impress` 还导不进来的情况。
+
+**已知遗留**（不在本次修复范围内，属 core 默认模板自身问题）：
+`results.pt` 第 158/159 行的 interim 脚注用的是裸 `tal:content`，而同一模板
+的主结果格（100/103/106/110 行）都写了 `structure`。所以脚注里的
+`<br/>` 与单位的 `<sup>` 会以字面量显示。这与本包数据无关，所有 interim
+类型都受影响，需要在报告模板层面解决。
+
+验证：8086 三个站点共 2380 个 interim 字段全部格式化，0 崩溃；13 项数值
+行为回归全部与修复前一致。
 
 ---
 
@@ -1483,6 +1543,7 @@ maitux.calcenhance/
             ├── configure.zcml         # 主 ZCML 配置
             ├── overrides.zcml         # 覆盖核心 vocabulary 的 ZCML
             ├── patches.py             # 所有 monkey-patch 逻辑
+            │                          # 注意：同时承担 Python 2 兼容层，见下节
             ├── config/
             │   ├── __init__.py
             │   └── vocabularies.py    # ADDITIONAL_RESULT_TYPES 定义
@@ -1498,6 +1559,31 @@ maitux.calcenhance/
                 ├── configure.zcml     # vocabulary 覆盖注册
                 └── resulttypes.py     # ResultTypesVocabulary 覆盖
 ```
+
+### patches.py 同时承担 Python 2 兼容层
+
+包名叫「计算增强」，但 `patches.py` 里有一部分补丁**跟计算公式毫无关系**，
+纯粹是在挡 `senaite.core` 在 Python 2 下的中文崩溃。接手的人不会想到来这里
+找报告渲染或目录索引的修复，所以在这里写明：
+
+| 补丁 | 挡的是什么 | 不打会怎样 |
+|---|---|---|
+| `_patch_getlink` | 链接渲染 | 带中文的链接抛 UnicodeDecodeError |
+| `_patch_validator_interimfields_unicode` | 表单校验 | AS 未挂 Calculation 时手工录入 interim，提交的标题是 UTF-8 字节、存的是 unicode，Py2 下两者不相等 → 误报校验失败 |
+| `_patch_format_interim` | 报告渲染 | 报告书整份出不来（1.4.1） |
+
+共同点：**在 Python 3 上都不成立**。这些不是功能，是本环境跑在 Python 2.7
+上的代价，一旦整套迁到 Py3 就应当整体删除，而不是逐个评估。
+
+另有一个 `_patch_uidcatalog_unicode`（同类问题：中文标题的物理路径让目录索引
+崩）**已停用**，代码保留在文件里但调用被注释掉了。它把 UUID 当作 catalog id
+来绕开路径编码，结果 `brain.getObject()` 返回 `None`，打断了
+`UIDReferenceField` 的反向引用 —— 在 UTF-8 原生环境（如 8085）上会出问题。
+**不要在没有替代方案时把它重新打开。**
+
+它们与计算代码不共享任何状态，将来若要拆成独立的 `maitux.py2compat`，照这
+张表切即可。**当前刻意不拆**：拆包意味着新增 `custom-addon.cfg` 条目、新
+zcml、并再走一遍 Docker 构建链路，风险大于收益。这里留下接缝，不留下动作。
 
 ---
 

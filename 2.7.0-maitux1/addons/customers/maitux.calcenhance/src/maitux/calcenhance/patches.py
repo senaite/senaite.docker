@@ -28,6 +28,9 @@ from Products.Archetypes.event import ObjectEditedEvent as \
 from zope.event import notify as _notify_event
 
 
+# [PY2-UNICODE] Not a calculation feature.  This package doubles as our
+# Python 2 unicode-safety layer; see the "patches.py 同时承担 Python 2 兼容层"
+# section in README.md for the full list and the removal criterion.
 def _patch_getlink():
     """Monkey-patch bika.lims.utils.get_link to be Python 2 unicode-safe.
 
@@ -86,6 +89,7 @@ def apply_patches():
     _patch_folder_item()
     _patch_is_multi_interim()
     _patch_get_formatted_interim()
+    _patch_format_interim()    # report-side twin of the above
     _patch_set_interim_value()
     _patch_set_interim_fields()
     _patch_calculate_result()
@@ -434,6 +438,7 @@ def _patch_is_multi_interim():
 # VALIDATOR PATCH — Normalize bytes/unicode in InterimFields keyword/title comparison
 # ==============================================================================
 
+# [PY2-UNICODE] Not a calculation feature -- see README.md.
 def _patch_validator_interimfields_unicode():
     """Patch InterimFieldsValidator.__call__ to normalize bytes vs unicode.
     
@@ -547,6 +552,188 @@ def _patch_get_formatted_interim():
         return original_formatted(self, interim)
 
     analysis_view.AnalysesView.get_formatted_interim = patched_get_formatted_interim
+
+
+# ==============================================================================
+# FORMAT_INTERIM PATCH — unicode-safe interim rendering in printed reports
+# [PY2-UNICODE] Not a calculation feature -- see README.md.
+# ==============================================================================
+#
+# This is the report-side twin of _patch_get_formatted_interim above.  The
+# listing view was fixed long ago; the report renderer goes through a different
+# function that nobody had touched, so the same defect was still live there.
+#
+# bika.lims.utils.analysis.format_interim routes every interim whose
+# result_type is not "string"/"text" through formatDecimalMark, and
+# formatDecimalMark opens with
+#
+#     rawval = str(value)     # <-- outside its own try/except
+#
+# Our "list" and "calculatedlist" interims legitimately hold text: impurity
+# names (未知杂质), solvent names (甲醇), the "—" placeholder.  api.to_list()
+# json-decodes the stored array into *unicode* strings, so str() tries an ascii
+# encode and the whole report dies with
+#
+#     UnicodeEncodeError: 'ascii' codec can't encode characters in position 0-3
+#
+# and no PDF is produced at all.  Measured on 2026-08-26: 23 such fields in
+# MaiLIMS, 8 in InnoCare, 6 in Care.
+#
+# format_supsub, called a few lines further down for the unit, carries the same
+# `str(text)` and breaks on any non-ascii unit such as "μg/mL".
+#
+# Behaviour of the replacement:
+#   * decimal-mark substitution is kept, but only for values that really are
+#     numeric (including the "< 2.1" / "> 2.1" forms core's own tests cover).
+#     Applying it to text would corrupt names containing a dot.
+#   * non-numeric values pass through as unicode text.  They are NOT
+#     html-escaped here: results.pt renders formatted_value with tal:content,
+#     not `structure`, so TAL escapes it and doing it twice would surface
+#     literal &lt;br/&gt; in the PDF.
+#   * the choices mapping is matched on unicode on both sides, otherwise a
+#     CJK choice label silently renders as an empty cell instead of crashing.
+
+_NUMERIC_RE = None
+
+
+def _looks_numeric(text):
+    """True for values formatDecimalMark was actually meant to handle."""
+    global _NUMERIC_RE
+    if _NUMERIC_RE is None:
+        import re as _re
+        # plain numbers, scientific notation, and the detection-limit forms
+        # ("< 2.1", "> 2.1") that senaite.core's own tests pin down
+        _NUMERIC_RE = _re.compile(
+            r"^\s*[<>]?\s*[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?\s*$")
+    return bool(_NUMERIC_RE.match(text))
+
+
+def _format_decimal_safe(value, decimal_mark):
+    """formatDecimalMark without the str(u"CJK") crash."""
+    text = _safe_text(value)
+    if not _looks_numeric(text):
+        # a decimal-mark swap on free text would corrupt it (e.g. an impurity
+        # name containing a dot), so leave it alone
+        return text
+    try:
+        return _safe_text(decimal_mark).join(text.split(u"."))
+    except Exception:
+        return text
+
+
+def _format_supsub_safe(unit):
+    """format_supsub without the str(u"μg/mL") crash."""
+    text = _safe_text(unit)
+    try:
+        text.encode("ascii")
+    except UnicodeEncodeError:
+        # non-ascii units carry no ^ / _ markup in practice; returning them
+        # verbatim is better than losing the whole report
+        return text
+    try:
+        from bika.lims.utils import format_supsub
+        return format_supsub(text)
+    except Exception:
+        return text
+
+
+def _patch_format_interim():
+    """Replace format_interim with a Python 2 unicode-safe equivalent."""
+    import sys as _sys
+    from bika.lims import api
+    from bika.lims.utils import formatTextResult
+    from bika.lims.utils import analysis as analysis_utils
+
+    def safe_format_interim(interim_field, html=True):
+        separator = u"<br/>" if html else u", "
+        result_type = interim_field.get("result_type", "")
+
+        # copy to prevent persistent changes
+        item = deepcopy(interim_field)
+
+        value = item.get("value", "")
+        values = filter(None, api.to_list(value))
+
+        choices = item.get("choices")
+        if choices:
+            mapping = {}
+            for chunk in _safe_text(choices).split(u"|"):
+                chunk = chunk.strip()
+                if u":" not in chunk:
+                    continue
+                # split once only: a label may legitimately contain a colon,
+                # which made the original raise "too many values to unpack"
+                key, text = chunk.split(u":", 1)
+                mapping[key.strip()] = text.strip()
+            texts = [mapping.get(_safe_text(v), u"") for v in values]
+            values = filter(None, texts)
+
+        elif result_type in ["string", "text"]:
+            values = [formatTextResult(val, html) for val in values]
+
+        else:
+            setup = api.get_senaite_setup()
+            decimal_mark = setup.getResultsDecimalMark()
+            values = [_format_decimal_safe(val, decimal_mark)
+                      for val in values]
+
+        item["formatted_value"] = separator.join(
+            [_safe_text(v) for v in values])
+
+        unit = item.get("unit", "")
+        item["formatted_unit"] = (
+            _format_supsub_safe(unit) if html else _safe_text(unit))
+
+        return item
+
+    safe_format_interim._maitux_patched = True
+    analysis_utils.format_interim = safe_format_interim
+
+    # senaite.impress binds the name at module import time
+    # ("from bika.lims.utils.analysis import format_interim"), so rebinding
+    # the source module alone would leave the report path -- the only path
+    # that actually crashes -- on the old function.
+    rebound = ["bika.lims.utils.analysis"]
+    impress_done = False
+    try:
+        from senaite.impress.analysisrequest import reportview
+        reportview.format_interim = safe_format_interim
+        rebound.append("senaite.impress...reportview")
+        impress_done = True
+    except Exception as exc:
+        rebound.append("senaite.impress PENDING (%s)" % exc)
+
+    _sys.stderr.write(
+        "maitux: format_interim patched for unicode safety (%s)\n"
+        % ", ".join(rebound))
+    _sys.stderr.flush()
+    return impress_done
+
+
+def _patch_format_interim_deferred(event=None):
+    """Retry the impress rebinding once every product is loaded.
+
+    Same reasoning as _patch_listing_set_field_deferred: apply_patches() runs
+    while this package is being imported, which on a cold start can be before
+    senaite.impress is importable.  Without the retry the core module would be
+    patched but the report path would silently keep the crashing function --
+    the worst possible outcome, since that is the only path that fails.
+    """
+    _s = __import__("sys")
+    try:
+        from senaite.impress.analysisrequest import reportview
+    except Exception as exc:
+        _s.stderr.write(
+            "maitux: deferred format_interim patch failed to import "
+            "senaite.impress: %s\n" % exc)
+        return
+    if getattr(reportview.format_interim, "_maitux_patched", False):
+        return   # the eager attempt already won
+    from bika.lims.utils import analysis as analysis_utils
+    reportview.format_interim = analysis_utils.format_interim
+    _s.stderr.write(
+        "maitux: format_interim rebound on senaite.impress (deferred)\n")
+    _s.stderr.flush()
 
 
 # ==============================================================================
