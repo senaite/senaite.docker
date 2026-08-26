@@ -28,6 +28,9 @@ from Products.Archetypes.event import ObjectEditedEvent as \
 from zope.event import notify as _notify_event
 
 
+# [PY2-UNICODE] Not a calculation feature.  This package doubles as our
+# Python 2 unicode-safety layer; see the "patches.py 同时承担 Python 2 兼容层"
+# section in README.md for the full list and the removal criterion.
 def _patch_getlink():
     """Monkey-patch bika.lims.utils.get_link to be Python 2 unicode-safe.
 
@@ -435,6 +438,7 @@ def _patch_is_multi_interim():
 # VALIDATOR PATCH — Normalize bytes/unicode in InterimFields keyword/title comparison
 # ==============================================================================
 
+# [PY2-UNICODE] Not a calculation feature -- see README.md.
 def _patch_validator_interimfields_unicode():
     """Patch InterimFieldsValidator.__call__ to normalize bytes vs unicode.
     
@@ -552,6 +556,7 @@ def _patch_get_formatted_interim():
 
 # ==============================================================================
 # FORMAT_INTERIM PATCH — unicode-safe interim rendering in printed reports
+# [PY2-UNICODE] Not a calculation feature -- see README.md.
 # ==============================================================================
 #
 # This is the report-side twin of _patch_get_formatted_interim above.  The
