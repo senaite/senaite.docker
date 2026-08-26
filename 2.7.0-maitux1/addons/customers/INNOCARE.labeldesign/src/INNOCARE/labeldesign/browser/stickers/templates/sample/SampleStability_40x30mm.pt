@@ -1,0 +1,51 @@
+<tal:sticker define="item python:view.current_item;
+                     sample_id python:getattr(item, 'getId', lambda: '')() or '';
+                     batch_title python:(getattr(item, 'getBatch', None) and getattr(item.getBatch(), 'Title', lambda: '')()) or '';">
+  <div class="label sample-stability">
+    <div class="label-header sample-stability">
+      <span class="label-title">稳定性标签</span>
+    </div>
+
+    <table class="label-table" cellpadding="0" cellspacing="0" border="0">
+      <tr>
+        <td class="lbl-label">样品编号</td>
+        <td class="lbl-value" tal:content="sample_id">UR-0001</td>
+      </tr>
+      <tr>
+        <td class="lbl-label">物料名称</td>
+        <td class="lbl-value" tal:content="python:getattr(item, 'MaterialName', '') or ''">材料</td>
+      </tr>
+      <tr>
+        <td class="lbl-label">厂家批号</td>
+        <td class="lbl-value" tal:content="batch_title">BATCH-01</td>
+      </tr>
+      <tr>
+        <td class="lbl-label">放样日期</td>
+        <td class="lbl-value" tal:content="python:(getattr(item, 'DateSampled', None) and item.DateSampled) or ''">2026-08-21</td>
+      </tr>
+      <tr>
+        <td class="lbl-label">取样点</td>
+        <td class="lbl-value" tal:content="python:(getattr(item, 'SamplingPoint', None) and getattr(item.SamplingPoint, 'Title', lambda: '')()) or ''">P01</td>
+      </tr>
+      <tr>
+        <td class="lbl-label">放置条件</td>
+        <td class="lbl-value" tal:content="python:getattr(item, 'placement_condition', '') or ''">Upright</td>
+      </tr>
+    </table>
+
+    <div class="barcode"
+         tal:attributes="data-id python:sample_id;"
+         data-code="code128"
+         data-barHeight="10"
+         data-addQuietZone="true"
+         data-showHRI="false">
+    </div>
+
+    <div class="qrcode"
+         data-size="64"
+         data-render="image"
+         data-quiet="2"
+         tal:attributes="data-text python:sample_id">
+    </div>
+  </div>
+</tal:sticker>

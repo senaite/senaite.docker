@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone">
+
+  <plone:static
+      directory="templates"
+      type="stickers"
+      name="INNOCARE.labeldesign"
+      />
+
+</configure>

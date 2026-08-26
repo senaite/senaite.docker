@@ -1,0 +1,37 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="INNOCARE.Reportdesign">
+
+  <include package="Products.GenericSetup" file="meta.zcml" />
+
+  <!-- Register the worksheet print template resource directory.
+       Any .pt file placed here (with a matching .css file) is
+       automatically discovered by senaite.core's
+       WSTemplatesPrintFactory and listed in the worksheet print
+       view's "Available templates" dropdown as
+       "reportdesign:<template>.pt". -->
+  <plone:static
+      directory="templates/print"
+      type="worksheets"
+      name="reportdesign"
+  />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="INNOCARE.Reportdesign"
+      directory="profiles/default"
+      description="Installs the INNOCARE.Reportdesign package"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="INNOCARE.Reportdesign (uninstall)"
+      directory="profiles/uninstall"
+      description="Uninstalls INNOCARE.Reportdesign"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+</configure>
