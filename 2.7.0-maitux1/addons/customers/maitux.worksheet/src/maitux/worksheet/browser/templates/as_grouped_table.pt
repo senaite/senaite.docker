@@ -81,6 +81,7 @@
                   <th class="col-result" i18n:translate="">Result</th>
                   <th class="col-method" i18n:translate="">Method</th>
                   <th class="col-instrument" i18n:translate="">Instrument</th>
+                  <th class="col-state" i18n:translate="">State</th>
                   <th tal:repeat="col group/interim_columns"
                       tal:attributes="class python:'col-interim col-interim-%s' % col['render_type']">
                     <span tal:content="col/title">IF Title</span>
@@ -228,6 +229,31 @@
                           <span tal:condition="not: row/instrument_editable|nothing"
                                 class="as-readonly"
                                 tal:content="row/Instrument | nothing">&mdash;</span>
+                        </tal:first>
+                      </td>
+
+                      <!-- ============================ State =============================
+                           The workflow state is per *analysis*, and in this layout
+                           one AS panel mixes analyses that are far apart in the
+                           workflow: a reviewer looking at a submitted row next to
+                           an unsubmitted one otherwise has to infer which is which
+                           from whether the inputs happen to be editable.
+
+                           Spans the sample block like Result / Method: it belongs
+                           to the analysis, not to a list element.
+
+                           state_title is the translated title the native listing
+                           uses; state_class is its `state-<id>` counterpart, so the
+                           same colours the rest of SENAITE already applies to state
+                           labels carry over without a new stylesheet.
+                      -->
+                      <td class="col-state as-span-cell"
+                          tal:condition="row/_is_first"
+                          tal:attributes="rowspan python:sample['row_count']">
+                        <tal:first condition="row/_is_first">
+                          <span class="as-readonly as-state"
+                                tal:attributes="class python:'as-readonly as-state %s' % (row.get('state_class') or '')"
+                                tal:content="row/state_title | nothing">&mdash;</span>
                         </tal:first>
                       </td>
 
