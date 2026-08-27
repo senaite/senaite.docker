@@ -22,5 +22,27 @@ COLD01|Low temperature|低温 / 冷藏储存|iso/W010.svg
 ASPH01|Asphyxiating atmosphere|窒息性 / 低温惰性气体|iso/W041.svg
 """.strip()
 
+LEGACY_HAZARD_EN_COMMON = {
+    u"GHS01": u"explosive",
+    u"GHS02": u"flammable",
+    u"GHS03": u"oxidizing",
+    u"GHS04": u"pressurised gas",
+    u"GHS05": u"acid / caustic",
+    u"GHS06": u"poisonous",
+    u"GHS07": u"harmful / irritant",
+    u"GHS08": u"carcinogenic / mutagenic",
+    u"GHS09": u"environmentally hazardous",
+    u"BIO01": u"infectious / biological",
+    u"RAD01": u"ionising radiation",
+    u"NIR01": u"UV / laser / RF",
+    u"MAG01": u"NMR / MRI",
+    u"ELEC01": u"electric shock",
+    u"HSURF01": u"hot to touch",
+    u"HOT01": u"heated material",
+    u"STEAM01": u"autoclave / sterilisation",
+    u"COLD01": u"freezing / cold storage",
+    u"ASPH01": u"cryogenic / inert gas",
+}
+
 PROJECTNAME = "maitux.hazardcategories"
 PROFILE_ID = "profile-%s:default" % PROJECTNAME

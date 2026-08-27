@@ -7,7 +7,7 @@ from senaite.app.listing import ListingView
 from senaite.core.i18n import translate
 
 from maitux.hazardcategories import _
-from INNOCARE.arextension.setuphandlers import translate_with_fallback
+from maitux.hazardcategories.translation import translate_with_fallback
 
 from zope.publisher.interfaces import IPublishTraverse
 from zope.interface import implementer
