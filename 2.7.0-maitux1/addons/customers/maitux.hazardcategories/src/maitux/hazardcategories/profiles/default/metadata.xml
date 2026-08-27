@@ -2,7 +2,6 @@
 <metadata>
   <version>1</version>
   <dependencies>
-    <dependency>profile-INNOCARE.arextension:default</dependency>
     <dependency>profile-senaite.core:default</dependency>
     <dependency>profile-plone.app.registry:default</dependency>
   </dependencies>

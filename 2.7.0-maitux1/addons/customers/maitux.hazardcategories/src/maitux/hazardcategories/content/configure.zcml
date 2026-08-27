@@ -16,4 +16,18 @@
         />
   </class>
 
+  <adapter
+      name="usage_scope"
+      factory=".hazardcategory.usage_scope"
+      for="maitux.hazardcategories.interfaces.IHazardCategory
+           senaite.core.interfaces.ISetupCatalog"
+      provides="plone.indexer.interfaces.IIndexer" />
+
+  <adapter
+      name="allowedRolesAndUsers"
+      factory=".hazardcategory.allowed_roles_and_users"
+      for="maitux.hazardcategories.interfaces.IHazardCategory
+           senaite.core.interfaces.ISetupCatalog"
+      provides="plone.indexer.interfaces.IIndexer" />
+
 </configure>
