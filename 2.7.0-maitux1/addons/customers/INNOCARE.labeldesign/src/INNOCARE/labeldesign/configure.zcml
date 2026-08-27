@@ -1,0 +1,28 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="INNOCARE.labeldesign">
+
+  <five:registerPackage package="." />
+
+  <include package=".browser" />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="INNOCARE Label Design"
+      directory="profiles/default"
+      description="INNOCARE label designs add-on"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="INNOCARE Label Design (uninstall)"
+      directory="profiles/uninstall"
+      description="Uninstalls INNOCARE.labeldesign"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+</configure>

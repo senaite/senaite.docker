@@ -55,9 +55,20 @@ def patched_senaite_translate(msgid, to_utf8=True, **kwargs):
     result = _original_senaite_translate(msgid, to_utf8=to_utf8, **kwargs)
     # Message 对象自带 domain，走原生逻辑；仅处理纯字符串未命中场景
     if not isinstance(msgid, Message) and result == msgid:
+        # 原生 str 若含非 ASCII（如 setup 面板的中文标题），zope.i18n.translate
+        # 会按 ascii 解码 msgid 而抛 UnicodeDecodeError，此类直接返回原生结果。
+        if isinstance(msgid, str):
+            try:
+                msgid.decode("ascii")
+            except UnicodeDecodeError:
+                return result
         context = kwargs.get("context") or _bika_api.get_request()
         for domain in _EXTRA_TRANSLATION_DOMAINS:
-            translated = _ztranslate(msgid, domain=domain, context=context)
+            try:
+                translated = _ztranslate(msgid, domain=domain, context=context)
+            except Exception:
+                # 附加域查找异常不得影响主流程（如排序/翻译）
+                continue
             if translated != msgid:
                 return _bika_api.to_utf8(translated) if to_utf8 else translated
     return result

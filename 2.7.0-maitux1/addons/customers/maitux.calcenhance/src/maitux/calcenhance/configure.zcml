@@ -45,6 +45,16 @@
       handler=".patches._patch_setupdata_import_deferred"
       />
 
+  <!-- format_interim must also be rebound on senaite.impress, which binds the
+  name at import time.  senaite.impress may not be importable while this
+  package is loading, and a miss there is invisible: the core module would be
+  patched while the report path (the only one that crashes) kept the old
+  function.  Retry once every product is up. -->
+  <subscriber
+      for="zope.processlifetime.IDatabaseOpenedWithRoot"
+      handler=".patches._patch_format_interim_deferred"
+      />
+
   <!-- Browser views/widgets -->
   <include package=".browser" />
 

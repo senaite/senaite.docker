@@ -1,0 +1,302 @@
+<!--
+    INNOCARE.Reportdesign - Worksheet print template (AS-grouped)
+
+    Renders the worksheet analyses grouped by Analysis Request (AR),
+    mirroring the "manage_results" view's AS-grouped layout.
+
+    All data is available via the "worksheet" dictionary produced by
+    senaite.core PrintView#_ws_data. Each entry in worksheet/ars is an
+    Analysis Request group: {id, position, client, sample, analyses}.
+    Each analysis dict provides title, keyword, position,
+    formatted_result, unit, formatted_unit, formatted_specs,
+    formatted_uncertainty, review_state, remarks, retested, ...
+-->
+<tal:print
+  i18n:domain="INNOCARE.Reportdesign"
+  tal:define="worksheet       python:view.getWorksheet();
+              laboratory      worksheet/laboratory;
+              portal          worksheet/portal;
+              ars             worksheet/ars;
+              reviewerid      python:getattr(worksheet['obj'], 'reviewer_userid', u'') or u'';
+              reviewerfull    python:(lambda m: (m.getProperty('fullname') or reviewerid) if m is not None else reviewerid)(modules['Products.CMFCore.utils'].getToolByName(worksheet['obj'], 'portal_membership').getMemberById(reviewerid)) if reviewerid else u'';
+              instruments     python:[i for i in sorted(set([(an['obj'].getInstrument().Title() if hasattr(an['obj'], 'getInstrument') and an['obj'].getInstrument() is not None else u'') for ar in ars for an in ar['analyses']])) if i];
+              logo_url        python:worksheet['portal']['url'] + '/maitu-logo-png';">
+
+  <div id="header">
+    <div class='barcode-container'>
+      <div class='report-qrcode'
+           data-size='128'
+           data-render='image'
+           data-quiet='4'
+           tal:attributes="data-text worksheet/id">
+      </div>
+    </div>
+    <div class='lab-logo'>
+      <a tal:attributes="href laboratory/url">
+        <img class="logo"
+             height="25"
+             tal:attributes="src python:logo_url"/>
+      </a>
+    </div>
+    <h1>
+      <a tal:attributes="href worksheet/url"
+         tal:content="worksheet/id"></a>
+    </h1>
+  </div>
+  <div class="subheader">
+    <div>
+      <span i18n:translate="">Created on</span>&nbsp;
+      <span tal:content="worksheet/date_created"></span>&nbsp;
+      <span i18n:translate="">by</span>&nbsp;
+      <a tal:attributes="href python:('mailto:%s' % worksheet['createdby']['email'])"
+         tal:content="worksheet/createdby/fullname"></a>
+    </div>
+    <div>
+      <span i18n:translate="">Printed on</span>&nbsp;
+      <span tal:content="worksheet/date_printed"></span>&nbsp;
+      <span i18n:translate="">by</span>&nbsp;
+      <a tal:attributes="href python:('mailto:%s' % worksheet['printedby']['email'])"
+         tal:content="worksheet/printedby/fullname"></a>
+    </div>
+    <div>
+      <span i18n:translate="">Analysed by</span>:&nbsp;
+      <a tal:attributes="href python:('mailto:%s' % worksheet['analyst']['email'])"
+         tal:content="worksheet/analyst/fullname"></a>
+    </div>
+    <div>
+      <span>审核人</span>:&nbsp;
+      <span tal:content="reviewerfull"></span>
+    </div>
+    <div>
+      <span>仪器</span>:&nbsp;
+      <span tal:content="python:', '.join(instruments)"></span>
+    </div>
+  </div>
+
+  <div class="content">
+    <tal:group repeat="ar ars">
+      <!-- AR group header (AS-grouped) -->
+      <div class="ar-group">
+        <div class="ar-header">
+          <span class="badge" tal:content="ar/position"></span>
+          <span class="ar-id" tal:content="ar/id"></span>
+        </div>
+        <!-- Each test renders its own interim fields and result -->
+        <tal:row repeat="an ar/analyses">
+          <!--
+            Layout rule for multi-value interim fields, bounded by A4 landscape width (~277mm).
+            Column widths use fixed character counts so the layout is predictable:
+              - Orientation A (positions as rows, fields as cols): each field column is a
+                fixed 6 characters wide; # column = index digits + 4.
+              - Orientation B (fields as rows, positions as cols): label column is a fixed
+                12.5 characters wide; each index column = index digits + 4.
+            - Prefer A (natural); transpose to B only when A's total width exceeds the page
+              and B is narrower (fits many numeric index columns on one line).
+            - Pagination: columns beyond the single-page capacity are split into sub-tables
+              (the first column stays fixed, the rest are equally divided by actual width):
+              max 9 data columns per sub-table in orientation A, max 7 in orientation B;
+              the last sub-table keeps its own equal division.
+            - Tables taller than ~24 rows become "breakable": they split across pages and
+              the <thead> header row repeats on every page (saves paper).
+          -->
+          <tal:block tal:define="interims python:[f for f in an['obj'].getInterimFields() if not f.get('hidden')];
+                                 raw python:[(f.get('title') or f.get('keyword'),
+                                              (lambda v: modules['json'].loads(v)
+                                                         if isinstance(v, basestring) and v.strip().startswith('[')
+                                                         else (v if isinstance(v, list) else None))(f.get('value')))
+                                             for f in interims];
+                                 afields python:[r for r in raw
+                                                 if isinstance(r[1], list)
+                                                 and any([unicode(x) for x in r[1] if x not in (None, u'', '')])];
+                                 sfields python:[r for r in raw
+                                                 if r[1] is not None
+                                                 and not isinstance(r[1], list)
+                                                 and r[1] not in (None, u'', '')];
+                                 ncols python:len(afields);
+                                 pcount python:max([len(r[1]) for r in afields] or [0]);
+                                 hasgrid python:ncols >= 1;
+                                 cwC python:3.4;
+                                 cwN python:2.1;
+                                 padC python:4;
+                                 pageW python:277.0;
+                                 maxplen python:len(str(pcount)) if pcount else 1;
+                                 colws python:[6 * cwC for a in afields];
+                                 rowA python:(maxplen + padC) * cwN;
+                                 wA python:rowA + (sum(colws) if colws else 0);
+                                 lcol python:12.5 * cwC;
+                                 pcol python:(maxplen + padC) * cwN;
+                                 wB python:lcol + pcount * pcol;
+                                 orient python:'B' if (hasgrid and wA > pageW and wB < wA) else 'A';
+                                 tcols python:ncols if orient == 'A' else pcount;
+                                 trows python:pcount if orient == 'A' else ncols;
+                                 wclass python:'cols-small' if tcols <= 6 else ('cols-mid' if tcols <= 12 else 'cols-many');
+                                 nper python:9 if orient == 'A' else 7;
+                                 ngrp python:(tcols + nper - 1) // nper if hasgrid and tcols > nper else 1;
+                                 breakcl python:(' breakable' if (hasgrid and trows + 3 > 24) else '');
+                                 orientcl python:(' orient-b' if orient == 'B' else '');
+                                 tbclass python:(('test-block transposed ' + wclass + orientcl + breakcl) if hasgrid else 'test-block');
+                                 rclazz string:result ${an/review_state};">
+
+            <!-- No multi-value fields: plain label/value rows -->
+            <tal:nogrid condition="python:not hasgrid">
+              <table class="test-block">
+                <tr class="test-head">
+                  <td class="pos" tal:content="an/position"></td>
+                  <td class="title">
+                    <span tal:content="an/title"></span>
+                    <span class="retested" tal:condition="an/retested" i18n:translate=""> (retested)</span>
+                  </td>
+                </tr>
+                <tal:single repeat="r sfields">
+                  <tr class="interim-row">
+                    <td class="ilabel" tal:content="python:r[0]"></td>
+                    <td class="ivalue" tal:content="python:r[1]"></td>
+                  </tr>
+                </tal:single>
+                <tr class="result-row">
+                  <td class="rlabel" i18n:translate="">Result</td>
+                  <td>
+                    <span class="rval" tal:attributes="class rclazz">
+                      <span tal:content="python:an.get('formatted_result') or ''">&nbsp;</span>
+                    </span>
+                    <span class="rmeta">
+                      <span tal:condition="python:an.get('formatted_unit')">
+                        <span i18n:translate="">Unit</span>: <span tal:content="python:an.get('formatted_unit')"></span>
+                      </span>
+                      <span tal:condition="python:an.get('formatted_uncertainty')">
+                        <span i18n:translate="">+/-</span>: <span tal:content="python:an.get('formatted_uncertainty')"></span>
+                      </span>
+                      <span tal:condition="python:an.get('formatted_specs')">
+                        <span i18n:translate="">Specification</span>: <span tal:content="python:an.get('formatted_specs')"></span>
+                      </span>
+                    </span>
+                  </td>
+                </tr>
+                <tr class="remarks-row" tal:condition="an/remarks">
+                  <td class="remarks" colspan="2">
+                    <span i18n:translate="">Remarks</span>: <span tal:content="an/remarks"></span>
+                  </td>
+                </tr>
+              </table>
+            </tal:nogrid>
+
+            <!-- Multi-value fields: orientation A (positions as rows) or B (positions as columns) -->
+            <tal:grid condition="python:hasgrid">
+              <table tal:repeat="gi python:range(ngrp)"
+                     tal:attributes="class tbclass">
+                <colgroup>
+                  <col tal:attributes="style python:'width:%s' % ('12mm' if orient == 'A' else ('%.1fmm' % lcol))"/>
+                  <col tal:repeat="c python:range(min(nper, tcols - gi * nper))" style="width:auto"/>
+                </colgroup>
+                <thead>
+                  <tr class="test-head">
+                    <td class="pos" tal:content="an/position"></td>
+                    <td class="title" tal:attributes="colspan python:min(nper, tcols - gi * nper)">
+                      <span tal:content="an/title"></span>
+                      <span class="grp" tal:condition="python:ngrp > 1"
+                            tal:content="python:' (%d-%d)' % (gi * nper + 1, min((gi + 1) * nper, tcols))"></span>
+                      <span class="retested" tal:condition="an/retested" i18n:translate=""> (retested)</span>
+                    </td>
+                  </tr>
+                  <!-- A: field names as column headers; fixed 6-char column width -->
+                  <tr class="cols-head" tal:condition="python:orient == 'A'">
+                    <td class="icol"><span i18n:translate="">#</span></td>
+                    <td class="ih" tal:repeat="a python:afields[gi * nper:(gi + 1) * nper]"
+                        tal:content="python:a[0]"></td>
+                  </tr>
+                  <!-- B: position numbers as column headers; label col = fixed 12.5 chars, index cols = digits + 4 -->
+                  <tr class="cols-head" tal:condition="python:orient == 'B'">
+                    <td class="ilabel"><span i18n:translate="">#</span></td>
+                    <td class="icol" tal:repeat="c python:range(min(nper, tcols - gi * nper))"
+                        tal:content="python:gi * nper + c + 1"></td>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- A: one row per position -->
+                  <tr class="interim-row" tal:condition="python:orient == 'A'"
+                      tal:repeat="p python:range(pcount)">
+                    <td class="icol" tal:content="python:p + 1"></td>
+                    <td class="ivalue" tal:repeat="a python:afields[gi * nper:(gi + 1) * nper]"
+                        tal:content="python:(a[1][p] if p < len(a[1]) and a[1][p] is not None else u'')"></td>
+                  </tr>
+                  <!-- B: one row per field -->
+                  <tr class="interim-row" tal:condition="python:orient == 'B'"
+                      tal:repeat="a afields">
+                    <td class="ilabel" tal:content="python:a[0]"></td>
+                    <td class="ivalue" tal:repeat="c python:range(min(nper, tcols - gi * nper))"
+                        tal:content="python:(a[1][gi * nper + c] if (gi * nper + c) < len(a[1]) and a[1][gi * nper + c] is not None else u'')"></td>
+                  </tr>
+                  <!-- Single-value fields shown once below the grid (last sub-table) -->
+                  <tal:single repeat="r sfields" condition="python:gi == ngrp - 1">
+                    <tr class="interim-row">
+                      <td class="ilabel" tal:content="python:r[0]"></td>
+                      <td class="ivalue" tal:attributes="colspan python:min(nper, tcols - gi * nper)" tal:content="python:r[1]"></td>
+                    </tr>
+                  </tal:single>
+                  <tr class="result-row" tal:condition="python:gi == ngrp - 1">
+                    <td class="rlabel" i18n:translate="">Result</td>
+                    <td tal:attributes="colspan python:min(nper, tcols - gi * nper)">
+                      <span class="rval" tal:attributes="class rclazz">
+                        <span tal:content="python:an.get('formatted_result') or ''">&nbsp;</span>
+                      </span>
+                      <span class="rmeta">
+                        <span tal:condition="python:an.get('formatted_unit')">
+                          <span i18n:translate="">Unit</span>: <span tal:content="python:an.get('formatted_unit')"></span>
+                        </span>
+                        <span tal:condition="python:an.get('formatted_uncertainty')">
+                          <span i18n:translate="">+/-</span>: <span tal:content="python:an.get('formatted_uncertainty')"></span>
+                        </span>
+                        <span tal:condition="python:an.get('formatted_specs')">
+                          <span i18n:translate="">Specification</span>: <span tal:content="python:an.get('formatted_specs')"></span>
+                        </span>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr class="remarks-row" tal:condition="python:gi == ngrp - 1 and bool(an.get('remarks'))">
+                    <td class="remarks" tal:attributes="colspan python:(min(nper, tcols - gi * nper) if orient == 'A' else nper) + 1">
+                      <span i18n:translate="">Remarks</span>: <span tal:content="an/remarks"></span>
+                    </td>
+                  </tr>
+                </tbody>
+                <!-- Underline at the bottom of every page fragment when the table breaks -->
+                <tfoot tal:condition="python:'breakable' in tbclass">
+                  <tr>
+                    <td class="tfoot-line"
+                        tal:attributes="colspan python:1 + min(nper, tcols - gi * nper)"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </tal:grid>
+          </tal:block>
+        </tal:row>
+      </div>
+    </tal:group>
+
+    <div id="footer" tal:condition="worksheet/remarks">
+      <div>
+        <span i18n:translate="">Remarks</span>:
+        <span tal:content="worksheet/remarks"></span>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    (function ($) {
+      function renderReportQR() {
+        $(".report-qrcode").each(function () {
+          var $el = $(this);
+          var text = $el.data("text") || "no text";
+          $el.empty().qrcode({
+            render: "image",
+            size: 128,
+            quiet: 4,
+            text: text.toString()
+          });
+        });
+      }
+      if (window.jQuery && $.fn.qrcode) {
+        renderReportQR();
+      }
+    })(window.jQuery);
+  </script>
+</tal:print>

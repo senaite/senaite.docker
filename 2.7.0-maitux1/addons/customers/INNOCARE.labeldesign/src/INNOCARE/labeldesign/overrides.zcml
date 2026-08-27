@@ -1,0 +1,16 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone">
+
+  <!-- 注册库存标签模板适配器（覆盖 maitux.stock 的同名适配器）。
+       for 用容器接口 IStockBatches（与 stockbatch_print 打印入口一致），
+       使 stockbatch_print 能枚举并选用本 addon 的库存标签模板。
+       必须放在 overrides.zcml：maitux.stock 已注册同名适配器，
+       在 configure.zcml 中注册会触发 ConfigurationConflictError。 -->
+  <adapter
+      factory="INNOCARE.labeldesign.browser.stickers.adapters.StockBatchLabelTemplates"
+      for="maitux.stock.interfaces.IStockBatches"
+      provides="senaite.core.interfaces.stickers.IGetStickerTemplates"
+      />
+
+</configure>

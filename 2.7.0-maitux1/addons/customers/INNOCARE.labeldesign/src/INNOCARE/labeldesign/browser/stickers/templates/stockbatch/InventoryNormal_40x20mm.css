@@ -1,0 +1,88 @@
+/* ADD(2026-08-21) - 库存标签 ① 样式（规格 40x20mm） */
+.sticker {
+  width: 40mm;
+  padding: 1.5mm;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: top;
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  color: #222;
+}
+.label {
+  border: 0.6px solid #333;
+  border-radius: 1.5mm;
+  padding: 1.2mm;
+  position: relative;
+  box-sizing: border-box;
+  height: 100%;
+}
+.label-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 0.8px solid #999;
+  padding-bottom: 0.8mm;
+  margin-bottom: 1mm;
+}
+.label-title {
+  font-size: 10px;
+  font-weight: bold;
+  color: #fff;
+  background: #1f4e78;
+  padding: 0.4mm 1.6mm;
+  border-radius: 1mm;
+  letter-spacing: 0.5px;
+}
+.material-name {
+  font-size: 8px;
+  font-weight: bold;
+  color: #1f4e78;
+  max-width: 60%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.inv-normal .label-title { background: #1f4e78; }
+.inv-normal .material-name { color: #1f4e78; }
+.label-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.label-table td {
+  font-size: 7px;
+  padding: 0.5mm 0;
+  vertical-align: top;
+}
+.lbl-label {
+  color: #666;
+  width: 40%;
+  white-space: nowrap;
+}
+.lbl-value {
+  font-weight: bold;
+  color: #111;
+  word-break: break-all;
+}
+.code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1mm;
+  gap: 1mm;
+}
+.barcode {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+.barcode svg, .barcode img {
+  display: block;
+  max-width: 100%;
+  height: 8mm;
+}
+.qrcode {
+  width: 12mm;
+  height: 12mm;
+  flex: 0 0 auto;
+}

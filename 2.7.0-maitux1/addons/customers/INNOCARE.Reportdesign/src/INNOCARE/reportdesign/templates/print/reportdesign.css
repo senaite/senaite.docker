@@ -1,0 +1,215 @@
+/* INNOCARE.Reportdesign - AS-grouped worksheet print template */
+/* Landscape A4 output (overrides the portrait default in print.pt) */
+@page {
+    size: A4 landscape;
+    margin: 10mm 10mm 12mm 10mm;
+}
+body {
+    width: 277mm;
+}
+.barcode-container {
+    width:100%;
+}
+.report-qrcode {
+    float: right;
+}
+div.worksheet {
+    font-size:0.8em;
+}
+div.worksheet a {
+    color:#000;
+    text-decoration:none;
+}
+div.worksheet h1 {
+    padding-top:15px;
+    font-size:1.7em;
+}
+div.subheader {
+    padding: 10px 0;
+}
+div.content {
+    padding:20px 0;
+    font-size:0.85em;
+    border-top:1px solid #333;
+}
+
+/* Per-test block layout (matches manage_results AS-grouped view) */
+div.content div.ar-group {
+    margin-bottom: 18px;
+    padding: 8px;
+    border: 1px solid #ccc;
+}
+div.content div.ar-group div.ar-header {
+    background-color: #dcdcdc;
+    font-weight: bold;
+    padding: 5px 8px;
+    border: 1px solid #666;
+    margin-bottom: 8px;
+}
+div.content div.ar-group div.ar-header .badge {
+    background-color: #666;
+    color: #fff;
+    padding: 1px 7px;
+    margin-right: 8px;
+    font-weight: bold;
+}
+div.content table.test-block {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    page-break-inside: avoid;
+}
+div.content table.test-block tr.test-head td {
+    background-color: #f0f0f0;
+    font-weight: bold;
+    border: 1px solid #666;
+    padding: 4px 8px;
+}
+div.content table.test-block td.pos {
+    text-align: center;
+    font-weight: bold;
+    width: 4%;
+}
+div.content table.test-block .retested {
+    color: #888;
+    font-size: 0.85em;
+}
+div.content table.test-block tr.interim-row td {
+    border: 1px solid #ddd;
+    padding: 3px 8px;
+}
+div.content table.test-block td.ilabel {
+    width: 35%;
+    font-weight: bold;
+    background-color: #f8f8f8;
+}
+div.content table.test-block td.ivalue {
+    width: 65%;
+}
+/* Transposed correspondence table (positions as rows, fields as columns)
+   Fixed layout: the first column (# or label) keeps its exact width, the
+   remaining data columns share the leftover width equally. */
+div.content table.test-block.transposed {
+    table-layout: fixed;
+}
+div.content table.test-block.transposed td {
+    border: 1px solid #ddd;
+    padding: 3px 6px;
+}
+div.content table.test-block.transposed tr.cols-head td {
+    background-color: #e8e8e8;
+    font-weight: bold;
+    text-align: center;
+}
+div.content table.test-block.transposed td.icol {
+    text-align: center;
+    white-space: nowrap;
+    min-width: 8mm;
+}
+div.content table.test-block.transposed td.ih {
+    text-align: center;
+    white-space: normal;
+}
+div.content table.test-block.transposed td.ivalue {
+    text-align: center;
+    white-space: nowrap;
+}
+div.content table.test-block.transposed td.ilabel {
+    white-space: nowrap;
+    background-color: #f8f8f8;
+    font-weight: bold;
+}
+div.content table.test-block.transposed.cols-mid td.ih {
+    font-size: 0.9em;
+}
+div.content table.test-block.transposed.cols-many td.ih {
+    font-size: 0.75em;
+    white-space: normal;
+}
+div.content table.test-block.transposed.cols-many td.ivalue {
+    font-size: 0.75em;
+}
+/* Orientation B: fields as rows, positions as columns.
+   Column widths use fixed character counts (label col = 12.5 chars, index
+   cols = digits + 4) applied as inline min-width on the header cells, so
+   these rules only keep the field labels and index headers on a single line. */
+div.content table.test-block.transposed.orient-b td.ilabel {
+    white-space: nowrap;
+}
+div.content table.test-block.transposed.orient-b td.icol {
+    white-space: nowrap;
+}
+div.content table.test-block.transposed.orient-b tr.cols-head td {
+    background-color: #e8e8e8;
+    text-align: center;
+}
+/* Group range indicator (wide tables split into sub-tables) */
+div.content table.test-block .grp {
+    font-size: 0.85em;
+    color: #666;
+    font-weight: normal;
+}
+/* Tall tables: split across pages and repeat the header on each page */
+div.content table.test-block.breakable {
+    page-break-inside: auto;
+}
+div.content table.test-block thead {
+    display: table-header-group;
+}
+div.content table.test-block thead tr {
+    page-break-inside: avoid;
+}
+/* Underline at the bottom of every page fragment when a tall table breaks.
+   1px so it stays the same weight as the grid lines (a 2px border would merge
+   with the 1px border of the row above and look like a thickened dark line). */
+div.content table.test-block.transposed tfoot td.tfoot-line {
+    border: none;
+    border-top: 1px solid #666;
+    height: 1px;
+    padding: 0;
+    line-height: 1px;
+    font-size: 0;
+}
+/* Keep the result row on a single page */
+div.content table.test-block tr.result-row {
+    page-break-inside: avoid;
+}
+div.content table.test-block tr.result-row td {
+    border: 1px solid #999;
+    background-color: #f5f5f5;
+    padding: 4px 8px;
+}
+div.content table.test-block td.rlabel {
+    width: 35%;
+    font-weight: bold;
+}
+div.content table.test-block .rmeta {
+    display: block;
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 4px;
+}
+/* Pending states are shown in italics */
+div.content table.test-block .rval {
+    font-weight: normal;
+    color: black;
+    font-style: italic;
+}
+/* Verified / published states are shown in bold */
+div.content table.test-block .rval.verified,
+div.content table.test-block .rval.published {
+    font-weight: bold;
+    color: black;
+    font-style: normal;
+}
+div.content table.test-block tr.remarks-row td {
+    background-color: #f8f8f8;
+    color: #555;
+    font-size: 0.85em;
+    border: 1px solid #ddd;
+    padding: 2px 8px 4px 8px;
+}
+
+div#footer {
+    padding-top: 1em;
+}
