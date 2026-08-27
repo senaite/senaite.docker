@@ -81,6 +81,61 @@ class GroupedRenderingMixin(object):
     def __init__(self, context, request):
         super(GroupedRenderingMixin, self).__init__(context, request)
         self._as_groups = None
+        self._raw_interims = {}
+
+    def _raw_interim_values(self, item):
+        """Interim values as *stored*, keyed by keyword.
+
+        senaite.core swaps the value for its formatted display text the moment
+        an analysis stops being editable:
+
+            # bika/lims/browser/analyses/view.py, _folder_item_calculation
+            if not is_editable:
+                # Display the text instead of the value
+                interim_field["value"] = interim_formatted
+
+        That is deliberate, and right for the native listing: with no input to
+        fill there is nothing to round-trip, so a plain string is what the
+        React grid wants.  Here it is destructive.  A list interim arrives as
+        "a, b, c" instead of '["a","b","c"]', _to_array() can only read that as
+        a single element, and the sample block collapses from one row per
+        element down to one row -- the layout's whole purpose, lost exactly
+        when the results are being reviewed.
+
+        The persistent value is untouched, so read it back off the object.
+        One fetch per analysis (api.get_object is cheap on a UID and the
+        native view has already woken the object anyway), cached per request
+        because every list column asks the same question.
+        """
+        uid = item.get("uid", "")
+        if not uid:
+            return {}
+        cached = self._raw_interims.get(uid)
+        if cached is None:
+            cached = {}
+            try:
+                obj = api.get_object(uid)
+                for ifield in (obj.getInterimFields() or []):
+                    keyword = ifield.get("keyword", "")
+                    if keyword:
+                        cached[keyword] = ifield.get("value", "")
+            except Exception:
+                # A missing or unreadable object must not take the page down;
+                # the item value is still there to fall back on.
+                cached = {}
+            self._raw_interims[uid] = cached
+        return cached
+
+    def _get_list_array(self, item, keyword):
+        """Elements of a list-type interim, taken from the stored value.
+
+        Falls back to the item value so a keyword the object does not carry
+        (or an object that could not be read) behaves as it did before.
+        """
+        raw = self._raw_interim_values(item)
+        if keyword in raw:
+            return self._to_array(raw[keyword])
+        return self._to_array(self._get_item_field_value(item, keyword))
 
     def _get_as_sort_key(self, item):
         """Return sort key for the AS (Analysis Service).
@@ -375,8 +430,8 @@ class GroupedRenderingMixin(object):
             for col in columns:
                 if not col["is_list"]:
                     continue
-                val = self._get_item_field_value(item, col["keyword"])
-                max_len = max(max_len, len(self._to_array(val)))
+                max_len = max(
+                    max_len, len(self._get_list_array(item, col["keyword"])))
 
         max_rows = max(1, max_len)
 
@@ -416,8 +471,8 @@ class GroupedRenderingMixin(object):
                 it = items[0]
                 for key in ("Pos", "Result", "DetectionLimitOperand",
                             "Uncertainty", "Specification", "Method",
-                            "Instrument", "state_title", "Remarks",
-                            "uid"):
+                            "Instrument", "state_title", "state_class",
+                            "Remarks", "uid"):
                     if key in it:
                         row[key] = it[key]
                 # Choices (method/instrument dropdowns)
@@ -474,13 +529,13 @@ class GroupedRenderingMixin(object):
                     kw = col["keyword"]
                     if kw in row["interim"]:
                         continue  # already set from another item
-                    val = self._get_item_field_value(item, kw)
                     if col["is_list"]:
                         # One list element per row; the spare trailing row (see
                         # above) stays empty so a new element can be typed in.
-                        arr = self._to_array(val)
+                        arr = self._get_list_array(item, kw)
                         row["interim"][kw] = arr[row_idx] if row_idx < len(arr) else ""
                     else:
+                        val = self._get_item_field_value(item, kw)
                         row["interim"][kw] = val if row_idx == 0 else ""
                     row["interim_uid"][kw] = item.get("uid", "")
                     row["interim_editable"][kw] = self._is_interim_editable(
@@ -612,10 +667,14 @@ class GroupedRenderingMixin(object):
     def get_column_count(self, group):
         """Return total column count for an AS group.
 
-        Fixed columns (4) + interim columns.
-        Fixed: Sample + Result + Method + Instrument
+        Fixed columns (6) + interim columns.
+        Fixed: row-select + Sample + Result + Method + Instrument + State
+
+        The row-select checkbox was missing from the old count; it is a real
+        column in the template, so include it rather than keep a total that
+        matches nothing on screen.
         """
-        fixed = 4  # Sample ID + Result + Method + Instrument
+        fixed = 6
         return fixed + len(group.get("interim_columns", []))
 
     # Name this view is registered under; the save endpoint is reached by
