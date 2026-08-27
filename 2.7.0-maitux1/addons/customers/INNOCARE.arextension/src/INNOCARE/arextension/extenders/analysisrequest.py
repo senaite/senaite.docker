@@ -331,7 +331,8 @@ class UIDReferenceExtensionField(ExtensionField, UIDReferenceField):
 
 class ARSchemaExtender(object):
     adapts(IAnalysisRequest)
-    implements(ISchemaExtender)
+    implements(ISchemaExtender, IBrowserLayerAwareExtender)
+    layer = IARExtensionLayer
 
     fields = [
         UIDReferenceExtensionField(
@@ -562,25 +563,16 @@ class ARSchemaExtender(object):
 
 class ARSchemaModifier(object):
     adapts(IAnalysisRequest)
-    implements(ISchemaModifier)
+    implements(ISchemaModifier, IBrowserLayerAwareExtender)
+    layer = IARExtensionLayer
 
     def __init__(self, context):
         self.context = context
 
     def fiddle(self, schema):
-        fields_to_hide = [
-            "ClientSampleID",
-            "SamplingDate",
-            "Sampler",
-            "DateSampled",
-            "Composite",
-            "CCContact",
-            "InvoiceTo",
-        ]
-        for field_name in fields_to_hide:
-            if field_name in schema:
-                schema[field_name].widget.visible = {"edit": "invisible", "view": "invisible"}
-                
+        # 不再硬编码隐藏任何原生字段。字段显隐交由 SENAITE 原生的
+        # Manage Sample Form Fields 手工配置（存 ZODB，跨容器重启持久化）。
+
         if "ClientReference" in schema:
             schema["ClientReference"].widget.label = _(u"Batch No")
             schema["ClientReference"].widget.description = _(u"Batch No")
