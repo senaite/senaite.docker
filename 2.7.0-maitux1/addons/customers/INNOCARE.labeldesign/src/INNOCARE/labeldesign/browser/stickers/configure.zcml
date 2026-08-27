@@ -9,4 +9,13 @@
       name="INNOCARE.labeldesign"
       />
 
+  <!-- ADD(2026-08-26) - 样品标签模板适配器。
+       挂在 Samples 目录接口（/lims/samples 上下文）上，使标准 sticker 视图
+       （senaite.core.browser.stickers.view.StickerView）能枚举并渲染样品标签④⑤。 -->
+  <adapter
+      factory="INNOCARE.labeldesign.browser.stickers.adapters.SampleLabelTemplates"
+      for="senaite.core.interfaces.ISamples"
+      provides="senaite.core.interfaces.stickers.IGetStickerTemplates"
+      />
+
 </configure>

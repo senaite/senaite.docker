@@ -50,8 +50,8 @@ class SampleLabelPrintView(BrowserView):
         ]
 
     def _get_templates_dir(self, prefix):
-        templates_dir = queryResourceDirectory("stickers", prefix).directory
-        return os.path.join(templates_dir, "sample")
+        # 模板已统一放在 stickers 资源目录根（标准 sticker 视图按根目录发现/渲染）
+        return queryResourceDirectory("stickers", prefix).directory
 
     def get_selected_template_css(self):
         template = self.get_selected_template()

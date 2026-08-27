@@ -11,7 +11,7 @@ INNOCARE 标签/贴纸（Label/Sticker）打印设计扩展，覆盖 3 份库存
 - **样品标签模板 + 打印视图**（`browser/sampleprint.py` / `sampleprint.pt`，数据源为 Sample / AnalysisRequest 的 `SuperModel`）：
   - ④ `SampleNormal_40x30mm.pt` — 样品标签：样品编号、条码、物料名称、厂家批号 + 二维码。
   - ⑤ `SampleStability_40x30mm.pt` — 样品标签·稳定性：④ ＋ 放样日期、取样点、放置条件。
-- 标签 HTML 结构 + CSS 分别置于 `browser/stickers/templates/{stockbatch,sample}/`，二维码/条码由打印页 JS（`BarcodeUtils`）按 `data-text`/`data-id` 渲染生成 PDF。
+- 标签 HTML 结构 + CSS 存放位置：样品模板在 `browser/stickers/templates/` 根目录（供 senaite 标准 `sticker` 视图发现/渲染），库存模板在 `browser/stickers/templates/stockbatch/`（供 `maitux.stock` 的 stockbatch_print 入口）。二维码/条码由打印页 JS（`BarcodeUtils`）按 `data-text`/`data-id` 渲染生成 PDF。
 
 ## 依赖
 

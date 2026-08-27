@@ -186,6 +186,43 @@ robocopy "<源>" "<目标>" /E /XF *.pyc /NFL /NDL /NJH /NJS
 
 ---
 
+### R8b. 决不用 root 进程往 `/data/cache` 写 Chameleon 缓存
+
+**规则**：`CHAMELEON_CACHE=/data/cache`，Zope 实例以 `senaite` 用户运行，
+缓存文件属主必须始终是 `senaite`。**禁止**用 root 身份（`docker exec` 默认 root、
+或 `bin/interpreter` 直接以 root 跑诊断脚本）去渲染/编译模板——那样会把
+**root 属主、mode `0600`** 的 `.py/.pyc` 写进缓存目录。
+
+**依据**：
+- Zope 以 `senaite` 运行；`/data/cache` 属主是 `senaite`。
+- Chameleon 缓存文件名是模板哈希；模板失效后需重写同名文件。
+- root 写入的文件 `-rw------- root`，`senaite` 既覆盖不了也删不掉。
+
+**违反后果**：模板重新编译时对该哈希文件 `EACCES` →
+`IOError: [Errno 13] Permission denied: '/data/cache/<hash>.py'`，
+该模板（典型如标签预览）直接**加载失败、显示为空**，表现为"原来的预览都没了"，
+看似是模板/代码问题，实则是缓存属主被 root 污染。
+
+**修复 / 清理命令**（等价、可任选）：
+```bash
+# 清掉所有 root 属主的缓存条目（可再生，最干净）
+docker exec maitux-lims find /data/cache -user root -delete
+# 或收归 senaite（保留有效编译，避免全量重新编译）
+docker exec maitux-lims find /data/cache -user root -exec chown senaite:senaite {} \+
+```
+
+**排查 root 残留**：
+```bash
+docker exec maitux-lims find /data/cache -maxdepth 1 ! -user senaite -ls
+# 同时留意卡在 root 上的诊断进程，必要时 kill 掉（如挂起 90% CPU 的实例进程）
+```
+
+**实例**：某次用 root 跑 `/tmp/check_stickers.py` 诊断标签渲染，向缓存写入两个
+root 属主文件，导致 `SampleNormal_40x30mm.pt` 及所有标签预览 `Permission denied`
+全部失效；chown 收归 `senaite` 并终止该 root 进程后恢复。
+
+---
+
 ## 五、通用原则
 
 ### R9. 本环境的失败大多是"静默"的，验证必须给可观测判据
@@ -207,6 +244,7 @@ robocopy "<源>" "<目标>" /E /XF *.pyc /NFL /NDL /NJH /NJS
 | 某计算字段永远空白 | 公式求值失败被静默吞掉 |
 | 页面渲染成旧布局 | ZCML 中 `class` 与 `template` 并用，`__call__` 被 MRO 遮蔽 |
 | 容器重启循环 / Zope 启动即崩 | 跨 addon 同接口同名 adapter 冲突（R5b）或分发名与目录名大小写不一致（R5c） |
+| 模板/标签预览"没了"、报 `Permission denied /data/cache/…` | `/data/cache` 被 root 进程写入 root 属主缓存（R8b） |
 
 ---
 

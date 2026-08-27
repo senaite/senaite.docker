@@ -2,7 +2,7 @@
    ● storage_condition / strength 为待新增字段（见 标签设计-缺失字段新增需求说明.md），
    字段落地前显示占位/空。 */
 .sticker {
-  width: 40mm;
+  width: 52mm;
   padding: 1.5mm;
   box-sizing: border-box;
   overflow: hidden;
@@ -15,6 +15,7 @@
   border: 0.6px solid #333;
   border-radius: 1.5mm;
   padding: 1.2mm;
+  padding-left: 14mm; /* 为左上角二维码留出空间 */
   position: relative;
   box-sizing: border-box;
   height: 100%;
@@ -66,25 +67,17 @@
   color: #111;
   word-break: break-all;
 }
-.code-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 1mm;
-  gap: 1mm;
-}
-.barcode {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-}
-.barcode svg, .barcode img {
-  display: block;
-  max-width: 100%;
-  height: 8mm;
-}
 .qrcode {
-  width: 12mm;
-  height: 12mm;
-  flex: 0 0 auto;
+  position: absolute;
+  top: 1.2mm;
+  left: 1.2mm;
+  width: 11mm;
+  height: 11mm;
+  overflow: hidden; /* 阻止二维码按 data-size(px) 渲染溢出遮挡文字 */
+}
+.qrcode img,
+.qrcode canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
