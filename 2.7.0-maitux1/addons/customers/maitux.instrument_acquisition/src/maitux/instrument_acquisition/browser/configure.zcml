@@ -4,5 +4,6 @@
 
   <include package=".controlpanel" />
   <include package=".deemo" />
+  <include package=".worksheet" />
 
 </configure>

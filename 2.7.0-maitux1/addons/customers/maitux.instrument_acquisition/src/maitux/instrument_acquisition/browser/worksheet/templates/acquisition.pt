@@ -1,0 +1,517 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      metal:use-macro="here/main_template/macros/master"
+      i18n:domain="maitux.instrument_acquisition"
+      tal:define="view_url view/get_view_url;">
+
+  <head>
+    <title></title>
+  </head>
+
+  <body>
+
+    <metal:content-title fill-slot="content-title">
+      <h1>
+        <span class="documentFirstHeading">仪器采集</span>
+      </h1>
+    </metal:content-title>
+
+    <metal:content-description fill-slot="content-description">
+      <p class="documentDescription">
+        <a tal:attributes="href view/get_worksheet_url"
+           tal:content="view/get_worksheet_title">Worksheet</a>
+        <span class="text-muted">— 分配并回写仪器读数</span>
+      </p>
+    </metal:content-description>
+
+    <metal:content-core fill-slot="content-core">
+
+      <!-- ===== 会话信息栏 ===== -->
+      <div class="row mb-2">
+        <div class="col-sm-12">
+          <div class="card">
+            <div class="card-body py-2 d-flex align-items-center flex-wrap">
+              <tal:error condition="view/get_session_error">
+                <span class="badge badge-warning mr-3"
+                      tal:content="view/get_session_error">未分配仪器</span>
+              </tal:error>
+              <tal:ok condition="python:not view.get_session_error()">
+                <span class="badge badge-success mr-3"
+                      tal:condition="python:view.get_session_status() == 'active' and view.is_listening()">
+                  采集中
+                </span>
+                <span class="badge badge-secondary mr-3"
+                      tal:condition="python:view.get_session_status() == 'active' and not view.is_listening()">
+                  未开始采集
+                </span>
+                <span class="badge badge-secondary mr-3"
+                      tal:condition="python:view.get_session_status() != 'active'">
+                  会话已关闭
+                </span>
+                <span class="badge mr-3" id="agent-status"
+                      style="display:none"></span>
+                <form class="form-inline d-inline mr-3" method="post">
+                  <input type="hidden" name="action" value="change_instrument"/>
+                  <span class="mr-1">仪器：</span>
+                  <select class="form-control form-control-sm mr-1"
+                          name="instrument_uid"
+                          style="min-width:180px"
+                          tal:define="instrlist view/getInstruments;
+                                      current view/get_current_instrument_uid">
+                    <tal:options repeat="option instrlist">
+                      <option tal:attributes="value option;
+                                              selected python:option == current and 'selected' or ''"
+                              tal:content="python:instrlist.getValue(option)">仪器</option>
+                    </tal:options>
+                  </select>
+                  <button class="btn btn-sm btn-outline-secondary" type="submit">
+                    更换仪器
+                  </button>
+                  <small class="text-muted ml-1">
+                    code: <code tal:content="view/get_instrument_code">-</code>
+                  </small>
+                </form>
+                <span class="mr-3">
+                  session_id：
+                  <code tal:content="view/get_session_id">-</code>
+                </span>
+                <span class="mr-3">
+                  已采集
+                  <strong tal:content="python:view.get_counts().get('total', 0)">0</strong>
+                  条
+                </span>
+                <span class="ml-auto">
+                  <form id="acq_start_form" class="d-inline mr-1" method="post"
+                        tal:condition="python:view.get_session_status() == 'active' and not view.is_listening()">
+                    <input type="hidden" name="action" value="start_listening"/>
+                    <button class="btn btn-sm btn-success" type="button"
+                            id="acq_start_button">
+                      <i class="fas fa-play"></i> 开始采集
+                    </button>
+                  </form>
+                  <form class="d-inline mr-1" method="post"
+                        tal:condition="python:view.get_session_status() == 'active' and view.is_listening()">
+                    <input type="hidden" name="action" value="stop_listening"/>
+                    <button class="btn btn-sm btn-danger" type="submit">
+                      <i class="fas fa-stop"></i> 停止采集
+                    </button>
+                  </form>
+                  <a class="btn btn-sm btn-outline-secondary mr-1"
+                     tal:attributes="href view/get_manage_results_url">
+                    返回结果录入
+                  </a>
+                  <form class="d-inline" method="post">
+                    <input type="hidden" name="action" value="close_session"/>
+                    <button class="btn btn-sm btn-outline-warning mr-1"
+                            type="submit"
+                            tal:condition="python:view.get_session_status() == 'active'">
+                      关闭会话
+                    </button>
+                  </form>
+                  <form class="d-inline" method="post">
+                    <input type="hidden" name="action" value="save"/>
+                    <button class="btn btn-sm btn-outline-success" type="submit">
+                      统一保存回写
+                    </button>
+                  </form>
+                </span>
+              </tal:ok>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <tal:error condition="view/get_session_error">
+        <div class="row">
+          <div class="col-sm-12">
+            <div class="alert alert-warning">
+              当前 Worksheet 未分配仪器，无法创建采集会话。
+              请先在结果录入页为 Worksheet 选择仪器。
+            </div>
+          </div>
+        </div>
+      </tal:error>
+
+      <div class="row"
+           tal:condition="python:not view.get_session_error()">
+
+        <!-- ===== 左侧：原始读数列表 ===== -->
+        <div class="col-md-6">
+          <div class="card mb-2">
+            <div class="card-header d-flex align-items-center">
+              <i class="fas fa-list-ul mr-2 text-muted"></i>
+              原始读数列表
+              <span class="badge badge-primary ml-2"
+                    tal:content="python:view.get_counts().get('total', 0)">0</span>
+            </div>
+            <div class="card-body p-2" style="max-height:540px;overflow-y:auto">
+
+              <tal:empty condition="python:not view.get_readings()">
+                <div class="text-muted text-center py-4">
+                  暂无读数。请在中转站按 session_id 推送数据。
+                </div>
+              </tal:empty>
+
+              <tal:reading repeat="reading view/get_readings">
+                <div class="pl-2 pr-2 pt-1 pb-1 mb-1"
+                     tal:attributes="class python:'pl-2 pr-2 pt-1 pb-1 mb-1 border-left ' + (
+                         reading['status'] == 'discarded' and 'bg-light text-muted' or
+                         reading['status'] == 'pending' and 'bg-white border-warning' or
+                         'bg-light border-success')">
+                  <div class="d-flex align-items-center flex-wrap">
+                    <span class="font-weight-bold text-primary mr-2"
+                          tal:content="python:'#' + reading['event_id'][:8]">#001</span>
+                    <span class="font-weight-bold mr-2"
+                          tal:content="reading/parsed_value">0.9678</span>
+                    <span class="text-muted mr-2"
+                          tal:content="reading/unit">mg</span>
+                    <span class="badge badge-success mr-2"
+                          tal:condition="python:reading['status'] == 'assigned'">已分配</span>
+                    <span class="badge badge-warning mr-2"
+                          tal:condition="python:reading['status'] == 'pending'">待分配</span>
+                    <span class="badge badge-info mr-2"
+                          tal:condition="python:reading['status'] == 'saved'">已保存</span>
+                    <span class="badge badge-secondary mr-2"
+                          tal:condition="python:reading['status'] == 'discarded'">已废弃</span>
+                    <span class="text-muted ml-auto"
+                          style="font-size:.75rem"
+                          tal:content="reading/received_at">time</span>
+                  </div>
+                  <div class="text-muted" style="font-size:.75rem">
+                    原始文本：
+                    <code tal:content="reading/raw_text">raw</code>
+                    <span tal:condition="python:reading['targets']"
+                          class="ml-2">
+                      已绑定：
+                      <tal:t repeat="t reading/targets">
+                        <span class="badge badge-light border"
+                              tal:content="python:t.split(':')[-1]">kw</span>
+                      </tal:t>
+                    </span>
+                  </div>
+                  <div class="mt-1"
+                       tal:condition="python:reading['status'] in ('pending', 'assigned')">
+                    <form class="form-inline" method="post">
+                      <input type="hidden" name="action" value="assign"/>
+                      <input type="hidden" name="event_id"
+                             tal:attributes="value reading/event_id"/>
+                      <select class="form-control form-control-sm mr-1"
+                              name="target_key"
+                              style="min-width:220px">
+                        <option value="">— 选择分配目标 —</option>
+                        <tal:target repeat="target view/get_targets">
+                          <option tal:attributes="value target/target_key"
+                                  tal:content="python:view.get_target_label(target)">目标</option>
+                        </tal:target>
+                      </select>
+                      <button class="btn btn-sm btn-success mr-1" type="submit">分配</button>
+                    </form>
+                    <form class="d-inline" method="post">
+                      <input type="hidden" name="action" value="discard"/>
+                      <input type="hidden" name="event_id"
+                             tal:attributes="value reading/event_id"/>
+                      <button class="btn btn-sm btn-outline-secondary"
+                              type="submit"
+                              tal:condition="python:reading['status'] != 'saved'">
+                        废弃
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </tal:reading>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 右侧：待分配目标列表 ===== -->
+        <div class="col-md-6">
+          <div class="card mb-2">
+            <div class="card-header d-flex align-items-center">
+              <i class="fas fa-clipboard-check mr-2 text-muted"></i>
+              待分配目标列表
+            </div>
+            <div class="card-body p-0" style="max-height:540px;overflow-y:auto">
+
+              <tal:empty condition="python:not view.get_targets()">
+                <div class="text-muted text-center py-4">
+                  当前 Worksheet 的分析行未包含仪器采集关键字
+                  （T_name / T_weight）。
+                </div>
+              </tal:empty>
+
+              <table class="table table-sm table-borderless mb-0"
+                     tal:condition="python:view.get_target_groups()">
+                <thead>
+                  <tr>
+                    <th style="width:80px">组</th>
+                    <th>分析</th>
+                    <th>名称</th>
+                    <th style="min-width:220px">重量</th>
+                    <th style="width:130px">状态 / 操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- 按组排版：同一组的 T_name + T_weight 并排（key-value）-->
+                  <tal:group repeat="group view/get_target_groups">
+                    <tr tal:define="wt python:group['weight_slot'] or group['field_slots'][0]">
+                      <td class="text-nowrap text-muted"
+                          style="font-size:.8rem"
+                          tal:content="group/group_title">第 1 组</td>
+                      <td tal:content="group/analysis_title">分析</td>
+                      <!-- 名称（T_name）-->
+                      <td>
+                        <tal:name condition="python:group['name_slot']"
+                                  tal:define="target python:group['name_slot']">
+                          <form class="form-inline" method="post">
+                            <input type="hidden" name="action" value="set_name"/>
+                            <input type="hidden" name="target_key"
+                                   tal:attributes="value target/target_key"/>
+                            <input class="form-control form-control-sm mr-1"
+                                   type="text"
+                                   name="value"
+                                   style="width:110px"
+                                   onchange="this.form.submit()"
+                                   title="输入后失焦自动保存"
+                                   tal:attributes="value python:target['value'] or ''"/>
+                          </form>
+                          <div tal:condition="python:target['source_event_id']"
+                               class="text-muted" style="font-size:.75rem">
+                            读数 <code tal:content="python:target['source_event_id'][:8]"/>
+                          </div>
+                        </tal:name>
+                      </td>
+                      <!-- 重量（T_weight）-->
+                      <td>
+                        <tal:weight condition="python:group['weight_slot']"
+                                    tal:define="target python:group['weight_slot']">
+                          <span class="badge badge-warning mr-1"
+                                tal:condition="python:target['status'] == 'pending'">待称量</span>
+                          <span class="badge badge-success mr-1"
+                                tal:condition="python:target['status'] == 'assigned'">已绑定</span>
+                          <span class="badge badge-primary mr-1"
+                                tal:condition="python:target['status'] == 'saved'">已保存</span>
+                          <span class="badge badge-info mr-1"
+                                tal:condition="python:target['status'] == 'filled'">已填写</span>
+                          <span class="badge badge-secondary mr-1"
+                                tal:condition="python:target['status'] == 'stale'">已失效</span>
+                          <div tal:condition="python:target['status'] in ('assigned', 'saved')"
+                               class="font-weight-bold">
+                            <span tal:content="python:((target['value'] or '') + ' ' + (target.get('unit') or '')).strip()">值</span>
+                            <form class="d-inline" method="post">
+                              <input type="hidden" name="action" value="unassign"/>
+                              <input type="hidden" name="target_key"
+                                     tal:attributes="value target/target_key"/>
+                              <button class="btn btn-sm btn-link text-danger p-0 ml-1"
+                                      type="submit">撤销</button>
+                            </form>
+                          </div>
+                          <div class="text-muted" style="font-size:.75rem"
+                               tal:condition="python:target['status'] == 'stale'">
+                            旧会话残留，请先撤销
+                          </div>
+                          <form class="form-inline" method="post"
+                                tal:condition="python:target['status'] not in ('assigned', 'stale', 'saved')">
+                            <input type="hidden" name="action" value="assign"/>
+                            <input type="hidden" name="target_key"
+                                   tal:attributes="value target/target_key"/>
+                            <select class="form-control form-control-sm mr-1"
+                                    name="event_id"
+                                    style="min-width:150px">
+                              <option value="">— 选读数 —</option>
+                              <tal:opt repeat="option view/get_reading_options">
+                                <option tal:attributes="value option/event_id"
+                                        tal:content="option/label">读数</option>
+                              </tal:opt>
+                            </select>
+                            <button class="btn btn-sm btn-success"
+                                    type="submit">绑定</button>
+                          </form>
+                        </tal:weight>
+                      </td>
+                      <!-- 操作：添加行 / 删除（独立列，不与徽章混排）-->
+                      <td class="text-nowrap">
+                        <tal:addrow condition="python:group['is_add_row_anchor']">
+                          <form class="d-inline" method="post">
+                            <input type="hidden" name="action" value="add_target_row"/>
+                            <input type="hidden" name="analysis_uid"
+                                   tal:attributes="value group/analysis_uid"/>
+                            <button class="btn btn-sm btn-outline-primary"
+                                    type="submit"
+                                    title="添加一组（名称 + 重量）">+ 添加行</button>
+                          </form>
+                        </tal:addrow>
+                        <tal:delrow condition="python:group['is_extra']">
+                          <form class="d-inline" method="post">
+                            <input type="hidden" name="action" value="remove_target_row"/>
+                            <input type="hidden" name="target_key"
+                                   tal:attributes="value python:group['weight_slot'] and group['weight_slot']['target_key'] or group['field_slots'][0]['target_key']"/>
+                            <button class="btn btn-sm btn-outline-danger ml-1"
+                                    type="submit">删除</button>
+                          </form>
+                        </tal:delrow>
+                      </td>
+                    </tr>
+                  </tal:group>
+                </tbody>
+              </table>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 操作日志 ===== -->
+      <div class="row">
+        <div class="col-sm-12">
+          <div class="card">
+            <div class="card-header d-flex align-items-center">
+              <i class="fas fa-history mr-2 text-muted"></i>
+              操作日志
+              <span class="badge badge-light ml-2"
+                    tal:content="python:len(view.get_logs())">0</span>
+            </div>
+            <div class="card-body p-0" style="max-height:240px;overflow-y:auto">
+              <table class="table table-sm table-borderless mb-0">
+                <thead>
+                  <tr>
+                    <th style="width:180px">时间</th>
+                    <th style="width:120px">操作人</th>
+                    <th style="width:120px">动作</th>
+                    <th>内容</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tal:log repeat="log python:reversed(view.get_logs())">
+                    <tr>
+                      <td class="text-muted"
+                          style="font-size:.75rem"
+                          tal:content="log/timestamp">time</td>
+                      <td class="text-muted"
+                          style="font-size:.75rem"
+                          tal:content="log/actor">user</td>
+                      <td>
+                        <code style="font-size:.6875rem"
+                              tal:content="log/action">action</code>
+                      </td>
+                      <td tal:content="log/message">message</td>
+                    </tr>
+                  </tal:log>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <script type="text/javascript">
+        // 阶段一：简单轮询 —— 读数集合或监听状态变化时整页刷新。
+        var acquisition_view_url = '<tal:u content="view_url"/>';
+        var acquisition_session_id = '<tal:s content="view/get_session_id"/>';
+        var acquisition_listening =
+            <tal:l content="python:str(view.is_listening()).lower()"/>;
+        var acquisition_event_ids = [
+          <tal:r repeat="reading view/get_readings">
+            '<tal:e content="python:reading['event_id']"/>',
+          </tal:r>
+        ];
+
+        (function() {
+          function poll() {
+            if (!window.jQuery) {
+              return;
+            }
+            $.getJSON(acquisition_view_url + '?format=json', function(data) {
+              var ids = (data.readings || []).map(function(r) {
+                return r.event_id;
+              });
+              var changed = ids.join('|') !== acquisition_event_ids.join('|');
+              if (data.listening !== acquisition_listening) {
+                changed = true;
+              }
+              // 采集端（中转站）连接状态展示：仪器连不上时给出报错提示。
+              // 文案全部由后端 JSON 返回（ZPT 会把 script 内中文转成 HTML
+              // 实体且 script 内不解析实体，故 JS 不写中文字面量）。
+              var relay = data.relay || null;
+              var agentBadge = $('#agent-status');
+              if (agentBadge.length) {
+                if (relay && relay.agent_message) {
+                  agentBadge.removeClass('badge-success badge-warning badge-danger');
+                  if (relay.agent_online && relay.instrument_connected) {
+                    agentBadge.addClass('badge-success');
+                  } else if (relay.agent_online) {
+                    agentBadge.addClass('badge-warning');
+                  } else {
+                    agentBadge.addClass('badge-danger');
+                  }
+                  agentBadge.text(relay.agent_message);
+                  agentBadge.show();
+                } else {
+                  agentBadge.hide();
+                }
+              }
+              if (changed) {
+                window.location.reload();
+              }
+            }).fail(function() {
+              // 忽略瞬时失败，下个周期重试
+            });
+          }
+
+          // 开始采集：查询中转站占用状态，若被其他用户占用则弹确认框，
+          // 确认后带 force=1 提交（通知中转站挤掉当前占用者）。
+          function startAcquisition() {
+            if (!window.jQuery) {
+              return;
+            }
+            var submit = function(force) {
+              if (force) {
+                $('#acq_start_form')
+                    .append('<input type="hidden" name="force" value="1"/>');
+              }
+              $('#acq_start_form').submit();
+            };
+            $.ajax({
+              url: acquisition_view_url + '?format=json',
+              dataType: 'json',
+              async: false,
+            }).done(function(data) {
+              var relay = data.relay || null;
+              if (relay && relay.active && relay.session_id &&
+                  relay.session_id !== acquisition_session_id) {
+                // 中文字面量用 \u 转义：ZPT 会把 script 内中文转成 HTML 实体，
+                // 而 script 内不解析实体，直接写字面中文会显示乱码
+                var who = relay.operator || '\u672a\u77e5\u7528\u6237';
+                if (confirm('\u7528\u6237 ' + who +
+                    ' \u6b63\u5728\u4f7f\u7528\u8be5\u4eea\u5668\uff0c'
+                    + '\u662f\u5426\u6324\u6389\u8be5\u7528\u6237\uff1f')) {
+                  submit(true);
+                }
+              } else {
+                submit(false);
+              }
+            }).fail(function() {
+              // 中转站不可达：直接提交，由后端提示失败原因
+              submit(false);
+            });
+          }
+
+          if (window.jQuery) {
+            $(document).ready(function() {
+              // 2 秒轮询：读数从采集端推送 → LIMS → 页面显示的端到端延迟更小
+              setInterval(poll, 2000);
+              $('#acq_start_button').on('click', function(event) {
+                event.preventDefault();
+                startAcquisition();
+              });
+            });
+          }
+        })();
+      </script>
+
+    </metal:content-core>
+
+  </body>
+</html>

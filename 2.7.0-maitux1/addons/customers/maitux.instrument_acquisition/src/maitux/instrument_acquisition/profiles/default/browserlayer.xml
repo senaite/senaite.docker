@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<layers>
+  <layer name="maitux.instrument_acquisition"
+         interface="maitux.instrument_acquisition.interfaces.IInstrumentAcquisitionLayer" />
+</layers>

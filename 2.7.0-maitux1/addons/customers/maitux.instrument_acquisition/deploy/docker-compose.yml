@@ -1,0 +1,18 @@
+# 仪器采集中转站 Docker Compose（含开机自启/异常自动重启）
+#
+# 用法（在 src/maitux.instrument_acquisition 目录下执行）：
+#   docker compose -f deploy/docker-compose.yml up -d --build
+#   docker compose -f deploy/docker-compose.yml logs -f
+
+services:
+  instrument-relay:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: instrument-relay
+    restart: unless-stopped   # 开机自启 + 异常退出自动拉起
+    ports:
+      - "9000:9000"
+    # Linux 下若容器访问不到局域网 W610，可改用宿主机网络：
+    # network_mode: host
+    # （使用 host 网络时请删除上面的 ports 配置）

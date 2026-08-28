@@ -1,4 +1,4 @@
-﻿<configure
+<configure
     xmlns="http://namespaces.zope.org/zope"
     xmlns:browser="http://namespaces.zope.org/browser"
     i18n_domain="maitux.instrument_acquisition">
@@ -35,6 +35,27 @@
       name="instrument_acquisition_api_manual_forward"
       for="*"
       class="maitux.instrument_acquisition.api.views.ManualForwardAPI"
+      permission="zope.Public"
+      />
+
+  <browser:page
+      name="instrument_acquisition_api_ingest"
+      for="*"
+      class="maitux.instrument_acquisition.api.views.IngestReadingAPI"
+      permission="zope.Public"
+      />
+
+  <browser:page
+      name="instrument_acquisition_api_agent_config"
+      for="*"
+      class="maitux.instrument_acquisition.api.views.AgentConfigAPI"
+      permission="zope.Public"
+      />
+
+  <browser:page
+      name="instrument_acquisition_api_agent_instruments"
+      for="*"
+      class="maitux.instrument_acquisition.api.views.AgentInstrumentsAPI"
       permission="zope.Public"
       />
 
