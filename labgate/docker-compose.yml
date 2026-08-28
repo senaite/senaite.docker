@@ -1,0 +1,58 @@
+# labgate 本机演示栈：完整走通 仪器 → 边缘网关 → 云端 NATS → 桥接 → LIMS
+#
+#   docker compose up -d --build
+#
+#   http://localhost:8090   采集网关界面（边缘，装在实验室）
+#   http://localhost:8080   替身 LIMS —— 在这里点「开始采集」
+#   http://localhost:8091/api/status   桥接层状态
+#   http://localhost:8222/jsz?streams=1  云端 JetStream
+#
+# 想看"先称量、后开始采集"的补投：先别点开始采集，让天平跑一两分钟
+# （读数堆在 NATS 里，替身 LIMS 上"因无会话被拒"会增长），再点「开始采集」，
+# 之前那段时间的读数会一次性补进来。
+#
+# 接真实环境时：删掉 fake-balance / fake-lims / nats-hub，
+# 把 LABGATE_LEAF_URL 指向云端 NATS，LABBRIDGE_LIMS_URL 指向真的 SENAITE。
+
+name: labgate
+
+services:
+  # ================================================================ 边缘
+  # labgate 采集端：auto 模式，主动轮询 LIMS 拿采集指令，
+  # 连仪器读数后用 HTTP 直推 SENAITE ingest 接口（不走 NATS 上云）。
+  labgate:
+    build:
+      context: .
+      args:
+        VERSION: ${LABGATE_VERSION:-dev}
+        # 国内网络使用镜像源与 Go 代理（Docker Hub / proxy.golang.org 慢时）
+        GO_IMAGE: docker.m.daocloud.io/library/golang:1.26-alpine
+        RUNTIME_IMAGE: docker.m.daocloud.io/library/alpine:3.22
+        GOPROXY: https://goproxy.cn,direct
+    image: labgate:${LABGATE_VERSION:-dev}
+    container_name: labgate
+    ports:
+      - "8090:8090" # 管理界面 / API（LIMS 的 agent_api_url 填宿主机 IP:8090）
+    environment:
+      # 首次启动时用这些值生成 /data/config.json；之后以界面上的配置为准。
+      LABGATE_SITE_ID: lab-main
+      LABGATE_MODE: auto
+      # 可选：管理接口鉴权令牌（留空则不鉴权）。设置后界面请求需带
+      # Authorization: Bearer <token>（配置页可「记住到本机」）。
+      # LABGATE_API_TOKEN: change-me
+      # 真 LIMS（Linux 服务器）：用模板上登记的 agent_token（一个中转站一个 Token）
+      LABGATE_LIMS_URL: http://192.168.1.18:8081/lims
+      LABGATE_LIMS_TOKEN: jklNg_f2y3x17lKXSBAAga_wXIGf6Bi8
+      LABGATE_LIMS_POLL: "true"  # 轮询 LIMS 拿采集指令（auto 模式）
+      LABGATE_LIMS_PUSH: "true"  # 读数 HTTP 直推 LIMS ingest 接口
+      TZ: Asia/Shanghai
+    extra_hosts:
+      # 容器内访问宿主局域网 IP：让 labgate 连本机（192.168.1.5）上的天平/串口网关
+      - "192.168.1.5:host-gateway"
+    volumes:
+      # 配置与 JetStream 落盘数据都在这里，容器重建不丢
+      - labgate-data:/data
+    restart: unless-stopped
+
+volumes:
+  labgate-data:

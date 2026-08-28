@@ -1,0 +1,40 @@
+# labgate systemd 单元（Linux 边缘节点）
+#
+#   sudo cp labgate /usr/local/bin/
+#   sudo useradd -r -s /usr/sbin/nologin labgate
+#   sudo mkdir -p /var/lib/labgate && sudo chown labgate:labgate /var/lib/labgate
+#   sudo cp deploy/labgate.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now labgate
+#   sudo journalctl -u labgate -f
+
+[Unit]
+Description=labgate 仪器采集网关
+Documentation=https://github.com/maitux/labgate
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=labgate
+Group=labgate
+ExecStart=/usr/local/bin/labgate --config /var/lib/labgate/config.json --data-dir /var/lib/labgate
+Restart=always
+RestartSec=5s
+
+# JetStream 要写文件，其余目录保持只读
+StateDirectory=labgate
+WorkingDirectory=/var/lib/labgate
+ReadWritePaths=/var/lib/labgate
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+# JetStream 与多仪器连接会占用较多文件描述符
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

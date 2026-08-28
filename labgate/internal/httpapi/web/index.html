@@ -1,0 +1,123 @@
+{{define "content"}}
+<div class="row">
+  <div class="col" style="flex:0 1 360px">
+    <div class="card">
+      <div class="card-header">手动采集</div>
+      <div class="card-body">
+        <div class="field">
+          <label>仪器标识 instrument_code</label>
+          <input id="inp-code" placeholder="如 instrument-3（留空自动匹配）">
+        </div>
+        <div class="field-row">
+          <div style="flex:2">
+            <label>仪器 IP</label>
+            <input id="inp-host" placeholder="如 192.168.1.20">
+          </div>
+          <div style="flex:1">
+            <label>端口</label>
+            <input id="inp-port" type="number" value="9000">
+          </div>
+        </div>
+        <div class="check">
+          <input type="checkbox" id="chk-push" checked>
+          <label for="chk-push">上传到云端（关闭 = 只在界面查看，不落盘不上云）</label>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ok" id="btn-start">开始采集</button>
+          <button class="btn btn-danger" id="btn-stop">全部停止</button>
+        </div>
+        <hr>
+        <div class="muted" id="conn-info">未连接</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">仪器连接</div>
+      <div class="card-body flush">
+        <table>
+          <thead><tr><th>仪器</th><th>状态</th><th>地址</th><th>收到</th><th></th></tr></thead>
+          <tbody id="instr-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <div class="card-header">
+        <span>实时读数 <span class="badge badge-info" id="reading-count">0</span></span>
+        <span class="muted" id="conn-status">—</span>
+      </div>
+      <div class="card-body flush scroll">
+        <table>
+          <thead><tr><th>#</th><th>时间</th><th>仪器</th><th>原始行</th><th>值</th><th>单位</th><th>状态</th></tr></thead>
+          <tbody id="reading-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+{{define "script"}}
+<script>
+function renderInstruments(list) {
+  if (!list.length) {
+    document.getElementById('instr-tbody').innerHTML =
+      '<tr><td colspan="5" class="muted">暂无仪器</td></tr>';
+    return;
+  }
+  document.getElementById('instr-tbody').innerHTML = list.map(function (it) {
+    var badge = it.connected ? '<span class="badge badge-ok">已连接</span>'
+      : it.connecting ? '<span class="badge badge-warn">连接中</span>'
+      : '<span class="badge badge-off">未连接</span>';
+    var addr = it.current_host ? esc(it.current_host) + ':' + it.current_port : '—';
+    return '<tr><td class="mono">' + esc(it.code) + '</td><td>' + badge + '</td>' +
+      '<td class="mono">' + addr + '</td><td class="num">' + (it.total_received || 0) + '</td>' +
+      '<td><button class="btn" data-stop="' + esc(it.code) + '">停止</button></td></tr>';
+  }).join('');
+  document.querySelectorAll('[data-stop]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      apiPost('/api/stop', { code: btn.getAttribute('data-stop') }, function () { toast('已停止'); refresh(); });
+    });
+  });
+}
+
+function refresh() {
+  apiGet('/api/state', function (d) {
+    document.getElementById('conn-status').innerHTML = d.connected
+      ? '<span class="badge badge-ok">采集中</span>'
+      : '<span class="badge badge-off">未采集</span>';
+    document.getElementById('conn-info').textContent = d.last_message || '—';
+    renderInstruments(d.instruments || []);
+  });
+  apiGet('/api/readings?limit=100', function (d) {
+    var readings = d.readings || [];
+    document.getElementById('reading-tbody').innerHTML = readings.length
+      ? readings.map(function (x) {
+          return '<tr><td class="muted num">' + x.seq + '</td><td class="muted">' + esc(x.time) +
+            '</td><td class="mono">' + esc(x.code) + '</td><td class="mono">' + esc(x.raw) +
+            '</td><td><b>' + esc(x.value) + '</b></td><td>' + esc(x.unit) +
+            '</td><td class="muted">' + esc(x.status) + '</td></tr>';
+        }).join('')
+      : '<tr><td colspan="7" class="muted">暂无数据</td></tr>';
+    document.getElementById('reading-count').textContent = readings.length;
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  refresh();
+  setInterval(refresh, 2000);
+  document.getElementById('btn-start').addEventListener('click', function () {
+    var host = document.getElementById('inp-host').value.trim();
+    if (!host) { toast('请填写仪器 IP', 'error'); return; }
+    apiPost('/api/start', {
+      code: document.getElementById('inp-code').value.trim(),
+      host: host,
+      port: parseInt(document.getElementById('inp-port').value, 10),
+      push: document.getElementById('chk-push').checked
+    }, function () { toast('已开始采集'); refresh(); });
+  });
+  document.getElementById('btn-stop').addEventListener('click', function () {
+    apiPost('/api/stop', { all: true }, function () { toast('已全部停止'); refresh(); });
+  });
+});
+</script>
+{{end}}

@@ -1,0 +1,85 @@
+{{define "content"}}
+<div class="row">
+  <div class="col">
+    <div class="card">
+      <div class="card-header">TCP 连通测试</div>
+      <div class="card-body">
+        <p class="hint">在开始采集前确认仪器（或串口服务器）的 TCP 通道确实开着。</p>
+        <div class="field-row">
+          <div style="flex:2"><label>仪器 IP</label><input id="tcp-host" placeholder="192.168.1.20"></div>
+          <div style="flex:1"><label>端口</label><input id="tcp-port" type="number" value="9000"></div>
+        </div>
+        <button class="btn btn-primary" id="btn-tcp">测试连接</button>
+        <div id="tcp-result" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">解析预览</div>
+      <div class="card-body">
+        <p class="hint">看看某一行仪器输出会被解析成什么值和单位，不产生任何数据。</p>
+        <div class="field"><label>输入任意一行</label><input id="parse-raw" value="ST,GS,0.9678,mg"></div>
+        <button class="btn" id="btn-parse">解析</button>
+        <div id="parse-result" class="mono" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <div class="card-header">注入一条读数</div>
+      <div class="card-body">
+        <p class="hint">不接仪器也能走通整条链路：解析 → 本地 JetStream 落盘 → 转发上云。</p>
+        <div class="field">
+          <label>仪器标识 instrument_code</label>
+          <input id="inj-code" placeholder="留空则用配置里的 instrument_code">
+        </div>
+        <div class="field">
+          <label>原始行</label>
+          <textarea id="inj-raw" rows="2">ST,GS,0.9678,mg</textarea>
+        </div>
+        <button class="btn btn-primary" id="btn-inject">注入</button>
+        <div id="inj-result" class="muted" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+{{define "script"}}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.getElementById('btn-tcp').addEventListener('click', function () {
+    var host = document.getElementById('tcp-host').value.trim();
+    if (!host) { toast('请填写 IP', 'error'); return; }
+    // 这里不用 apiPost：连通失败会返回 success:false，需要把原因显示在页面上
+    fetch('/api/tcp_test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host: host, port: parseInt(document.getElementById('tcp-port').value, 10) })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      document.getElementById('tcp-result').innerHTML =
+        '<span class="' + (d.success ? 'ok' : 'danger') + '">' + esc(d.message) + '</span>';
+    }).catch(function () { toast('请求失败', 'error'); });
+  });
+
+  document.getElementById('btn-inject').addEventListener('click', function () {
+    var raw = document.getElementById('inj-raw').value.trim();
+    if (!raw) { toast('请输入一行读数', 'error'); return; }
+    apiPost('/api/http_test', {
+      raw_text: raw,
+      code: document.getElementById('inj-code').value.trim()
+    }, function (d) {
+      document.getElementById('inj-result').innerHTML =
+        'event_id <span class="mono">' + esc(d.event_id) + '</span>，解析值 <b>' +
+        esc(d.parsed.value) + '</b> ' + esc(d.parsed.unit);
+      toast('已落盘，转发器会自动上云');
+    });
+  });
+
+  document.getElementById('btn-parse').addEventListener('click', function () {
+    apiPost('/api/parse_test', { raw_text: document.getElementById('parse-raw').value }, function (d) {
+      document.getElementById('parse-result').textContent =
+        '值 = ' + (d.parsed.value || '(无)') + '    单位 = ' + (d.parsed.unit || '(无)');
+    });
+  });
+});
+</script>
+{{end}}

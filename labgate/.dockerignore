@@ -1,0 +1,21 @@
+# 运行时数据与本地配置
+data/
+config.json
+config.json.tmp
+dist/
+*.log
+
+# 构建辅助（镜像内不需要）
+gorun.sh
+Makefile
+*.ps1
+docs/
+deploy/
+README.md
+docker-compose.yml
+
+# 版本控制与编辑器
+.git/
+.gitignore
+.idea/
+.vscode/
