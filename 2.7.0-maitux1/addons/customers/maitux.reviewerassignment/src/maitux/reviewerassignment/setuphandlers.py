@@ -3,13 +3,19 @@
 
 from bika.lims import api
 from plone import api as ploneapi
+from plone.registry.interfaces import IRegistry
 from Products.CMFPlone.interfaces import INonInstallable
 from senaite.core import logger
 from senaite.core.api import catalog as catalogapi
 from senaite.core.catalog import WORKSHEET_CATALOG
+from zope.component import getUtility
 from zope.interface import implementer
 
+from maitux.reviewerassignment.interfaces import (
+    IReviewerAssignmentControlPanelSettings,
+)
 from maitux.reviewerassignment.config import PROJECTNAME
+from maitux.reviewerassignment.config import REGISTRY_PREFIX
 from maitux.reviewerassignment.config import REVIEWER_FIELD
 from maitux.reviewerassignment.config import REVIEWER_INDEX
 from maitux.reviewerassignment.config import ROOT_ID
@@ -18,23 +24,18 @@ from maitux.reviewerassignment.config import VERIFIER_ROLE
 from maitux.reviewerassignment.config import WORKSHEET_REVIEWER_BEHAVIOR
 
 
-ANALYSIS_WORKFLOW_ID = "senaite_analysis_workflow"
-WORKSHEET_WORKFLOW_ID = "senaite_worksheet_workflow"
-
-ANALYSIS_TO_BE_VERIFIED_TRANSITIONS = (
-    "multi_verify",
-    "verify",
-    "retest",
-    "retract",
-    "reject",
-)
-WORKSHEET_OPEN_TRANSITIONS = ("submit", "remove")
-WORKSHEET_TO_BE_VERIFIED_TRANSITIONS = ("verify", "retract", "rollback_to_open")
-
-ANALYSIS_PERMISSION_VERIFY = "senaite.core: Transition: Verify"
-ANALYSIS_PERMISSION_RETEST = "senaite.core: Transition: Retest"
-ANALYSIS_PERMISSION_RETRACT = "senaite.core: Transition: Retract"
-ANALYSIS_PERMISSION_REJECT = "senaite.core: Transition: Reject Analysis"
+# 本 addon 不再改动 workflow。
+#
+# 曾经这里有一个 setup_workflows()，用 state.setPermission() / state.transitions
+# 直接写 live workflow。逐项比对 SENAITE 原生 definition.xml 后确认：7 项里 6 项
+# 是原生值照抄（analysis 与 worksheet 的状态出口、Retract / Retest / Reject 权限），
+# 唯一的真改动是把 analysis "to_be_verified" 的 Verify 权限从原生的
+# [LabManager, Manager, Verifier] 收窄成 [Verifier]。
+#
+# 那是越界：该权限归 maitux.workflow 管（它设的正是原生值）。两个 addon 同写一个
+# 权限，谁的 profile 后跑谁赢，导致同一套代码在不同站点表现不一致。
+#
+# 详见 Docs/maitux.reviewerassignment-遗留问题分阶段整改方案.md 阶段 A。
 
 
 @implementer(INonInstallable)
@@ -70,7 +71,57 @@ def run_install_steps(portal):
     root_container = setup_site_structure(portal)
     setup_permissions(root_container)
     setup_sidebar()
-    setup_workflows()
+    register_registry_defaults()
+    check_site_prerequisites()
+
+
+def register_registry_defaults():
+    """按接口注册 registry 默认值
+
+    与 maitux.esignature 同一做法：用 registerInterface 而不是 registry.xml，
+    避免旧站点导入时因记录已存在/缺失而报错。
+    """
+    logger.info("*** Setup Reviewerassignment Registry ***")
+    registry = getUtility(IRegistry)
+    registry.registerInterface(
+        IReviewerAssignmentControlPanelSettings, prefix=REGISTRY_PREFIX)
+
+
+def check_site_prerequisites():
+    """检查站点设置是否会让本 addon 的审核人机制失效，只告警不阻断。
+
+    审核人机制只覆盖「工作表内」的分析项 —— guard 在拿不到工作表时一律放行。
+    真正把普通分析员挡在工作表之外的，是 SENAITE 自己的
+    `AllowToSubmitNotAssigned=False`（提交前必须有分析员，而分析员只能由工作表带来）。
+
+    该设置一旦被打开，不建工作表也能提交，本 addon 的约束就整体形同虚设。
+    这里不去覆盖 SENAITE 的设置，只在安装时把风险显式说出来。
+    """
+    logger.info("*** Check Reviewerassignment Site Prerequisites ***")
+    setup_tool = api.get_bika_setup()
+    if setup_tool is None:
+        logger.warn("Maitux.Reviewerassignment: bika_setup not found, "
+                    "skip prerequisite check")
+        return
+
+    try:
+        allow_not_assigned = setup_tool.getAllowToSubmitNotAssigned()
+    except Exception:
+        logger.warn("Maitux.Reviewerassignment: cannot read "
+                    "AllowToSubmitNotAssigned, skip prerequisite check")
+        return
+
+    if allow_not_assigned:
+        logger.warn(
+            "Maitux.Reviewerassignment: site setting "
+            "'AllowToSubmitNotAssigned' is enabled. Analyses can be submitted "
+            "without a worksheet, and this add-on's reviewer rules only cover "
+            "analyses inside a worksheet -- the reviewer requirement can be "
+            "bypassed entirely. Disable it in Setup > Analyses to keep the "
+            "reviewer assignment effective.")
+    else:
+        logger.info("Maitux.Reviewerassignment: 'AllowToSubmitNotAssigned' is "
+                    "disabled, reviewer rules cover the submit path")
 
 
 def setup_type_constraints():
@@ -166,74 +217,32 @@ def setup_sidebar():
         logger.info("Skip existing sidebar folder '%s'", ROOT_ID)
 
 
-def setup_workflows():
-    """安全修补 live workflow，避免覆盖官方 workflow XML"""
-    logger.info("*** Setup Reviewerassignment Workflows ***")
-    workflow_tool = api.get_tool("portal_workflow")
-    if workflow_tool is None:
-        raise RuntimeError("portal_workflow tool not found")
-
-    analysis_workflow = workflow_tool.getWorkflowById(ANALYSIS_WORKFLOW_ID)
-    worksheet_workflow = workflow_tool.getWorkflowById(WORKSHEET_WORKFLOW_ID)
-    if analysis_workflow is None:
-        raise RuntimeError("Workflow '%s' not found" % ANALYSIS_WORKFLOW_ID)
-    if worksheet_workflow is None:
-        raise RuntimeError("Workflow '%s' not found" % WORKSHEET_WORKFLOW_ID)
-
-    ensure_state_transitions(
-        analysis_workflow,
-        "to_be_verified",
-        ANALYSIS_TO_BE_VERIFIED_TRANSITIONS)
-    ensure_state_transitions(
-        worksheet_workflow,
-        "open",
-        WORKSHEET_OPEN_TRANSITIONS)
-    ensure_state_transitions(
-        worksheet_workflow,
-        "to_be_verified",
-        WORKSHEET_TO_BE_VERIFIED_TRANSITIONS)
-
-    ensure_state_permission_setup(
-        analysis_workflow,
-        "to_be_verified",
-        {
-            ANALYSIS_PERMISSION_VERIFY: (0, (VERIFIER_ROLE, )),
-            ANALYSIS_PERMISSION_RETEST: (1, ()),
-            ANALYSIS_PERMISSION_RETRACT: (0, ("Analyst", "LabManager", "Manager", "Sampler")),
-            ANALYSIS_PERMISSION_REJECT: (1, ()),
-        })
-
-
-def ensure_state_transitions(workflow, state_id, transition_ids):
-    """恢复指定状态的完整出口列表"""
-    state = workflow.states.get(state_id)
-    if state is None:
-        raise RuntimeError("Workflow state '%s' not found in '%s'" % (state_id, workflow.id))
-    state.transitions = tuple(transition_ids)
-    logger.info("Ensured workflow state '%s.%s' transitions=%s",
-                workflow.id, state_id, state.transitions)
-
-
-def ensure_state_permission_setup(workflow, state_id, permission_map):
-    """恢复指定状态的关键权限映射"""
-    state = workflow.states.get(state_id)
-    if state is None:
-        raise RuntimeError("Workflow state '%s' not found in '%s'" % (state_id, workflow.id))
-
-    for permission_id, value in permission_map.items():
-        acquired, roles = value
-        if permission_id not in workflow.permissions:
-            workflow.permissions = workflow.permissions + (permission_id,)
-        state.setPermission(permission_id, acquired, roles)
-
-
 def uninstall_handler(context):
-    """标准插件卸载入口"""
+    """标准插件卸载入口
+
+    卸载 = 拆结构与行为，不碰业务数据。
+
+    - 结构/行为层（behavior、catalog 索引、类型约束、侧边栏、browserlayer）可移除；
+    - 业务数据层（根容器及其内容、工作表上已保存的审核人字段值）**绝不动**。
+
+    审核人字段值在 behavior 停用后前端不再显示，但仍完整保存在 ZODB 里，
+    重新装回本 addon 即原样恢复 —— 这是有意为之的「孤儿属性」策略。
+    """
     uninstall_file = "%s-uninstall.txt" % PROJECTNAME
     if context.readDataFile(uninstall_file) is None:
         return
 
     logger.info("Maitux.Reviewerassignment uninstall handler [BEGIN]")
+    teardown_sidebar()
+    teardown_behaviors()
+    teardown_catalog()
+    teardown_type_constraints()
+    logger.info("Maitux.Reviewerassignment uninstall handler [DONE]")
+
+
+def teardown_sidebar():
+    """从 SENAITE 侧边栏移除入口"""
+    logger.info("*** Teardown Reviewerassignment Sidebar ***")
     setup_tool = api.get_senaite_setup()
     if setup_tool is None:
         raise RuntimeError("SENAITE setup tool not found")
@@ -246,7 +255,53 @@ def uninstall_handler(context):
     else:
         logger.info("Skip missing sidebar folder '%s'", ROOT_ID)
 
-    logger.info("Maitux.Reviewerassignment uninstall handler [DONE]")
+
+def teardown_behaviors():
+    """停用 Worksheet 审核人行为
+
+    只摘掉 schema，不删字段值 —— 值留在 ZODB 里成为孤儿属性，重装即恢复。
+    """
+    logger.info("*** Teardown Reviewerassignment Behaviors ***")
+    api.disable_behavior("Worksheet", WORKSHEET_REVIEWER_BEHAVIOR)
+
+
+def teardown_catalog():
+    """移除工作表 catalog 上的审核人索引与列"""
+    logger.info("*** Teardown Reviewerassignment Catalog ***")
+    catalog = api.get_tool(WORKSHEET_CATALOG)
+    if catalog is None:
+        logger.warn("Worksheet catalog not found, skip catalog teardown")
+        return
+
+    catalogapi.del_column(catalog, REVIEWER_INDEX)
+    catalogapi.del_index(catalog, REVIEWER_INDEX)
+
+
+def teardown_type_constraints():
+    """把 ReviewerassignmentContainer 从 Plone Site 的允许类型里摘掉
+
+    只改约束，不删已存在的根容器 —— 那里面是业务数据。
+    """
+    logger.info("*** Teardown Reviewerassignment Type Constraints ***")
+    types_tool = api.get_tool("portal_types")
+    if types_tool is None:
+        logger.warn("portal_types tool not found, skip type constraint teardown")
+        return
+
+    fti = types_tool.getTypeInfo("Plone Site")
+    if fti is None:
+        logger.warn("FTI 'Plone Site' not found, skip type constraint teardown")
+        return
+
+    allowed = list(getattr(fti, "allowed_content_types", ()) or ())
+    if "ReviewerassignmentContainer" not in allowed:
+        logger.info("Skip allowed_content_types teardown, already absent")
+        return
+
+    allowed.remove("ReviewerassignmentContainer")
+    fti.manage_changeProperties(allowed_content_types=tuple(allowed))
+    logger.info("Removed 'ReviewerassignmentContainer' from "
+                "allowed_content_types of 'Plone Site'")
 
 
 def setup_reviewerassignment_content(context):

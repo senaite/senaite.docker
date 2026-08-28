@@ -11,7 +11,6 @@ from bika.lims.workflow import doActionFor
 from zope.interface import implements
 
 from maitux.reviewerassignment.assignment import get_reviewer_userid
-from maitux.reviewerassignment.assignment import set_reviewer_userid
 from maitux.reviewerassignment.review_logic import has_selected_reviewer
 
 
@@ -31,12 +30,12 @@ class WorkflowActionSubmitReviewerAdapter(RequestContextAware):
                 message=u"请先在页面顶部选择审核人并点击 Apply，再执行提交。",
                 level="warning")
 
+        # 这里曾经把工作表的审核人复制一份写到每个分析项的 annotation 上。
+        # 那份副本从来没有被任何代码读过 —— guard_analysis 读的始终是工作表上的值，
+        # 而改工作表审核人时副本也不会跟着更新。留着只是个数据不一致的隐患：
+        # 哪天有人改成读分析项那份，就会冒出「改了没生效」的诡异 bug。
+        # 审核人是工作表级的属性，一张工作表一个审核人，不需要按分析项存。
         analyses = self.get_objects(uids)
-        for analysis in analyses:
-            # 提交前把当前工作表选定的审核人同步写入分析项，便于后续权限判断与追踪。
-            set_reviewer_userid(analysis, reviewer_userid)
-            analysis.reindexObject()
-
         adapter = WorkflowActionSubmitAdapter(self.context, self.request)
         return adapter(action, analyses)
 

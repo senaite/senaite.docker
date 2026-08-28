@@ -7,6 +7,18 @@
 
   <include package="plone.behavior" file="meta.zcml"/>
 
+  <!-- 注册审核人指派权限。
+       必须在这里声明，否则 rolemap.xml 导入时 manage_permission 会报
+       "The permission ... is invalid" —— 光有 rolemap.xml 不够。 -->
+  <permission
+      id="maitux.reviewerassignment.permissions.AssignReviewer"
+      title="maitux.reviewerassignment: Assign Reviewer"
+      />
+  <permission
+      id="maitux.reviewerassignment.permissions.ReassignAnyReviewer"
+      title="maitux.reviewerassignment: Reassign Any Reviewer"
+      />
+
   <!-- 引入子包 ZCML 配置 -->
   <include package=".browser" />
   <include package=".content" />

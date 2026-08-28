@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <metadata>
   <version>1.0.0</version>
-  <dependencies>
-    <dependency>profile-maitux.reviewerassignment:default</dependency>
-  </dependencies>
+  <!-- 这里曾经声明 <dependency>profile-maitux.reviewerassignment:default</dependency>，
+       即「卸载 profile 依赖安装 profile」，方向是反的：按 GenericSetup 的依赖解析，
+       它有可能在卸载时先把安装 profile 再跑一遍。已移除。 -->
 </metadata>

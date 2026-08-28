@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<object name="portal_controlpanel" meta_type="Plone Control Panel Tool">
+
+  <!-- title 必须是纯 ASCII。
+       Products/CMFPlone/exportimport/controlpanel.py:123 对它做 str()，
+       含中文会在 profile 导入时抛 UnicodeEncodeError，整个安装失败。
+       中文标题放在面板模板自己的 H1 里。 -->
+  <configlet
+      title="Maitux Reviewer Assignment"
+      action_id="maitux.reviewerassignment"
+      appId="maitux.reviewerassignment"
+      category="Products"
+      condition_expr=""
+      icon_expr=""
+      url_expr="string:${portal_url}/@@maitux-reviewerassignment-controlpanel"
+      visible="True">
+    <permission>senaite.core: Manage Bika</permission>
+  </configlet>
+
+</object>

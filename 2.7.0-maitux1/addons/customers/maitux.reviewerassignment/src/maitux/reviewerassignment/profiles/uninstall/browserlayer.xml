@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<layers>
+  <!-- 注销 browser layer。
+       不做这件事的话，卸载后 layer 仍然注册着，绑在它上面的
+       WorkflowActionSubmitReviewerAdapter 依旧活着，仍会拦住 submit。 -->
+  <layer name="maitux.reviewerassignment"
+         interface="maitux.reviewerassignment.interfaces.IReviewerAssignmentLayer"
+         remove="True" />
+</layers>

@@ -1,0 +1,46 @@
+<html xmlns:tal="http://xml.zope.org/namespaces/tal"
+      metal:use-macro="context/main_template/macros/master">
+<body>
+<metal:content fill-slot="content">
+  <div class="container-fluid">
+    <h1 class="documentFirstHeading">Maitux 审核分配</h1>
+
+    <div tal:define="status view/get_prerequisite_status">
+      <div class="alert alert-warning"
+           tal:condition="not: status/ok">
+        <strong>站点前置条件未满足</strong>
+        <div tal:content="status/message">message</div>
+      </div>
+      <div class="alert alert-success"
+           tal:condition="status/ok">
+        <span tal:content="status/message">message</span>
+      </div>
+    </div>
+
+    <form method="post"
+          tal:attributes="action string:${context/absolute_url}/@@maitux-reviewerassignment-controlpanel">
+      <input type="hidden" name="form_submitted" value="1" />
+
+      <tal:fields repeat="field view/get_fields">
+        <div class="form-group border-bottom pb-3 mb-3">
+          <div class="custom-control custom-checkbox">
+            <input type="checkbox"
+                   class="custom-control-input"
+                   tal:attributes="id field/name;
+                                   name field/name;
+                                   checked python:field['value'] and 'checked' or nothing" />
+            <label class="custom-control-label"
+                   tal:attributes="for field/name"
+                   tal:content="field/title">title</label>
+          </div>
+          <small class="form-text text-muted"
+                 tal:content="field/description">description</small>
+        </div>
+      </tal:fields>
+
+      <button type="submit" class="btn btn-primary">保存</button>
+    </form>
+  </div>
+</metal:content>
+</body>
+</html>

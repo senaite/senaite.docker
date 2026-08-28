@@ -88,3 +88,50 @@ def collect_verifiable_analyses(worksheets, current_userid):
         selected.extend(pending)
 
     return selected, errors
+
+
+def can_assign_reviewer(is_worksheet_analyst, has_assign, has_reassign_any):
+    """纯判定：当前用户能否修改这张工作表的审核人
+
+    :param is_worksheet_analyst: 当前用户是否为该工作表的被指派分析员
+    :param has_assign: 是否有 Assign Reviewer 权限
+    :param has_reassign_any: 是否有 Reassign Any Reviewer 权限
+    """
+    if not has_assign:
+        return False
+    if is_worksheet_analyst:
+        return True
+    return bool(has_reassign_any)
+
+
+def is_reviewer_editable_state(review_state, edit_states):
+    """纯判定：该工作表状态下审核人是否可改"""
+    if not review_state:
+        return False
+    return review_state in tuple(edit_states or ())
+
+
+def should_exclude_submitter(self_verification_flags):
+    """纯判定：是否要把未来的提交人从审核人候选中剔除
+
+    自审开关是 analysis 级的（setup 全局 + Analysis Service 级 -1/0/1 覆盖），
+    而选审核人在 worksheet 上做 —— 一张工作表混着多个 AS，可能没有统一答案。
+    只要存在任一分析项不允许自审，就把提交人排除掉（保守取向）。
+    """
+    flags = list(self_verification_flags or [])
+    if not flags:
+        return False
+    return not all(flags)
+
+
+def filter_reviewer_candidates(candidates, excluded_userid):
+    """从候选名单中剔除指定用户
+
+    candidates 是 (userid, 显示名) 的序列。excluded_userid 为空时原样返回。
+    """
+    items = list(candidates or [])
+    excluded = normalize_userid(excluded_userid)
+    if not excluded:
+        return items
+    return [item for item in items
+            if normalize_userid(item[0]) != excluded]
