@@ -31,6 +31,14 @@ type Agent struct {
 	// Authorization: Bearer <token>。云 LIMS 调用的 /api/state、
 	// /api/start_sync 等联动接口不受此限制（LIMS 无此令牌）。
 	APIToken string `json:"api_token"`
+	// AdminUser / AdminPassword 是管理界面（8090 网页）的登录账号。
+	// 密码非空时，网页与管理接口都要先登录（会话 Cookie）；留空则不启用
+	// 登录，保持旧部署行为。云 LIMS 联动接口不受影响（LIMS 不会登录）。
+	//
+	// 用 LABGATE_ADMIN_USER / LABGATE_ADMIN_PASSWORD 从 .env 注入；环境变量
+	// 每次启动都会覆盖 config.json，改密码请改 .env 再重启。
+	AdminUser     string `json:"admin_user"`
+	AdminPassword string `json:"admin_password"`
 }
 
 // InstrumentEntry 是仪器清单中的一台仪器（自动模式下由 LIMS 下发时可为空）。
@@ -162,6 +170,7 @@ func Defaults() Config {
 			Mode:        "auto",
 			SiteID:      "site-1",
 			PushEnabled: true,
+			AdminUser:   "admin",
 		},
 		Instruments: []InstrumentEntry{},
 		Cloud: Cloud{
@@ -473,6 +482,8 @@ func applyEnv(c *Config) {
 	envStr("LABGATE_MODE", &c.Agent.Mode)
 	envStr("LABGATE_SITE_ID", &c.Agent.SiteID)
 	envStr("LABGATE_API_TOKEN", &c.Agent.APIToken)
+	envStr("LABGATE_ADMIN_USER", &c.Agent.AdminUser)
+	envStr("LABGATE_ADMIN_PASSWORD", &c.Agent.AdminPassword)
 	envStr("LABGATE_DATA_DIR", &c.Cache.Dir)
 
 	envStr("LABGATE_LIMS_URL", &c.Cloud.LIMSURL)

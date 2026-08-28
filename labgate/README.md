@@ -64,6 +64,9 @@ labgate 把这件事交给 NATS JetStream：
 
 ## 快速开始
 
+> 现场部署（实施人员照着做，不需要源码、不需要编译）见 **[部署说明.md](部署说明.md)**。
+> 下面是开发机上的用法。
+
 ### 一、Docker（含一整套可跑通的演示件）
 
 ```bash
@@ -188,19 +191,41 @@ labgate --config balance2.json --port 8091 --data-dir data2
 > `/api/state` 会被 LIMS 反复轮询，其中的 Token 与 LeafNode 密码已脱敏；
 > 配置页读的 `/api/config` 才返回原值。
 
+### 界面登录
+
+`agent.admin_password` 非空时，8090 网页要先登录才能用；账号是
+`agent.admin_user`（缺省 `admin`）。Docker 部署从 `.env` 注入：
+
+```dotenv
+LABGATE_ADMIN_USER=admin
+LABGATE_ADMIN_PASSWORD=改成你的密码
+```
+
+- 登录成功种一个签名 Cookie（HMAC，服务端不存会话），有效期 12 小时；
+  采集端重启或改了密码，旧会话立即失效，重新登录即可。
+- 环境变量每次启动都会覆盖 `config.json`，**改密码要改 `.env` 再重启**，
+  在配置页上改会被下次启动覆盖回去。
+- 密码留空 = 不启用登录，保持旧部署行为（仅建议内网调试用）。
+
+登录只保护网页与界面接口，云 LIMS 联动的三个接口不受影响 —— LIMS 侧不会登录。
+
 ### 接口鉴权
 
-`agent.api_token` 是管理接口的可选鉴权令牌（默认空 = 不鉴权，兼容旧部署）。
+`agent.api_token` 是管理接口的可选鉴权令牌（默认空 = 不鉴权，兼容旧部署），
+给的是「非浏览器的调用方」，比如脚本或另一套系统直接调管理接口。
+已登录的浏览器会话视同已鉴权，界面自己不用再带令牌。
 
 - **受保护**（要求 `Authorization: Bearer <token>`，或 `X-API-Token` 头）：
-  `POST /api/config`、`POST /api/token/regenerate`、`POST /api/start`、
-  `POST /api/tcp_test`、`POST /api/http_test`、`POST /api/parse_test`、`POST /api/pull_now`
-- **豁免**（云 LIMS 联动接口，LIMS 侧没有本机令牌）：`GET /api/state`、
-  `GET /api/readings`、`GET /api/logs`、`GET /api/stats`、`GET /api/config`、
-  `POST /api/start_sync`、`POST /api/stop`、`GET /healthz`
+  除下面豁免项外的全部接口，包括 `GET /api/readings`、`GET /api/logs`、
+  `GET /api/stats`、`GET /api/config` 与所有 POST 管理接口
+- **豁免**（云 LIMS 联动接口 + 健康检查，LIMS 侧没有本机令牌）：
+  `GET /api/state`、`POST /api/start_sync`、`POST /api/stop`、`GET /healthz`
+
+> `GET /api/readings`、`/api/logs`、`/api/stats`、`/api/config` 以前也在豁免里 ——
+> 那时没有登录，不豁免界面就没法用。现在有会话 Cookie 了，它们回到保护之下：
+> `/api/config` 会原样返回 `cloud.token`，不该是谁都能读的。
 
 配置页可以设置令牌并「记住到本机」（存浏览器 localStorage，界面请求自动带上）。
-生产环境建议设置，避免局域网内任意机器改配置 / 注入读数。
 
 ---
 

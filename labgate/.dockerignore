@@ -2,6 +2,8 @@
 data/
 config.json
 config.json.tmp
+.env
+.env.example
 dist/
 *.log
 

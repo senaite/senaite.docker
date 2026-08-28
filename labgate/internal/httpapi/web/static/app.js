@@ -31,9 +31,19 @@ function esc(value) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/* 会话过期后接口返回 401 + login_required，直接回登录页，
+   否则页面会一直静默轮询空数据，看着像采集端挂了。 */
+function checkAuth(r) {
+  if (r.status === 401) {
+    location.href = '/login?next=' + encodeURIComponent(location.pathname + location.search);
+    throw new Error('unauthorized');
+  }
+  return r.json();
+}
+
 function apiGet(url, cb) {
   fetch(url, { headers: apiHeaders(false) })
-    .then(function (r) { return r.json(); })
+    .then(checkAuth)
     .then(cb)
     .catch(function () { /* 轮询期间的瞬时失败忽略，下一轮会补上 */ });
 }
@@ -43,10 +53,13 @@ function apiPost(url, data, cb) {
     method: 'POST',
     headers: apiHeaders(true),
     body: JSON.stringify(data || {})
-  }).then(function (r) { return r.json(); }).then(function (d) {
+  }).then(checkAuth).then(function (d) {
     if (d && d.success === false) { toast(d.message || '操作失败', 'error'); return; }
     if (cb) { cb(d); }
-  }).catch(function () { toast('请求失败，采集端可能已停止', 'error'); });
+  }).catch(function (e) {
+    if (e && e.message === 'unauthorized') { return; }
+    toast('请求失败，采集端可能已停止', 'error');
+  });
 }
 
 /* 导航栏右侧的运行状态：模式 / 仪器连接 / 云端连接 */

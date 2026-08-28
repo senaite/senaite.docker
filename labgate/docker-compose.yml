@@ -13,6 +13,16 @@
 #
 # 接真实环境时：删掉 fake-balance / fake-lims / nats-hub，
 # 把 LABGATE_LEAF_URL 指向云端 NATS，LABBRIDGE_LIMS_URL 指向真的 SENAITE。
+#
+# 现场相关的值（LIMS 地址、令牌、站点号、局域网 IP、端口）都在 .env 里，
+# 本文件不再硬编码任何令牌：先 cp .env.example .env 再按实际值改。
+# .env 已被 .gitignore 排除，只有模板 .env.example 进版本库。
+#
+# 镜像推送阿里云个人版仓库：
+#   make docker-build VERSION=1.0.0 && make docker-push VERSION=1.0.0
+#
+# 现场部署不编译，直接用现成镜像（在线 docker compose pull / 离线 docker load），
+# 给实施人员的操作手册见 部署说明.md。
 
 name: labgate
 
@@ -29,26 +39,29 @@ services:
         GO_IMAGE: docker.m.daocloud.io/library/golang:1.26-alpine
         RUNTIME_IMAGE: docker.m.daocloud.io/library/alpine:3.22
         GOPROXY: https://goproxy.cn,direct
-    image: labgate:${LABGATE_VERSION:-dev}
+    image: crpi-z99l88o2fu3lae8l.cn-hangzhou.personal.cr.aliyuncs.com/maitux/labgate:${LABGATE_VERSION:-dev}
     container_name: labgate
     ports:
-      - "8090:8090" # 管理界面 / API（LIMS 的 agent_api_url 填宿主机 IP:8090）
+      - "${LABGATE_PORT:-8090}:8090" # 管理界面 / API（LIMS 的 agent_api_url 填宿主机 IP:8090）
     environment:
       # 首次启动时用这些值生成 /data/config.json；之后以界面上的配置为准。
-      LABGATE_SITE_ID: lab-main
-      LABGATE_MODE: auto
+      LABGATE_SITE_ID: ${LABGATE_SITE_ID:-lab-main}
+      LABGATE_MODE: ${LABGATE_MODE:-auto}
+      # 管理界面（8090 网页）登录账号，密码留空则不启用登录
+      LABGATE_ADMIN_USER: ${LABGATE_ADMIN_USER:-admin}
+      LABGATE_ADMIN_PASSWORD: ${LABGATE_ADMIN_PASSWORD:?请在 .env 里设置 LABGATE_ADMIN_PASSWORD}
       # 可选：管理接口鉴权令牌（留空则不鉴权）。设置后界面请求需带
       # Authorization: Bearer <token>（配置页可「记住到本机」）。
-      # LABGATE_API_TOKEN: change-me
+      LABGATE_API_TOKEN: ${LABGATE_API_TOKEN:-}
       # 真 LIMS（Linux 服务器）：用模板上登记的 agent_token（一个中转站一个 Token）
-      LABGATE_LIMS_URL: http://192.168.1.18:8081/lims
-      LABGATE_LIMS_TOKEN: jklNg_f2y3x17lKXSBAAga_wXIGf6Bi8
-      LABGATE_LIMS_POLL: "true"  # 轮询 LIMS 拿采集指令（auto 模式）
-      LABGATE_LIMS_PUSH: "true"  # 读数 HTTP 直推 LIMS ingest 接口
-      TZ: Asia/Shanghai
+      LABGATE_LIMS_URL: ${LABGATE_LIMS_URL:?请在 .env 里设置 LABGATE_LIMS_URL}
+      LABGATE_LIMS_TOKEN: ${LABGATE_LIMS_TOKEN:?请在 .env 里设置 LABGATE_LIMS_TOKEN}
+      LABGATE_LIMS_POLL: "${LABGATE_LIMS_POLL:-true}"  # 轮询 LIMS 拿采集指令（auto 模式）
+      LABGATE_LIMS_PUSH: "${LABGATE_LIMS_PUSH:-true}"  # 读数 HTTP 直推 LIMS ingest 接口
+      TZ: ${TZ:-Asia/Shanghai}
     extra_hosts:
-      # 容器内访问宿主局域网 IP：让 labgate 连本机（192.168.1.5）上的天平/串口网关
-      - "192.168.1.5:host-gateway"
+      # 容器内访问宿主局域网 IP：让 labgate 连本机上的天平/串口网关
+      - "${LABGATE_HOST_LAN_IP:-192.168.1.5}:host-gateway"
     volumes:
       # 配置与 JetStream 落盘数据都在这里，容器重建不丢
       - labgate-data:/data

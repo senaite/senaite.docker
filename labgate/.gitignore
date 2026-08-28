@@ -4,3 +4,8 @@ config.json
 config.json.tmp
 *.exe
 *.log
+
+# 本机环境变量（含令牌），只提交模板 .env.example
+.env
+.env.*
+!.env.example

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 · labgate</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:,">
+</head>
+<body class="login-body">
+<div class="login-box">
+  <div class="card">
+    <div class="card-header">labgate <small class="muted">仪器采集网关</small></div>
+    <div class="card-body">
+      {{if .Error}}<div class="login-error">{{.Error}}</div>{{end}}
+      <form method="post" action="/login">
+        <input type="hidden" name="next" value="{{.Next}}">
+        <div class="field">
+          <label>账号</label>
+          <input name="user" autocomplete="username" autofocus required>
+        </div>
+        <div class="field">
+          <label>密码</label>
+          <input name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn btn-primary" type="submit" style="width:100%">登录</button>
+      </form>
+      <p class="hint" style="margin-bottom:0">账号密码在采集端的 <code>.env</code> 里
+        （<code>LABGATE_ADMIN_USER</code> / <code>LABGATE_ADMIN_PASSWORD</code>），改完重启生效。</p>
+    </div>
+  </div>
+  <p class="muted login-foot">labgate {{.Version}}</p>
+</div>
+</body>
+</html>

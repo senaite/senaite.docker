@@ -186,3 +186,14 @@ hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
   max-width: 360px;
 }
 .toast.err { border-left-color: var(--danger); }
+
+/* 登录页 */
+.login-body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 18px; }
+.login-box { width: 100%; max-width: 360px; }
+.login-box .card { margin-bottom: 0; }
+.login-error {
+  background: var(--danger-soft); color: var(--danger);
+  border-radius: 6px; padding: 8px 10px; margin-bottom: 12px; font-size: 13px;
+}
+.login-foot { text-align: center; font-size: 12px; margin-top: 12px; }
+.navbar a.nav-logout { margin-left: 12px; font-size: 13px; color: var(--muted); }

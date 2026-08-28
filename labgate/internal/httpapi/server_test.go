@@ -8,7 +8,9 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -471,5 +473,100 @@ func TestLogsEndpoint(t *testing.T) {
 	}
 	if fmt.Sprint(entry["message"]) == "" {
 		t.Error("日志内容为空")
+	}
+}
+
+// 配了 agent.admin_password 后，网页与界面接口都要先登录；
+// 云 LIMS 联动的三个接口不受影响（LIMS 侧不会登录）。
+func TestLoginProtectsUI(t *testing.T) {
+	ts, store := newTestServer(t)
+	if _, err := store.Update(map[string]any{
+		"agent": map[string]any{"admin_user": "admin", "admin_password": "test-pw-9f3a"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// 不跟随跳转，好确认拿到的是 302 而不是被重定向后的 200
+	noRedirect := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	}}
+	get := func(c *http.Client, path string) *http.Response {
+		t.Helper()
+		resp, err := c.Get(ts.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { resp.Body.Close() })
+		return resp
+	}
+
+	if resp := get(noRedirect, "/"); resp.StatusCode != http.StatusFound {
+		t.Errorf("未登录访问首页应跳登录页，得到 %d", resp.StatusCode)
+	} else if loc := resp.Header.Get("Location"); !strings.HasPrefix(loc, "/login") {
+		t.Errorf("跳转目标应是 /login，得到 %q", loc)
+	}
+	if resp := get(noRedirect, "/api/readings"); resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("未登录调界面接口应 401，得到 %d", resp.StatusCode)
+	}
+	if resp := get(noRedirect, "/login"); resp.StatusCode != http.StatusOK {
+		t.Errorf("登录页本身应可访问，得到 %d", resp.StatusCode)
+	}
+	// LIMS 联动接口与健康检查不参与登录
+	for _, path := range []string{"/api/state", "/healthz"} {
+		if resp := get(noRedirect, path); resp.StatusCode != http.StatusOK {
+			t.Errorf("%s 不该要求登录，得到 %d", path, resp.StatusCode)
+		}
+	}
+
+	login := func(c *http.Client, user, pass string) *http.Response {
+		t.Helper()
+		resp, err := c.PostForm(ts.URL+"/login", url.Values{
+			"user": {user}, "password": {pass},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { resp.Body.Close() })
+		return resp
+	}
+
+	if resp := login(noRedirect, "admin", "wrong"); resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("密码错应 401，得到 %d", resp.StatusCode)
+	}
+
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := &http.Client{Jar: jar}
+	if resp := login(client, "admin", "test-pw-9f3a"); resp.StatusCode != http.StatusOK {
+		t.Fatalf("登录后应跳回首页并渲染成功，得到 %d", resp.StatusCode)
+	}
+	for _, path := range []string{"/", "/config_page", "/api/readings", "/api/config"} {
+		if resp := get(client, path); resp.StatusCode != http.StatusOK {
+			t.Errorf("登录后访问 %s 应成功，得到 %d", path, resp.StatusCode)
+		}
+	}
+
+	if resp := get(client, "/logout"); resp.StatusCode != http.StatusOK {
+		t.Fatalf("退出后应落到登录页，得到 %d", resp.StatusCode)
+	}
+	if resp := get(client, "/api/readings"); resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("退出后接口应回到 401，得到 %d", resp.StatusCode)
+	}
+}
+
+// 管理密码会写进 config.json，/api/state 被 LIMS 反复轮询，必须脱敏。
+func TestStateRedactsAdminPassword(t *testing.T) {
+	ts, store := newTestServer(t)
+	if _, err := store.Update(map[string]any{
+		"agent": map[string]any{"admin_password": "test-pw-9f3a"},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	out := getJSON(t, ts, "/api/state")
+	agent := out["config"].(map[string]any)["agent"].(map[string]any)
+	if got := agent["admin_password"]; got != "***" {
+		t.Errorf("/api/state 里的管理密码没有脱敏: %v", got)
 	}
 }

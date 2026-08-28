@@ -26,9 +26,17 @@
             <button class="btn" id="btn-api-token-save">记住到本机</button>
             <button class="btn" id="btn-api-token-clear">清除</button>
           </div>
-          <p class="hint">设置后，改配置 / 启停 / 调试注入等管理接口要求
-            <code>Authorization: Bearer &lt;token&gt;</code>；云 LIMS 联动接口
-            （状态查询、开始/停止采集）不受影响。令牌会随「保存配置」写入采集端。</p>
+          <p class="hint">给脚本等非浏览器调用方用：设置后，管理接口要求
+            <code>Authorization: Bearer &lt;token&gt;</code>；已登录的界面会话不受影响，
+            云 LIMS 联动接口（状态查询、开始/停止采集）也不受影响。
+            令牌会随「保存配置」写入采集端。</p>
+        </div>
+        <div class="field">
+          <label>界面登录账号</label>
+          <p class="hint" style="margin-top:0">账号密码不在这里改 —— 它们由采集端的
+            <code>.env</code> 决定（<code>LABGATE_ADMIN_USER</code> /
+            <code>LABGATE_ADMIN_PASSWORD</code>），环境变量每次启动都会覆盖本页保存的值。
+            改完密码重启采集端生效，所有已登录会话同时失效。</p>
         </div>
 
         <div class="section-title">云端 NATS（LeafNode）</div>

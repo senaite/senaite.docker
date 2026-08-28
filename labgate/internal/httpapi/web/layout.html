@@ -16,7 +16,8 @@
   <a href="/config_page"{{if eq .Active "config"}}class="active"{{end}}>配置</a>
   <a href="/logs"       {{if eq .Active "logs"}}class="active"{{end}}>日志</a>
   <span class="nav-status" id="nav-status"></span>
-</nav>
+{{if .LoginEnabled}}  <a href="/logout" class="nav-logout" title="退出登录">{{.User}} · 退出</a>
+{{end}}</nav>
 <div class="container">
 {{template "content" .}}
 </div>

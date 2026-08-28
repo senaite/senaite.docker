@@ -483,6 +483,9 @@ func toPort(v any) (int, error) {
 // redact 屏蔽 /api/state 里的凭据 —— 这个接口会被云 LIMS 反复轮询。
 // 配置页读的是 /api/config，那里仍返回原值。
 func redact(cfg config.Config) config.Config {
+	if cfg.Agent.AdminPassword != "" {
+		cfg.Agent.AdminPassword = "***"
+	}
 	if cfg.Cloud.Token != "" {
 		cfg.Cloud.Token = "***"
 	}

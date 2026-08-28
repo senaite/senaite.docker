@@ -53,18 +53,29 @@ type Deps struct {
 // Server 是管理界面与 API 的处理器。
 type Server struct {
 	Deps
-	tmpl map[string]*template.Template
+	tmpl      map[string]*template.Template
+	loginTmpl *template.Template
+	secret    []byte // 会话 Cookie 的签名密钥，进程级随机
 }
 
 // New 构造 Server 并预编译页面模板。
 func New(d Deps) (*Server, error) {
-	s := &Server{Deps: d, tmpl: map[string]*template.Template{}}
+	secret, err := newSecret()
+	if err != nil {
+		return nil, err
+	}
+	s := &Server{Deps: d, tmpl: map[string]*template.Template{}, secret: secret}
 	for _, p := range pages {
 		t, err := template.ParseFS(webFS, "web/layout.html", "web/"+p.file)
 		if err != nil {
 			return nil, fmt.Errorf("解析页面模板 %s 失败: %w", p.file, err)
 		}
 		s.tmpl[p.route] = t
+	}
+	// 登录页不套导航栏布局，单独编译
+	s.loginTmpl, err = template.ParseFS(webFS, "web/login.html")
+	if err != nil {
+		return nil, fmt.Errorf("解析登录页模板失败: %w", err)
 	}
 	return s, nil
 }
@@ -86,6 +97,10 @@ func (s *Server) Handler() http.Handler {
 	}
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(static))))
 
+	mux.HandleFunc("GET /login", s.handleLoginPage)
+	mux.HandleFunc("POST /login", s.handleLoginSubmit)
+	mux.HandleFunc("GET /logout", s.handleLogout)
+
 	mux.HandleFunc("GET /healthz", s.handleHealth)
 	mux.HandleFunc("GET /api/state", s.handleState)
 	mux.HandleFunc("GET /api/readings", s.handleReadings)
@@ -103,36 +118,32 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/parse_test", s.handleParseTest)
 	mux.HandleFunc("POST /api/pull_now", s.handlePullNow)
 
-	return s.auth(mux)
+	return s.requireLogin(s.auth(mux))
 }
 
 // auth 保护管理类写接口：配置了 agent.api_token 时，非豁免路径必须带
 // Authorization: Bearer <token>（也兼容 X-API-Token 头）。
 //
-// 豁免路径是云 LIMS 联动的接口（LIMS 侧没有本机令牌）：/api/state、
-// /api/start_sync。其余写接口（改配置、启停、注入读数、拉取）一律要求令牌。
+// 豁免的只有云 LIMS 联动接口（machineAPI，LIMS 侧没有本机令牌）与健康检查。
+// 界面自己的只读接口（/api/readings、/api/logs、/api/stats、/api/config）以前
+// 也在豁免里，是因为那时没有登录、不豁免界面就用不了；现在有了会话 Cookie，
+// 它们回到保护之下 —— /api/config 会原样返回 cloud.token，不该谁都能读。
 // 未配置 api_token 时全部放行（兼容旧部署，界面会提示建议设置）。
 func (s *Server) auth(next http.Handler) http.Handler {
-	// 豁免：LIMS 联动接口（只读查询 / 同步启停）
-	exempt := map[string]bool{
-		"GET /api/state": true,
-		"GET /api/readings": true,
-		"GET /api/logs": true,
-		"GET /api/stats": true,
-		"GET /api/config": true,
-		"POST /api/start_sync": true,
-		"POST /api/stop": true, // LIMS 停止单台会话也走这里（带 code）
-		"GET /healthz": true,
-	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		key := r.Method + " " + r.URL.Path
-		if exempt[key] {
+		if machineAPI[key] || key == "GET /healthz" {
 			next.ServeHTTP(w, r)
 			return
 		}
 		token := s.Config.Get().Agent.APIToken
 		if token == "" {
 			// 未启用鉴权：放行（旧部署行为）
+			next.ServeHTTP(w, r)
+			return
+		}
+		// 已经登录过的浏览器会话视同已鉴权，界面不用再手工带 Bearer
+		if s.hasSessionCookie(r) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -158,7 +169,11 @@ func (s *Server) auth(next http.Handler) http.Handler {
 
 func (s *Server) renderPage(w http.ResponseWriter, route, active, title string) {
 	t := s.tmpl[route] // 路由与模板在 New 里成对注册，取不到说明是编码错误
-	data := map[string]any{"Title": title, "Active": active, "Version": s.Version}
+	user, _, loginEnabled := s.credentials()
+	data := map[string]any{
+		"Title": title, "Active": active, "Version": s.Version,
+		"LoginEnabled": loginEnabled, "User": user,
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := t.ExecuteTemplate(w, "layout", data); err != nil {
 		s.Log.Errorf("渲染页面 %s 失败：%v", route, err)
