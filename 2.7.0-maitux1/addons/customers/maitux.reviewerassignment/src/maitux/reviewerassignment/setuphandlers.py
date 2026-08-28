@@ -65,6 +65,44 @@ def run_install_steps(portal):
     root_container = setup_site_structure(portal)
     setup_permissions(root_container)
     setup_sidebar()
+    check_site_prerequisites()
+
+
+def check_site_prerequisites():
+    """检查站点设置是否会让本 addon 的审核人机制失效，只告警不阻断。
+
+    审核人机制只覆盖「工作表内」的分析项 —— guard 在拿不到工作表时一律放行。
+    真正把普通分析员挡在工作表之外的，是 SENAITE 自己的
+    `AllowToSubmitNotAssigned=False`（提交前必须有分析员，而分析员只能由工作表带来）。
+
+    该设置一旦被打开，不建工作表也能提交，本 addon 的约束就整体形同虚设。
+    这里不去覆盖 SENAITE 的设置，只在安装时把风险显式说出来。
+    """
+    logger.info("*** Check Reviewerassignment Site Prerequisites ***")
+    setup_tool = api.get_bika_setup()
+    if setup_tool is None:
+        logger.warn("Maitux.Reviewerassignment: bika_setup not found, "
+                    "skip prerequisite check")
+        return
+
+    try:
+        allow_not_assigned = setup_tool.getAllowToSubmitNotAssigned()
+    except Exception:
+        logger.warn("Maitux.Reviewerassignment: cannot read "
+                    "AllowToSubmitNotAssigned, skip prerequisite check")
+        return
+
+    if allow_not_assigned:
+        logger.warn(
+            "Maitux.Reviewerassignment: site setting "
+            "'AllowToSubmitNotAssigned' is enabled. Analyses can be submitted "
+            "without a worksheet, and this add-on's reviewer rules only cover "
+            "analyses inside a worksheet -- the reviewer requirement can be "
+            "bypassed entirely. Disable it in Setup > Analyses to keep the "
+            "reviewer assignment effective.")
+    else:
+        logger.info("Maitux.Reviewerassignment: 'AllowToSubmitNotAssigned' is "
+                    "disabled, reviewer rules cover the submit path")
 
 
 def setup_type_constraints():
