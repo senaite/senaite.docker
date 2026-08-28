@@ -28,6 +28,7 @@
       directory="profiles/uninstall"
       description="Uninstalls INNOCARE.arextension"
       provides="Products.GenericSetup.interfaces.EXTENSION"
+      post_handler=".setuphandlers.uninstall_handler"
       />
 
 </configure>

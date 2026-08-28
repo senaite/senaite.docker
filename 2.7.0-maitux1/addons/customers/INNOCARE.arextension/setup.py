@@ -21,4 +21,8 @@ setup(
         "archetypes.schemaextender",
         "zope.interface",
     ],
+    entry_points="""
+    [z3c.autoinclude.plugin]
+    target = plone
+    """,
 )

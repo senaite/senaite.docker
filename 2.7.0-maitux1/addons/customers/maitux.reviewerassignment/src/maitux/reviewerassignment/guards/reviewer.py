@@ -12,7 +12,6 @@ from maitux.reviewerassignment.review_logic import (
 )
 from maitux.reviewerassignment.review_logic import has_selected_reviewer
 from maitux.reviewerassignment.review_logic import is_assigned_verifier
-from maitux.reviewerassignment.siteinstall import is_installed_in_current_site
 
 ANALYSIS_REVIEW_TRANSITIONS = ("verify", "multi_verify")
 ANALYSIS_SUBMIT_TRANSITIONS = ("submit", )
@@ -25,10 +24,6 @@ class ReviewerAssignmentGuardAdapter(object):
         self.context = context
 
     def guard(self, transition):
-        # 本适配器是 for="*" 的进程级注册，所有站点都会调到；只有装了本 addon
-        # 的站点才该受这套审核规则约束，其余站点一律放行。详见 siteinstall。
-        if not is_installed_in_current_site():
-            return True
         if IWorksheet.providedBy(self.context):
             return self.guard_worksheet(transition)
         if IAnalysis.providedBy(self.context):

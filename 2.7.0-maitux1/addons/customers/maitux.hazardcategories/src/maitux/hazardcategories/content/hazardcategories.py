@@ -32,9 +32,19 @@ class HazardCategories(Container):
     def Title(self):
         raw = getattr(self.aq_base, "title", None)
         try:
-            value = zt(raw, context=self, domain="maitux.hazardcategories")
+            from zope.globalrequest import getRequest
+            req = getRequest()
+        except Exception:
+            req = None
+        try:
+            value = zt(raw, context=self, domain="INNOCARE.arextension")
         except Exception:
             value = None
+        if not value:
+            try:
+                value = zt(raw, domain="maitux.hazardcategories")
+            except Exception:
+                value = None
         if not value:
             value = raw
         return safe_unicode(value)

@@ -9,9 +9,10 @@ from zope.schema.interfaces import IVocabularyFactory
 from zope.schema.vocabulary import SimpleTerm
 from zope.schema.vocabulary import SimpleVocabulary
 
+from INNOCARE.arextension.defaults import DEFAULT_HAZARD_CATEGORIES
+from INNOCARE.arextension.setuphandlers import translate_with_fallback
+
 from maitux.hazardcategories import _
-from maitux.hazardcategories.config import DEFAULT_CATEGORIES
-from maitux.hazardcategories.translation import translate_with_fallback
 
 REGISTRY_KEY = "maitux.hazardcategories.categories"
 REGISTRY_JSON_KEY = "maitux.hazardcategories.categories.json"
