@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from bika.lims.interfaces import IDeactivable
+from plone.indexer import indexer
 from senaite.core.catalog import SETUP_CATALOG
 from senaite.core.content.base import Container
+from senaite.core.interfaces import ISetupCatalog
 from zope.interface import implementer
 
 from maitux.hazardcategories.interfaces import IHazardCategory
@@ -77,3 +79,52 @@ def safe_unicode(value):
             except Exception:
                 return u""
     return unicode(value)
+
+
+@indexer(IHazardCategory, ISetupCatalog)
+def usage_scope(instance):
+    """Indexer for the ``usage_scope`` KeywordIndex in senaite_catalog_setup.
+
+    The AR ``SampleProperties`` ReferenceWidget queries this index with
+    ``usage_scope=[both, ar, ar_only]``. Without this indexer the KeywordIndex
+    stays empty and the widget returns no candidates.
+    """
+    value = getattr(instance, "usage_scope", None)
+    if not value:
+        return u"both"
+    return value
+
+
+@indexer(IHazardCategory, ISetupCatalog)
+def allowed_roles_and_users(instance):
+    """Indexer for the ``allowedRolesAndUsers`` KeywordIndex.
+
+    Dexterity content does not provide an ``allowedRolesAndUsers`` method
+    (Archetypes mixins do), so without this indexer the CMF security filter
+    of ``senaite_catalog_setup`` matches no role and the AR
+    ``SampleProperties`` ReferenceWidget gets no candidates.
+    """
+    allowed = set()
+    for permission in ("Access contents information", "View"):
+        try:
+            for entry in instance.rolesOfPermission(permission):
+                name = entry.get("name")
+                if name:
+                    allowed.add(name)
+        except Exception:
+            continue
+    if "Anonymous" in allowed:
+        return ["Anonymous"]
+    if "Authenticated" in allowed:
+        return ["Authenticated"]
+    try:
+        for userid, roles in instance.get_local_roles():
+            if allowed.intersection(roles):
+                allowed.add("user:" + userid)
+    except Exception:
+        pass
+    allowed.discard("Owner")
+    if not allowed:
+        # Fallback: visible to all authenticated users, like other setup data
+        return ["Authenticated"]
+    return list(allowed)

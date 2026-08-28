@@ -12,13 +12,14 @@ INNOCARE 检验申请（Analysis Request, AR）定制扩展包，是本项目多
   - RetentionTime（留存时间）
   - SampleStatus / StorageConditions / SampleProperties（基体、储存条件、样品性质）
   - 等字段的添加、显示与实际控件调整。
-- **AR 新增页（ar_add2）右侧控件样式与去重**：右单元格控件顶对齐、隐藏冗余 label（CSS 见仓库根 `ar_add_align.css`、补丁见 `src/INNOCARE/arextension/patches.py`）。
+- **AR 新增页（ar_add2）右侧控件去重**：隐藏冗余 label（补丁见 `src/INNOCARE/arextension/patches.py`）。
 - **字段标签/备注文案**：locale 目录 `en/zh/zh-cn/zh_CN` 遵循 ASCII msgid + `.po/.mo` 翻译（避免 `UnicodeEncodeError`）。
 - **ID Server**（`src/INNOCARE/arextension/idserver.py`）：样品编号 `URs-025` 提供 `deptCode` 变量。
 - **补丁**（`src/INNOCARE/arextension/patches.py`）：
   - senaite i18n `translate` 对其它 addon 域（`maitux.projects`、`maitux.hazardcategories`、`maitux.roles`）做附加域回退；
   - `AnalysisRequestAddView.get_input_widget` 对 AR 新增页右侧重复标签做清理；
-  - `get_points_of_capture` 隐藏 Field Analyses 区块。
+  - `guard_receive` 恒放行（本项目未启用采样流程，接收不强制录入采样日期）；
+  - `NotSampledViewlet.is_visible` 恒隐藏（不显示“未采样”黄色提示横幅）。
 
 ## 依赖
 
@@ -47,11 +48,9 @@ profiles += INNOCARE.arextension:default
 ## 迁移 / 独立部署评估
 
 **可以独立部署迁移。** 该包对自身功能零外部定制依赖，迁移时：
-1. 拷贝 `INNOCORE.arextension/` 目录（含 `src/`、`setup.py`、`ar_add_align.css`）到目标环境 `/opt/addons/customers/`；
+1. 拷贝 `INNOCORE.arextension/` 目录（含 `src/`、`setup.py`）到目标环境 `/opt/addons/customers/`；
 2. 在目标 `custom-addon.cfg` 按上面三处注册；
 3. 重新 buildout + 重启容器（.py/.po/.mo 变更需重启）即可。
-
-> 注意：`ar_add_align.css` 目前是仓库内留档副本，功能样式注册在 senaite core 的 CSS 中。**镜像重建会丢失**——如需彻底持久化，应通过本 ADD-ON 的 GenericSetup profile（cssregistry）注册该样式，见项目根 `SENAITE-Addon开发规则.md` §3。
 
 ## 卸载
 

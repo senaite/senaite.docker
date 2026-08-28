@@ -7,7 +7,7 @@ from zope.interface import Interface
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 
 from maitux.hazardcategories import _
-from INNOCARE.arextension.defaults import DEFAULT_HAZARD_CATEGORIES as DEFAULT_CATEGORIES
+from maitux.hazardcategories.config import DEFAULT_CATEGORIES
 
 
 class IMaituxHazardCategoriesLayer(ISenaiteCore, IDefaultBrowserLayer):

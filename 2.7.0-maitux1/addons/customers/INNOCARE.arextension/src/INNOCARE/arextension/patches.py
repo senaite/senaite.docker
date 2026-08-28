@@ -1,30 +1,37 @@
 # -*- coding: utf-8 -*-
 import logging
-from collections import OrderedDict
 from bika.lims.browser.analysisrequest.add2 import AnalysisRequestAddView
 
 logger = logging.getLogger("INNOCARE.arextension")
 
-# 保存原生的方法，以防其他地方还需要调用
-_original_get_points_of_capture = AnalysisRequestAddView.get_points_of_capture
+# 运行时站点判断：addon 的 browserlayer 是否在当前站点注册。
+# monkey patch 是进程级副作用，无法按站点隔离；在每个 patch 内运行时判断，
+# layer 未注册的站点回退原方法，还原原生行为。
+_AR_EXTENSION_LAYER_ID = (
+    "INNOCARE.arextension.extenders.analysisrequest.IARExtensionLayer"
+)
 
-def patched_get_points_of_capture(self):
-    """
-    拦截原生的 get_points_of_capture，
-    在返回给前台模板前，强行将 'field' 移除，从而在 UI 上隐藏 Field Analyses 区块
-    """
-    pocs = _original_get_points_of_capture(self)
-    
-    # pocs 是一个 OrderedDict，例如 OrderedDict([('field', 'Field Analyses'), ('lab', 'Lab Analyses')])
-    if 'field' in pocs:
-        # 删除 field 键值对
-        del pocs['field']
-        
-    return pocs
 
-# 注入补丁
-AnalysisRequestAddView.get_points_of_capture = patched_get_points_of_capture
-logger.info("Patched AnalysisRequestAddView.get_points_of_capture to hide Field Analyses")
+def _is_enabled():
+    """判断当前站点是否启用了本 addon。
+
+    default profile 的 browserlayer.xml 注册 ``IARExtensionLayer``；站点
+    安装该 profile 后 layer 进入本地 browserlayer 注册表。这里据此判断：
+    layer 已注册 => 应用补丁；否则回退原方法。无法判定（无站点/异常）时
+    保守视为启用，保持既有行为。
+    """
+    try:
+        from zope.component.hooks import getSite
+        from plone.browserlayer import utils as _layer_utils
+        site = getSite()
+        if site is None:
+            return True
+        for layer in _layer_utils.registered_layers():
+            if getattr(layer, "__identifier__", None) == _AR_EXTENSION_LAYER_ID:
+                return True
+        return False
+    except Exception:
+        return True
 
 
 # ---------------------------------------------------------------------------
@@ -103,6 +110,8 @@ _RIGHT_CLEAN_LABEL_FIELDS = ("SampleRecovery", "SafetyPrecautions")
 
 def patched_get_input_widget(self, fieldname, arnum=0, **kw):
     widget = _original_get_input_widget(self, fieldname, arnum=arnum, **kw)
+    if not _is_enabled():
+        return widget
     base_fieldname = str(fieldname).split("-")[0]
     if base_fieldname in _RIGHT_CLEAN_LABEL_FIELDS:
         # 右侧控件由"复制字段"渲染，其 widget 与原字段 widget 不同实例。
@@ -138,6 +147,8 @@ _original_ar_guard_receive = _ar_workflow_guards.guard_receive
 
 def patched_ar_guard_receive(sample):
     """允许在未填写采样日期的情况下接收 AR"""
+    if not _is_enabled():
+        return _original_ar_guard_receive(sample)
     return True
 
 
@@ -153,11 +164,56 @@ logger.info("Patched guard_receive -> always True (Date Sampled not required for
 # ---------------------------------------------------------------------------
 from senaite.core.browser.viewlets.sample.not_sampled import NotSampledViewlet
 
+_original_not_sampled_is_visible = NotSampledViewlet.is_visible
+
 
 def patched_not_sampled_is_visible(self):
     """隐藏未采集提示横幅"""
+    if not _is_enabled():
+        return _original_not_sampled_is_visible(self)
     return False
 
 
 NotSampledViewlet.is_visible = patched_not_sampled_is_visible
 logger.info("Patched NotSampledViewlet.is_visible -> False (hide 'not sampled' warning banner)")
+
+
+def restore_all():
+    """还原本模块注入的全部 monkey patch（幂等，供 uninstall 调用）。
+
+    只做行为还原，绝不触碰业务数据。每个 patch 先判断当前是否仍指向
+    本模块的 patched 版本，避免误覆盖其它代码后续的修改。
+    """
+    restored = []
+
+    # 1) senaite.core.i18n.translate：撤销 addon-domain 回退
+    if getattr(_senaite_i18n, "translate", None) is patched_senaite_translate:
+        _senaite_i18n.translate = _original_senaite_translate
+        restored.append("senaite_translate")
+    try:
+        import senaite.core.browser.viewlets.sidebar as _sidebar_mod
+        if getattr(_sidebar_mod, "translate", None) is patched_senaite_translate:
+            _sidebar_mod.translate = _original_senaite_translate
+    except ImportError:
+        pass
+
+    # 2) get_input_widget：恢复右侧控件自动标签
+    if getattr(AnalysisRequestAddView, "get_input_widget", None) \
+            is patched_get_input_widget:
+        AnalysisRequestAddView.get_input_widget = _original_get_input_widget
+        restored.append("get_input_widget")
+
+    # 3) guard_receive：恢复原生接收守卫（重新要求采样日期）
+    if getattr(_ar_workflow_guards, "guard_receive", None) \
+            is patched_ar_guard_receive:
+        _ar_workflow_guards.guard_receive = _original_ar_guard_receive
+        restored.append("guard_receive")
+
+    # 4) NotSampledViewlet.is_visible：恢复未采样提示横幅
+    if getattr(NotSampledViewlet, "is_visible", None) \
+            is patched_not_sampled_is_visible:
+        NotSampledViewlet.is_visible = _original_not_sampled_is_visible
+        restored.append("NotSampledViewlet.is_visible")
+
+    logger.info("INNOCARE.arextension restore_all: restored %s", restored)
+    return restored

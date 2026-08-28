@@ -48,7 +48,7 @@ RUN mkdir -p $SENAITE_INSTANCE_HOME $SENAITE_FILESTORAGE $SENAITE_BLOBSTORAGE
 
 # Copy Buildout
 COPY requirements.txt buildout.cfg common-addons.cfg versions.cfg zope-versions.cfg zope-versions-prod.cfg $SENAITE_INSTANCE_HOME/
-COPY addons/customers/custom-addon.cfg $SENAITE_INSTANCE_HOME/custom-addon.cfg
+RUN touch $SENAITE_INSTANCE_HOME/custom-addon.cfg
 
 # Copy the build dependencies and startup scripts
 COPY build_deps.txt run_deps.txt docker-initialize.py docker-entrypoint.sh /

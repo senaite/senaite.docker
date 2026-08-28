@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<import-steps>
+  <import-step id="innocare-arextension-uninstall"
+               version="1000"
+               handler="INNOCARE.arextension.setuphandlers.uninstall"
+               title="INNOCARE.arextension uninstall">
+    <dependency step="various" />
+  </import-step>
+</import-steps>
