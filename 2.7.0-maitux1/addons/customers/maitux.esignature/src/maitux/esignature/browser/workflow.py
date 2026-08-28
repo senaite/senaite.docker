@@ -5,6 +5,7 @@ import json
 import transaction
 
 from bika.lims import api
+from bika.lims import logger
 from bika.lims.api.user import get_user_id
 from bika.lims.browser import workflow as bika_browser_workflow
 from bika.lims.browser.workflow.analysisrequest import WorkflowActionReceiveAdapter
@@ -12,8 +13,9 @@ from bika.lims.browser.workflow import RequestContextAware
 from bika.lims.interfaces import IAnalysis
 from bika.lims.interfaces import IAnalysisRequest
 from bika.lims.interfaces import IWorkflowActionUIDsAdapter
-from bika.lims.workflow import doActionFor as do_action_for
 from bika.lims.workflow import isTransitionAllowed as is_transition_allowed
+from bika.lims.workflow import normalize_workflow_error_message
+from Products.CMFCore.WorkflowCore import WorkflowException
 from Products.Five.browser import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from senaite.app.listing.adapters.workflow import ListingWorkflowTransition
@@ -110,6 +112,44 @@ def build_post_transition_redirect_url(context, transition_id, back_url):
     if IAnalysisRequest.providedBy(context) and transition_id == "receive":
         return build_receive_redirect_url(context, back_url)
     return back_url or api.get_url(context)
+
+
+def do_action_with_comment(obj, transition_id, comment):
+    """Fire the transition, recording `comment` in the workflow history.
+
+    This is what puts the signature on the transition's *own* audit entry.
+
+    `bika.lims.workflow.doActionFor()` takes no comment, so nothing the signer
+    attested ever reached DCWorkflow, and the audit entry for the transition
+    came out blank.  Setting `request.form["comments"]` does not help either;
+    the precedence inside take_snapshot() is
+
+        metadata["comments"] = ""              # default
+        metadata.update(get_request_data())    # request.form["comments"]
+        metadata.update(kw)                    # this one wins
+
+    and senaite's ObjectTransitionedEventHandler passes the review history
+    entry as `kw` -- whose `comments` is empty unless a comment travelled
+    through DCWorkflow.  So the request-level value is overwritten with "".
+
+    Going through portal_workflow with `comment=` puts the summary into the
+    review history, which senaite then copies verbatim into the snapshot.  No
+    subscriber ordering, no storage[-1] guesswork.
+
+    Mirrors the error handling of bika's doActionFor(): a refused transition
+    comes back as (False, message) rather than an exception, which is what the
+    all-or-nothing loop in handle_submit() expects.
+    """
+    workflow = api.get_tool("portal_workflow")
+    try:
+        workflow.doActionFor(obj, transition_id, comment=comment)
+        return True, ""
+    except WorkflowException as error:
+        message = normalize_workflow_error_message(error, transition_id)
+        logger.warning(
+            "Transition '{}' not allowed on {}: {}".format(
+                transition_id, api.get_id(obj), message))
+        return False, message
 
 
 def get_request_header(request, name, default=None):
@@ -307,6 +347,7 @@ class WorkflowActionVerifyPromptAdapter(RequestContextAware):
             analyses[0],
             action,
             self.back_url,
+            skip_transition_check=True,
             uids=[api.get_uid(obj) for obj in analyses],
         )
         return self.redirect_response(url)
@@ -349,6 +390,7 @@ class ListingVerifyPromptTransition(ListingWorkflowTransition):
             self.context,
             transition,
             api.get_url(self.view.context),
+            skip_transition_check=True,
         )
 
 
@@ -591,6 +633,19 @@ class SignaturePromptView(BrowserView):
         meaning = self.request.get("meaning", "").strip()
         reason = self.request.get("reason", "").strip()
 
+        # ⚠ 这道闸对「需要签名的 transition」而言是自相矛盾的，因此每个入口都传
+        # skip_transition_check=True 把它跳过。不要"好心"打开它。
+        #
+        # 本表单 POST 时带着 execute_transition=1 与 transition_id，于是
+        # ESignatureGuardAdapter 判定这是一次执行请求，转而去查"有没有已验证的
+        # 签名上下文"——而此刻密码还没验，上下文必然不存在，于是它把目标
+        # transition 从可用列表里摘掉。实测：
+        #
+        #   普通请求          allowed = ['retract', 'verify']
+        #   本表单 POST       allowed = ['retract']
+        #
+        # 真正的可执行性检查在下面：写入已验证上下文**之后**逐个
+        # is_transition_allowed()，那时 guard 才能给出正确答案。
         allowed_transitions = self.allowed_transition_ids()
         if not self.skip_transition_check() and transition_id not in allowed_transitions:
             # 当前对象此刻不允许执行目标动作时，提前返回更明确的提示，
@@ -693,7 +748,11 @@ class SignaturePromptView(BrowserView):
             object_uids=self.target_uids(),
             request=self.request,
         )
-        self.request.form["comments"] = build_signature_summary(verified_context)
+        signature_summary = build_signature_summary(verified_context)
+        # Kept for the non-transition snapshots of this request; the audit
+        # entry of the transition itself gets the summary through DCWorkflow
+        # instead (see do_action_with_comment).
+        self.request.form["comments"] = signature_summary
         self.request["execute_transition"] = True
 
         # One signature, N transitions -- all of them or none.
@@ -739,7 +798,8 @@ class SignaturePromptView(BrowserView):
 
         transitioned = []
         for obj in targets:
-            success, message = do_action_for(obj, transition_id)
+            success, message = do_action_with_comment(
+                obj, transition_id, signature_summary)
             if success:
                 transitioned.append(obj)
                 continue

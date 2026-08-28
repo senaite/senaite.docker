@@ -5,6 +5,13 @@ import sys
 import types
 import unittest
 
+# Imported for its side effect of caching the real module, before any loader
+# below replaces sys.modules["zope"] with a stub.  adapters/auditlog.py imports
+# `transaction`, which imports zope.interface; test_controlpanel.py runs first
+# (alphabetical order) and leaves a fake bare "zope" module behind, so without
+# this the import inside the loader resolves against the stub and blows up.
+import transaction  # noqa: F401
+
 
 def load_signflow_module():
     """加载 signflow 模块。"""
@@ -39,9 +46,16 @@ def load_auditlog_module():
     audit_subscriber_module = types.ModuleType("bika.lims.subscribers.auditlog")
     audit_subscriber_module.reindex_object = lambda obj: None
 
+    logger_stub = types.SimpleNamespace(
+        warning=lambda *a, **kw: None,
+        error=lambda *a, **kw: None,
+        info=lambda *a, **kw: None,
+    )
+
     sys.modules["bika"] = types.ModuleType("bika")
     sys.modules["bika.lims"] = types.ModuleType("bika.lims")
     sys.modules["bika.lims"].api = api_module
+    sys.modules["bika.lims"].logger = logger_stub
     sys.modules["bika.lims.api"] = api_module
     sys.modules["bika.lims.api.snapshot"] = snapshot_module
     sys.modules["bika.lims.api.user"] = user_module
@@ -257,6 +271,16 @@ class TestSignatureFlow(unittest.TestCase):
 
 class TestVerifiedSignatureContext(unittest.TestCase):
     """针对 services/context.py 真实实现的批量语义测试。"""
+
+    def setUp(self):
+        # These tests stub out whole packages ("zope", "bika.lims"); restoring
+        # sys.modules afterwards keeps that from leaking into whatever runs
+        # next, which is how the loaders in this file broke each other before.
+        self._saved_modules = dict(sys.modules)
+
+    def tearDown(self):
+        sys.modules.clear()
+        sys.modules.update(self._saved_modules)
 
     def load_context_module(self):
         api_module = types.ModuleType("bika.lims.api")
