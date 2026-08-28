@@ -1,0 +1,28 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="maitux.audittrail">
+
+  <!-- R5：覆盖 senaite.core 已注册的同名 auditlog 全文索引器
+       （senaite.core.catalog.indexer.auditlog.listing_searchable_text）。
+
+       核心实现把若干未编码 bytes（如 GBK 中文）与 UID 解析出的 unicode 标题
+       混进同一个 set 再 join，Py2 下 join 时按 ascii 解码 bytes 抛
+       UnicodeDecodeError，导致样品接收后列表重索引时报 500。
+
+       必须写在 overrides.zcml（覆盖语义），不能写在 configure.zcml（冲突语义）。
+
+       加载方式：custom-addon.cfg 的 [instance] 段里写
+           zcml += maitux.audittrail-overrides
+       recipe 会生成 package-includes/NNN-maitux.audittrail-overrides.zcml，
+       再由 site.zcml 的
+           <includeOverrides files="package-includes/*-overrides.zcml" />
+       以与 senaite.core 注册路径同层级（且更晚）的方式加载，覆盖才生效。 -->
+  <adapter
+      name="listing_searchable_text"
+      factory=".indexers.listing_searchable_text"
+      for="bika.lims.interfaces.IAuditable
+           senaite.core.interfaces.IAuditlogCatalog"
+      provides="plone.indexer.interfaces.IIndexer"
+      />
+
+</configure>

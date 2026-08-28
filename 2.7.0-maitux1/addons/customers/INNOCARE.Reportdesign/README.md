@@ -198,3 +198,54 @@ remarks   ：备注行（可选）
 - 二维码依赖页面加载 `thirdparty.js`（内含 `jquery.qrcode`）；模板内联脚本在内容注入（含 AJAX 切换模板）后执行，保证二维码重绘。
 - 临时字段值若以 `[` 开头的字符串，需经 `json.loads` 解析为列表后再判断多值/单值。
 - 修改 `.pt`/`.css` 后无需重启容器：Chameleon 模板自动重编译；若未生效，清空 `/data/cache/*` 并强制刷新（Ctrl+F5）。
+
+---
+
+## 8. 分析证书（COA）模板（AnalysisRequest）
+
+本 addon 新增一个面向 **AnalysisRequest** 的 COA 模板，参考附件《分析证书COA模板-北京》：
+
+- 模板文件：`src/INNOCARE/reportdesign/templates/coa/innocare_coa.pt`
+- 样式文件：`src/INNOCARE/reportdesign/templates/coa/innocare_coa.css`
+- 资源注册：`configure.zcml` 中 `type="analysisrequests"` + `name="reportdesign"`
+- 预期模板 ID：`reportdesign:innocare_coa.pt`
+
+> 说明：AR 的“打印入口 URL/按钮”由 SENAITE 原生提供（不同版本/皮肤入口可能不同）。该模板仅负责被 AR 打印视图发现并渲染。
+
+### 8.1 头部字段取值（默认映射）
+
+模板的头部字段取值通过 `INNOCARE.reportdesign.utils.get_coa_data(ar)` 汇总，优先使用 `INNOCARE.arextension` 已扩展到 AR 的字段：
+
+- `Project ID` → `ProjectNo`（项目引用）
+- `Compound ID` → `MaterialCode`
+- `Material Name` → `MaterialName`
+- `Strength` → `Strength`
+- `Manufacture Date` → `ManufactureDate`
+- `Batch Number` → `ClientReference`（在 `INNOCARE.arextension` 中已重命名为 Batch No）
+- `Batch Size` → `Quantity` + `Unit`
+- `Storage Conditions` → `StorageConditions`
+- `Comment` → `SafetyPrecautions`（或 `Remarks` 兜底）
+- `Test Date` → `TestDate / DateSampled / DateReceived`（按顺序兜底）
+
+### 8.2 需要你决策的取值点
+
+以下字段在现有 AR 扩展中**没有明确的数据源**。根据你的最新决定，暂定为**出报告时手工录入**，因此模板会刻意留空并显示下划线（不再兜底到 AR `id`）。后续如需自动取值，再做第二轮收敛：
+
+- `Report ID`：示例 PDF 为 `COA-...`，但 AR `id` 通常是 `QC...`。需要决定：
+  - 方案 A：新增 AR 字段（如 `ReportID/CoAID`）并由 ID 规则生成；
+  - 方案 B：直接使用 AR `id`（最快，但与示例不一致）。
+- `CoA Version`：示例为 `V1.0`，需要确定版本来源（固定值、AR 字段、或基于版本历史自动推导）。
+- `Manufacturer`：示例为“都创(上海)医药科技有限公司”，需要确定来源（AR 字段、供应商/客户字段、或关联物料/批次对象）。
+- `Conclusion`：示例为合格文本，需要决定：
+  - 手填字段（最稳妥，适配不同文案），或
+  - 基于所有分析项规格判定自动生成（需明确判定规则与输出文案）。
+- `Reference value (%)`（对照品赋值）：示例为 `99.6`，需要明确从哪个结果/字段取值（例如某个特定 AnalysisService 的结果）。
+
+### 8.3 检测项目表格（结果行）
+
+模板按 AR 下分析项逐行输出：
+
+- `Testing Item`：分析项标题
+- `Method`：优先 `Analysis.getMethod()`，其次 `Service.getMethod()`（best-effort）
+- `Accept criteria`：优先格式化规格（best-effort）
+- `Results`：优先格式化结果（best-effort）

@@ -1,0 +1,217 @@
+/* INNOCARE.Reportdesign - Analysis Request COA template */
+@page {
+    size: A4 portrait;
+    margin: 12mm 12mm 14mm 12mm;
+}
+
+body {
+    font-family: Arial, "Microsoft YaHei", "SimSun", sans-serif;
+    font-size: 10.5pt;
+    color: #000;
+}
+
+div.innocare-coa {
+    width: 100%;
+}
+
+/* Header */
+table.coa-header {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 4mm;
+}
+table.coa-header td.logo-cell {
+    width: 40mm;
+    vertical-align: top;
+}
+div.logo-placeholder {
+    width: 38mm;
+    height: 12mm;
+    border: 1px solid #bbb;
+    text-align: center;
+    line-height: 12mm;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+table.coa-header td.company-cell {
+    vertical-align: middle;
+    text-align: left;
+    padding-left: 4mm;
+}
+.company-cn {
+    font-size: 13pt;
+    font-weight: bold;
+}
+.company-en {
+    font-size: 10pt;
+    font-weight: bold;
+}
+
+.company-address {
+    margin-bottom: 6mm;
+}
+.company-address .addr-cn,
+.company-address .addr-en {
+    font-size: 9pt;
+    line-height: 1.25;
+}
+
+/* Title */
+.coa-title {
+    text-align: center;
+    margin: 4mm 0 6mm 0;
+}
+.coa-title .title-cn {
+    font-size: 16pt;
+    font-weight: bold;
+}
+.coa-title .title-en {
+    font-size: 12pt;
+    font-weight: bold;
+}
+
+/* Report ID */
+.report-id {
+    margin: 2mm 0 4mm 0;
+}
+.report-id .rid-cn .label {
+    font-weight: bold;
+}
+.fillline {
+    display: inline-block;
+    min-width: 60mm;
+    min-height: 5mm;
+    border-bottom: 1px solid #999;
+}
+.report-id .rid-en {
+    font-size: 9pt;
+    color: #333;
+}
+.report-id.second {
+    margin-top: 2mm;
+}
+
+/* Meta table */
+table.coa-meta {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 6mm;
+}
+table.coa-meta th,
+table.coa-meta td {
+    border: 1px solid #333;
+    padding: 2mm 2.5mm;
+    vertical-align: top;
+}
+table.coa-meta th {
+    width: 22%;
+    background: #f5f5f5;
+    font-weight: bold;
+}
+table.coa-meta td {
+    width: 28%;
+}
+table.coa-meta .cn {
+    font-weight: bold;
+}
+table.coa-meta .en {
+    font-size: 9pt;
+    color: #333;
+}
+
+/* Tests table */
+table.coa-tests {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 6mm;
+}
+table.coa-tests th,
+table.coa-tests td {
+    border: 1px solid #333;
+    padding: 2mm 2.5mm;
+    vertical-align: top;
+}
+table.coa-tests th {
+    background: #f0f0f0;
+}
+table.coa-tests th .cn {
+    font-weight: bold;
+}
+table.coa-tests th .en {
+    font-size: 9pt;
+    color: #333;
+}
+table.coa-tests td.empty {
+    text-align: center;
+    color: #666;
+    font-style: italic;
+}
+
+/* Conclusion */
+.coa-conclusion {
+    margin: 2mm 0 6mm 0;
+}
+.coa-conclusion .cn,
+.coa-conclusion .en {
+    display: inline-block;
+    font-weight: bold;
+    margin-right: 3mm;
+}
+.coa-conclusion .value {
+    margin-top: 2mm;
+    min-height: 10mm;
+    border-bottom: 1px solid #999;
+}
+
+/* Reference value */
+.note {
+    margin: 3mm 0 2mm 0;
+    color: #444;
+    font-size: 9pt;
+}
+table.coa-refvalue {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 6mm;
+}
+table.coa-refvalue th,
+table.coa-refvalue td {
+    border: 1px solid #333;
+    padding: 2mm 2.5mm;
+}
+table.coa-refvalue th {
+    width: 40%;
+    background: #f5f5f5;
+}
+
+/* Page break */
+.page-break {
+    page-break-before: always;
+}
+
+/* Version history + signatures */
+table.coa-version-history,
+table.coa-sign {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6mm;
+}
+table.coa-version-history th,
+table.coa-version-history td,
+table.coa-sign th,
+table.coa-sign td {
+    border: 1px solid #333;
+    padding: 2mm 2.5mm;
+    vertical-align: top;
+}
+table.coa-version-history thead th {
+    background: #f0f0f0;
+}
+table.coa-sign th {
+    width: 20%;
+    background: #f5f5f5;
+}
+table.coa-sign td {
+    width: 30%;
+    min-height: 10mm;
+}

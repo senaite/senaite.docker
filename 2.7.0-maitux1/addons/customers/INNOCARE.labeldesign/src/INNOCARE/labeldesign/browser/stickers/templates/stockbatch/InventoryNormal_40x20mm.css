@@ -1,80 +1,97 @@
 /* ADD(2026-08-21) - 库存标签 ① 样式（规格 40x20mm） */
+.stickers {
+  text-align: center;
+}
 .sticker {
-  width: 52mm;
-  padding: 1.5mm;
+  width: 40mm;
+  min-height: 20mm;
+  padding: 0.65mm;
   box-sizing: border-box;
   overflow: hidden;
   display: inline-block;
   vertical-align: top;
+  text-align: left;
   font-family: "Helvetica Neue", Arial, sans-serif;
   color: #222;
+  page-break-inside: avoid;
 }
-.label {
-  border: 0.6px solid #333;
+.sticker .label {
+  border: 0.4pt solid #333;
   border-radius: 1.5mm;
-  padding: 1.2mm;
-  padding-left: 14mm; /* 为左上角二维码留出空间 */
+  padding: 0.8mm 1mm 0.7mm 10.8mm;
   position: relative;
   box-sizing: border-box;
-  height: 100%;
+  min-height: 18.7mm;
+  background: #fff;
 }
-.label-header {
+.sticker .label-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 0.8px solid #999;
-  padding-bottom: 0.8mm;
-  margin-bottom: 1mm;
+  gap: 1mm;
+  border-bottom: 0.6pt solid #1f4e78;
+  padding-bottom: 0.5mm;
+  margin-bottom: 0.8mm;
 }
-.label-title {
-  font-size: 10px;
+.sticker .label-title {
+  font-size: 5.5pt;
   font-weight: bold;
   color: #fff;
   background: #1f4e78;
-  padding: 0.4mm 1.6mm;
-  border-radius: 1mm;
-  letter-spacing: 0.5px;
+  padding: 0.3mm 1.5mm;
+  border-radius: 1.2mm;
+  letter-spacing: 0.1pt;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 0.1mm 0.3mm rgba(0,0,0,0.1);
 }
-.material-name {
-  font-size: 8px;
+.sticker .material-name {
+  font-size: 4.8pt;
   font-weight: bold;
   color: #1f4e78;
-  max-width: 60%;
+  max-width: 55%;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  line-height: 1.1;
 }
 .inv-normal .label-title { background: #1f4e78; }
 .inv-normal .material-name { color: #1f4e78; }
-.label-table {
+.sticker .label-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
-.label-table td {
-  font-size: 7px;
-  padding: 0.5mm 0;
+.sticker .label-table td {
+  font-size: 4.6pt;
+  padding: 0.2mm 0;
   vertical-align: top;
+  line-height: 1.1;
 }
-.lbl-label {
-  color: #666;
-  width: 40%;
+.sticker .lbl-label {
+  color: #555;
+  width: 34%;
   white-space: nowrap;
 }
-.lbl-value {
-  font-weight: bold;
-  color: #111;
+.sticker .lbl-value {
+  font-weight: 700;
+  color: #000;
   word-break: break-all;
+  padding-left: 0.5mm;
 }
-.qrcode {
+.sticker .qrcode {
   position: absolute;
-  top: 1.2mm;
-  left: 1.2mm;
-  width: 11mm;
-  height: 11mm;
-  overflow: hidden; /* 阻止二维码按 data-size(px) 渲染溢出遮挡文字 */
+  top: 1mm;
+  left: 1mm;
+  width: 8.5mm;
+  height: 8.5mm;
+  overflow: hidden;
+  border: 0.1pt solid #eee;
+  padding: 0.2mm;
+  background: #fff;
 }
-.qrcode img,
-.qrcode canvas {
+.sticker .qrcode img,
+.sticker .qrcode canvas {
   width: 100%;
   height: 100%;
   object-fit: contain;

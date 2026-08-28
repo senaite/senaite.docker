@@ -18,6 +18,15 @@
       name="reportdesign"
   />
 
+  <!-- Register AnalysisRequest print templates (COA).
+       Files placed in templates/coa/ will be discovered by the AR print view
+       (senaite.core) and listed as "reportdesign:<template>.pt". -->
+  <plone:static
+      directory="templates/coa"
+      type="analysisrequests"
+      name="reportdesign"
+  />
+
   <genericsetup:registerProfile
       name="default"
       title="INNOCARE.Reportdesign"

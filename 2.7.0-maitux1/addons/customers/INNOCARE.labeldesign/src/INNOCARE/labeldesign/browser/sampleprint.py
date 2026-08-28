@@ -50,8 +50,8 @@ class SampleLabelPrintView(BrowserView):
         ]
 
     def _get_templates_dir(self, prefix):
-        templates_dir = queryResourceDirectory("stickers", prefix).directory
-        return os.path.join(templates_dir, "sample")
+        # 模板已移至 stickers 资源目录根（与 senaite.core StickerView 保持一致）
+        return queryResourceDirectory("stickers", prefix).directory
 
     def get_selected_template_css(self):
         template = self.get_selected_template()

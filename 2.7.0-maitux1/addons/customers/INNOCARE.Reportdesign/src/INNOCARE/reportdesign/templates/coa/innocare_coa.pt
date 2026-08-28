@@ -1,0 +1,207 @@
+<!--
+  INNOCARE.Reportdesign - Analysis Request COA template
+
+  Expected template id (AR print view):
+    reportdesign:innocare_coa.pt
+
+  Header field mapping (default):
+  - Project ID        -> AR.ProjectNo (INNOCARE.arextension)
+  - CoA Version       -> (empty, see README: decide source)
+  - Compound ID       -> AR.MaterialCode
+  - Batch Size        -> AR.Quantity + AR.Unit
+  - Material Name     -> AR.MaterialName
+  - Manufacture Date  -> AR.ManufactureDate
+  - Batch Number      -> AR.ClientReference (already relabeled to Batch No)
+  - Test Date         -> AR.TestDate / DateSampled / DateReceived (fallback chain)
+  - Retest Date       -> AR.RetestDate (if present)
+  - Manufacturer      -> AR.Manufacturer (if present)
+  - Storage Conditions-> AR.StorageConditions
+  - Comment           -> AR.SafetyPrecautions (or AR.Remarks)
+
+  Analysis table rows:
+  - Testing Item      -> Analysis Title
+  - Method            -> Analysis.getMethod() / Service.getMethod() (best effort)
+  - Accept criteria   -> formatted specs (best effort)
+  - Results           -> formatted result (best effort)
+-->
+<tal:coa
+  i18n:domain="INNOCARE.Reportdesign"
+  tal:define="
+      context python:view.context;
+      ar      python:getattr(view, 'getAnalysisRequest', lambda: context)();
+      data    python:modules['INNOCARE.reportdesign.utils'].get_coa_data(ar);
+      meta    data/meta;
+      rows    data/rows;">
+
+  <div class="innocare-coa">
+    <table class="coa-header">
+      <tr>
+        <td class="logo-cell">
+          <!-- NOTE: logo is intentionally left as a placeholder.
+               If you want to render a logo, decide the source (site image or resource),
+               then update this block accordingly. -->
+          <div class="logo-placeholder">INNOCARE</div>
+        </td>
+        <td class="company-cell">
+          <div class="company-cn">北京诺诚健华医药科技有限公司</div>
+          <div class="company-en">Beijing InnoCarePharma Tech Co., Ltd</div>
+        </td>
+      </tr>
+    </table>
+
+    <div class="company-address">
+      <div class="addr-cn">地址：中国北京市昌平区中关村生命科学园生命科学园路8号8号楼</div>
+      <div class="addr-en">Address: Building 8, No. 8 Life Science Park Road, Zhongguancun Life Science Park, Changping District, Beijing, China</div>
+    </div>
+
+    <div class="coa-title">
+      <div class="title-cn">分析证书</div>
+      <div class="title-en">Certificate of Analysis</div>
+    </div>
+
+    <div class="report-id">
+      <div class="rid-cn">
+        <span class="label">报告编号：</span>
+        <span class="value fillline" tal:content="python:meta.get('report_id','')"></span>
+      </div>
+      <div class="rid-en">Report ID</div>
+    </div>
+
+    <table class="coa-meta">
+      <tr>
+        <th><div class="cn">项目号</div><div class="en">Project ID</div></th>
+        <td tal:content="python:meta.get('project_id','')"></td>
+        <th><div class="cn">CoA版本号</div><div class="en">CoA Version</div></th>
+        <td class="fillline" tal:content="python:meta.get('coa_version','')"></td>
+      </tr>
+      <tr>
+        <th><div class="cn">化合物编号</div><div class="en">Compound ID</div></th>
+        <td tal:content="python:meta.get('compound_id','')"></td>
+        <th><div class="cn">批数量</div><div class="en">Batch Size</div></th>
+        <td tal:content="python:meta.get('batch_size','')"></td>
+      </tr>
+      <tr>
+        <th><div class="cn">物料名称</div><div class="en">Material Name</div></th>
+        <td tal:content="python:meta.get('material_name','')"></td>
+        <th><div class="cn">生产日期</div><div class="en">Manufacture Date</div></th>
+        <td tal:content="python:meta.get('manufacture_date','')"></td>
+      </tr>
+      <tr>
+        <th><div class="cn">批号</div><div class="en">Batch Number</div></th>
+        <td tal:content="python:meta.get('batch_no','')"></td>
+        <th><div class="cn">检测日期</div><div class="en">Test Date</div></th>
+        <td tal:content="python:meta.get('test_date','')"></td>
+      </tr>
+      <tr>
+        <th><div class="cn">规格</div><div class="en">Strength</div></th>
+        <td tal:content="python:meta.get('strength','')"></td>
+        <th><div class="cn">复检日期</div><div class="en">Retest Date</div></th>
+        <td tal:content="python:meta.get('retest_date','')"></td>
+      </tr>
+      <tr>
+        <th><div class="cn">生产企业</div><div class="en">Manufacturer</div></th>
+        <td colspan="3" class="fillline" tal:content="python:meta.get('manufacturer','')"></td>
+      </tr>
+      <tr>
+        <th><div class="cn">储存条件</div><div class="en">Storage Conditions</div></th>
+        <td colspan="3" tal:content="python:meta.get('storage_conditions','')"></td>
+      </tr>
+      <tr>
+        <th><div class="cn">备注</div><div class="en">Comment</div></th>
+        <td colspan="3" tal:content="python:meta.get('comment','')"></td>
+      </tr>
+    </table>
+
+    <table class="coa-tests">
+      <thead>
+        <tr>
+          <th><div class="cn">检测项目</div><div class="en">Testing Item</div></th>
+          <th><div class="cn">方法</div><div class="en">Method</div></th>
+          <th><div class="cn">可接受标准</div><div class="en">Accept criteria</div></th>
+          <th><div class="cn">结果</div><div class="en">Results</div></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr tal:repeat="r rows">
+          <td tal:content="python:r.get('testing_item','')"></td>
+          <td tal:content="python:r.get('method','')"></td>
+          <td tal:content="python:r.get('accept_criteria','')"></td>
+          <td tal:content="python:r.get('result','')"></td>
+        </tr>
+        <tr tal:condition="python:not rows">
+          <td colspan="4" class="empty" i18n:translate="">
+            No analyses found for this Analysis Request.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="coa-conclusion">
+      <div class="cn">结论：</div>
+      <div class="en">Conclusion:</div>
+      <!-- Intentionally empty: decide whether this is free text, or derived from review state -->
+      <div class="value fillline"></div>
+    </div>
+
+    <!-- Reference value section (for standards) -->
+    <div class="note">
+      <div class="cn">若为对照品COA，则增加以下表格内容</div>
+      <div class="en">For reference standard COA, add the following table</div>
+    </div>
+    <table class="coa-refvalue">
+      <tr>
+        <th><div class="cn">对照品赋值（%）</div><div class="en">Reference value</div></th>
+        <td class="fillline"></td>
+      </tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    <div class="report-id second">
+      <div class="rid-cn">
+        <span class="label">报告编号：</span>
+        <span class="value fillline" tal:content="python:meta.get('report_id','')"></span>
+      </div>
+      <div class="rid-en">Report ID</div>
+    </div>
+
+    <table class="coa-version-history">
+      <thead>
+        <tr>
+          <th colspan="3"><div class="cn">版本历史</div><div class="en">Version History</div></th>
+        </tr>
+        <tr>
+          <th><div class="cn">版本号</div><div class="en">Version</div></th>
+          <th><div class="cn">修改内容</div><div class="en">Revised Content</div></th>
+          <th><div class="cn">生效日期</div><div class="en">Effective Date</div></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td></td><td></td><td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <table class="coa-sign">
+      <tr>
+        <th><div class="cn">起草人</div><div class="en">Drafted By</div></th>
+        <td></td>
+        <th><div class="cn">日期</div><div class="en">Date</div></th>
+        <td></td>
+      </tr>
+      <tr>
+        <th><div class="cn">审核人</div><div class="en">Reviewed By</div></th>
+        <td></td>
+        <th><div class="cn">日期</div><div class="en">Date</div></th>
+        <td></td>
+      </tr>
+      <tr>
+        <th><div class="cn">批准人</div><div class="en">Approved by</div></th>
+        <td></td>
+        <th><div class="cn">日期</div><div class="en">Date</div></th>
+        <td></td>
+      </tr>
+    </table>
+  </div>
+</tal:coa>

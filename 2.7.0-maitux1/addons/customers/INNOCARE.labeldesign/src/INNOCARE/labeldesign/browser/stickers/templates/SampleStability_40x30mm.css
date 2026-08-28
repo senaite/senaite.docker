@@ -1,0 +1,92 @@
+/* ADD(2026-08-21) - 样品标签 ⑤（稳定性）样式（规格 40x30mm）
+   ● placement_condition 为待新增字段，字段落地前显示占位/空。 */
+.stickers {
+  text-align: center;
+}
+.sticker {
+  width: 40mm;
+  min-height: 30mm;
+  padding: 0.8mm;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: top;
+  text-align: left;
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  color: #222;
+  page-break-inside: avoid;
+}
+.sticker .label {
+  border: 0.4pt solid #444;
+  border-radius: 1.5mm;
+  padding: 1.2mm;
+  display: block;
+  position: relative;
+  box-sizing: border-box;
+  min-height: 28.4mm;
+  background: #fff;
+  box-shadow: 0 0 1mm rgba(0,0,0,0.05);
+}
+.sticker .label-content {
+  margin-left: 9.8mm;
+}
+.sticker .label-header {
+  border-bottom: 0.6pt solid #2f8f44;
+  padding-bottom: 0.6mm;
+  margin-bottom: 1mm;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+.sticker .label-title {
+  display: inline-block;
+  font-size: 6.5pt;
+  font-weight: bold;
+  color: #fff;
+  background: #2f8f44;
+  padding: 0.4mm 2.2mm;
+  border-radius: 2mm;
+  letter-spacing: 0.2pt;
+  line-height: 1.2;
+  box-shadow: 0 0.2mm 0.5mm rgba(0,0,0,0.1);
+}
+.sample-stability .label-title { background: #2f8f44; }
+.sticker .label-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.sticker .label-table td {
+  font-size: 5pt;
+  padding: 0.4mm 0;
+  vertical-align: top;
+  line-height: 1.15;
+}
+.sticker .lbl-label {
+  color: #555;
+  width: 32%;
+  white-space: nowrap;
+}
+.sticker .lbl-value {
+  font-weight: 700;
+  color: #000;
+  word-break: break-all;
+  padding-left: 0.5mm;
+}
+.sticker .qrcode {
+  position: absolute;
+  top: 1.2mm;
+  left: 1.2mm;
+  width: 8.2mm;
+  height: 8.2mm;
+  overflow: hidden;
+  border: 0.2pt solid #eee;
+  padding: 0.2mm;
+  background: #fff;
+}
+.sticker .qrcode img,
+.sticker .qrcode canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
