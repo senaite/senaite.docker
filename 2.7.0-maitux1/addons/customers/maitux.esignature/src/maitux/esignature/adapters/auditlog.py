@@ -12,10 +12,12 @@ from bika.lims.subscribers.auditlog import reindex_object
 from maitux.esignature.services.context import (
     build_signature_summary,
     clear_verified_signature_context,
+    consume_verified_signature_context,
     get_verified_signature_context,
     is_verified_signature_context_valid,
 )
 from maitux.esignature.services.policy import SignaturePolicyResolver
+from maitux.esignature.siteinstall import is_installed_in_current_site
 from maitux.esignature.storage.store import SignatureRecordStore
 
 
@@ -130,6 +132,11 @@ def record_pending_countersign(context, verified_context, action):
 
 def on_action_succeeded(context, event):
     """Persist the signature record and enrich the latest audit snapshot."""
+    # 本订阅器是 for="*" 的进程级注册，所有站点都会调到，而它会往站点写签名
+    # 记录和审计快照。未装本 addon 的站点直接不参与。详见 siteinstall。
+    if not is_installed_in_current_site():
+        return
+
     action = getattr(event, "action", None)
     if not action:
         return
@@ -156,4 +163,7 @@ def on_action_succeeded(context, event):
     if policy.get("auditlog_summary_enabled", True):
         _update_latest_snapshot(context, dict(stored), action)
     reindex_object(context)
-    clear_verified_signature_context()
+
+    # 一次签名可覆盖多个对象：此处只销掉当前对象，全部完成后上下文才作废。
+    # 过去这里无条件清空，导致批次里第 2 个对象的 guard 必然失败。
+    consume_verified_signature_context(context)

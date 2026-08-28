@@ -4,7 +4,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="maitux.esignature",
-    version="0.1.0",
+    version="0.2.1",
     description="MAITUX electronic signature add-on",
     long_description=open("README.rst").read() if os.path.exists("README.rst") else "",
     author="MAITUX Team",

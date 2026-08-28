@@ -2,6 +2,7 @@
 """Workflow action adapters and signature prompt views."""
 
 import json
+import transaction
 
 from bika.lims import api
 from bika.lims.api.user import get_user_id
@@ -12,6 +13,7 @@ from bika.lims.interfaces import IAnalysis
 from bika.lims.interfaces import IAnalysisRequest
 from bika.lims.interfaces import IWorkflowActionUIDsAdapter
 from bika.lims.workflow import doActionFor as do_action_for
+from bika.lims.workflow import isTransitionAllowed as is_transition_allowed
 from Products.Five.browser import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
 from senaite.app.listing.adapters.workflow import ListingWorkflowTransition
@@ -35,14 +37,25 @@ from maitux.esignature.storage.store import SignatureRecordStore
 
 
 def build_signature_prompt_url(
-    context, transition_id, redirect_url, skip_transition_check=False
+    context, transition_id, redirect_url, skip_transition_check=False,
+    uids=None,
 ):
+    """URL of the prompt for one signature act.
+
+    `context` stays the *anchor* object even when the act covers a batch: the
+    policy is resolved by portal_type (SignaturePolicyResolver.resolve), so
+    hanging the prompt on the worksheet would look up rules for portal_type
+    "Worksheet" and find none.  The rest of the batch travels in `uids`.
+    """
     query_data = {
         "transition_id": transition_id,
         "redirect_url": redirect_url,
     }
     if skip_transition_check:
         query_data["skip_transition_check"] = "1"
+    uids = [u for u in (uids or []) if u]
+    if uids:
+        query_data["uids"] = ",".join(uids)
     query = urlencode(query_data)
     return "{}/@@maitux-esignature-prompt?{}".format(api.get_url(context), query)
 
@@ -142,21 +155,31 @@ def maybe_redirect_signature_prompt_for_action(
         return None
 
     redirect_url = back_url or api.get_url(context)
-    if len(objects) != 1 or len(matched) != 1:
+
+    # A batch may mix objects that need a signature with objects that do not
+    # (different portal_types, different workflows).  Signing for some while
+    # silently transitioning the others would produce an audit trail nobody
+    # can defend, so the whole action is refused instead.
+    if len(matched) != len(objects):
         return warning_response(
             context,
             request,
-            "The electronic signature flow currently supports one item at a time.",
+            "The selection mixes items that require an electronic signature "
+            "with items that do not. Please handle them separately.",
             redirect_url,
         )
 
+    # One signature act for the whole batch; the anchor carries the policy,
+    # the rest ride along in `uids`.
     target = matched[0]
+    uids = [api.get_uid(obj) for obj in matched]
     redirect_url = build_post_transition_redirect_url(target, action, redirect_url)
     prompt_url = build_signature_prompt_url(
         target,
         action,
         redirect_url,
         skip_transition_check=True,
+        uids=uids,
     )
     return redirect_response(request, prompt_url)
 
@@ -252,7 +275,11 @@ def patch_listing_workflow_transition():
 
 @implementer(IWorkflowActionUIDsAdapter)
 class WorkflowActionVerifyPromptAdapter(RequestContextAware):
-    """Redirect single-analysis verify actions to the signature prompt view."""
+    """Redirect analysis verify actions to the signature prompt view.
+
+    Handles a batch: every selected analysis is authorised by the one
+    signature, with the first one acting as the policy anchor.
+    """
 
     def is_ajax_request(self):
         return is_ajax_request(self.request)
@@ -262,17 +289,26 @@ class WorkflowActionVerifyPromptAdapter(RequestContextAware):
 
     def __call__(self, action, uids):
         uids = list(uids)
-        if len(uids) != 1:
+        if not uids:
             return self.redirect(
-                message="The MVP signature prompt currently supports one AnalysisRequest at a time.",
+                message="No items selected.",
                 level="warning",
             )
 
-        analysis = api.get_object_by_uid(uids[0], default=None)
-        if analysis is None or not IAnalysis.providedBy(analysis):
-            return None
+        analyses = []
+        for uid in uids:
+            obj = api.get_object_by_uid(uid, default=None)
+            if obj is None or not IAnalysis.providedBy(obj):
+                # Not our business: let the default adapter handle the action.
+                return None
+            analyses.append(obj)
 
-        url = build_signature_prompt_url(analysis, action, self.back_url)
+        url = build_signature_prompt_url(
+            analyses[0],
+            action,
+            self.back_url,
+            uids=[api.get_uid(obj) for obj in analyses],
+        )
         return self.redirect_response(url)
 
 
@@ -420,6 +456,33 @@ class SignaturePromptView(BrowserView):
 
     def redirect_url(self):
         return self.request.get("redirect_url") or api.get_url(self.context)
+
+    def target_uids(self):
+        """UIDs this one signature act authorises.
+
+        Defaults to the anchor alone, so a prompt reached without `uids`
+        (a bookmarked URL, an older caller) keeps behaving as before.
+        """
+        raw = self.request.get("uids", "") or ""
+        if not isinstance(raw, (list, tuple)):
+            raw = raw.split(",")
+        uids = [u.strip() for u in raw if u and u.strip()]
+        anchor = api.get_uid(self.context)
+        if anchor not in uids:
+            uids.insert(0, anchor)
+        return uids
+
+    def target_objects(self):
+        objects = []
+        for uid in self.target_uids():
+            obj = api.get_object_by_uid(uid, default=None)
+            if obj is not None:
+                objects.append(obj)
+        return objects
+
+    def target_count(self):
+        """Shown on the prompt so the signer knows what they are signing for."""
+        return len(self.target_uids())
 
     def policy(self):
         return SignaturePolicyResolver().resolve(
@@ -627,27 +690,85 @@ class SignaturePromptView(BrowserView):
             countersign_auth_backend_id=(
                 countersign_result and countersign_result.get("secondary_auth_backend_id")
             ),
+            object_uids=self.target_uids(),
             request=self.request,
         )
         self.request.form["comments"] = build_signature_summary(verified_context)
         self.request["execute_transition"] = True
-        success, message = do_action_for(self.context, transition_id)
-        if not success:
+
+        # One signature, N transitions -- all of them or none.
+        #
+        # A signature is a declaration of intent: "I approve these N items".
+        # Carrying out only some of them leaves the declaration partly
+        # unfulfilled, and the unfulfilled part has no trace anywhere:
+        # IActionSucceededEvent never fires for it, so there is no audit entry
+        # and no SignatureRecord.  All-or-nothing keeps the story tellable --
+        # either the signature took full effect, or nothing happened and the
+        # signer can try again.
+        #
+        # The atomicity comes for free: one request is one ZODB transaction, so
+        # the state changes and the SignatureRecords of the whole batch commit
+        # or roll back together.  bika's doActionFor() swallows
+        # WorkflowException and returns (False, message) instead of letting the
+        # transaction fail, which is why the abort below has to be explicit.
+        #
+        # Boundary worth knowing: the transaction covers ZODB only.  Anything
+        # non-transactional triggered by a transition -- an e-mail, an external
+        # call -- will NOT roll back with it.  The verify path has none today.
+        targets = self.target_objects()
+
+        # Cheap gate first: refuse before touching anything if the batch cannot
+        # be carried out as a whole.  This runs *after* the verified context is
+        # in place on purpose -- a signature-gated transition is only allowed
+        # once the signature backs it, so checking earlier would always fail.
+        not_allowed = [
+            obj for obj in targets
+            if not is_transition_allowed(obj, transition_id)
+        ]
+        if not_allowed:
             clear_verified_signature_context(request=self.request)
             self.context.plone_utils.addPortalMessage(
-                message or "Transition execution failed.",
+                u"本次签名未生效：以下 {} 项当前不允许执行 '{}'，请刷新后重试："
+                u"{}".format(
+                    len(not_allowed), transition_id,
+                    u", ".join(api.get_id(obj) for obj in not_allowed),
+                ),
                 "error",
             )
             return self.index()
 
+        transitioned = []
+        for obj in targets:
+            success, message = do_action_for(obj, transition_id)
+            if success:
+                transitioned.append(obj)
+                continue
+
+            # Mid-batch failure: a cascade from an earlier object can change
+            # what a later one is allowed to do, so the gate above cannot catch
+            # everything.  Undo the whole act.
+            transaction.abort()
+            clear_verified_signature_context(request=self.request)
+            self.context.plone_utils.addPortalMessage(
+                u"本次签名未生效：{} 执行 '{}' 失败（{}），批次已整体回滚，"
+                u"请重试。".format(
+                    api.get_id(obj), transition_id,
+                    message or "unknown error",
+                ),
+                "error",
+            )
+            return self.request.response.redirect(self.redirect_url())
+
+        clear_verified_signature_context(request=self.request)
+
         if policy.get("require_countersign"):
             self.context.plone_utils.addPortalMessage(
-                u"双人电子签名验证通过。",
+                u"双人电子签名验证通过，共 {} 项。".format(len(transitioned)),
                 "info",
             )
         else:
             self.context.plone_utils.addPortalMessage(
-                "Electronic signature verified.",
+                u"电子签名验证通过，共 {} 项。".format(len(transitioned)),
                 "info",
             )
         return self.request.response.redirect(self.redirect_url())
