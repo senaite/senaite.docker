@@ -10,6 +10,7 @@ from bika.lims.api.analysis import is_out_of_range
 from senaite.core.browser.worksheets.worksheet.analyses_listing import (
     AnalysesView as WorksheetAnalysesView,
 )
+from senaite.core.i18n import translate
 
 # Sentinel: tells "decoded to None" apart from "could not be decoded".
 _UNPARSEABLE = object()
@@ -699,6 +700,51 @@ class GroupedRenderingMixin(object):
         """
         return "{}/{}/set_fields".format(
             self.context.absolute_url(), self.view_name)
+
+    def get_transitions_url(self):
+        """Return the URL of the native listing transitions endpoint.
+
+        This is what makes the action buttons dynamic: posting the selected
+        UIDs here runs AjaxListingView.ajax_transitions(), which asks
+        IListingTransitions for the transitions all of them have in common --
+        after every guard-permission and guard_handler() of the analysis
+        workflow has had its say.  Nothing about workflow, roles or e-signature
+        is decided on our side; we only render whatever comes back.
+
+        Note the path segment is `transitions`, NOT `ajax_transitions`:
+        handle_subpath() prefixes the first subpath element with "ajax_"
+        itself, so the latter would resolve to `ajax_ajax_transitions` and
+        raise NameError.  Same endpoint name the ReactJS listing uses
+        (api.coffee: get_json "transitions").
+        """
+        return "{}/{}/transitions".format(
+            self.context.absolute_url(), self.view_name)
+
+    def get_confirm_messages(self):
+        """Confirmation texts of the active review state, as JSON.
+
+        The native ButtonBar turns these into bootstrap-confirmation popovers
+        before firing a transition.  The worksheet listing declares one for
+        `reject` ("This operation can not be undone..."), which is exactly the
+        kind of thing that must not be lost when the buttons are rendered by
+        us instead of by ReactJS.
+
+        Translated here rather than in the browser: the messages are zope
+        i18n messages of the senaite.core domain, and `window._t` only resolves
+        what the client-side catalogs carry.
+
+        Uses senaite.core's own i18n helper rather than `context.translate`:
+        the latter is only reachable through acquisition and is not there for
+        every context this mixin serves.
+        """
+        review_state = self.review_state or {}
+        messages = review_state.get("confirm_messages") or {}
+        translated = {}
+        for tid, message in messages.items():
+            # to unicode before json.dumps: translate() hands back utf8 bytes,
+            # and json.dumps would try to decode those as ascii (CLAUDE.md §5).
+            translated[tid] = api.safe_unicode(translate(message))
+        return json.dumps(translated)
 
     def get_redirect_url(self):
         """Where workflow_action returns to once it is done."""

@@ -134,6 +134,10 @@
     }
     checkbox.checked = true;
     syncSelectAll(checkbox);
+    // Only when the row was not selected yet, exactly like
+    // listing.coffee's updateEditableField (`if not @is_uid_selected uid`):
+    // typing in an already-selected row must not cost a round trip.
+    scheduleTransitionsRefresh();
   }
 
   function enqueue(node) {
@@ -420,6 +424,11 @@
         saving = false;
         refreshSaveButton();
         setStatus("Saved.");
+        // A saved value can flip a guard: guard_submit refuses an analysis
+        // whose interims are still empty, so Submit only becomes available
+        // once they are persisted.  The native listing refetches transitions
+        // at the very same point (listing.coffee, end of ajax_save).
+        scheduleTransitionsRefresh();
         return true;
       },
       function (error) {
@@ -582,6 +591,342 @@
     }
   }
 
+  /* ------------------------------------------------------------------- *
+   * workflow transition buttons
+   *
+   * Which transitions may be fired is a property of the *selected* analyses,
+   * never of the layout: their workflow state, the roles of the current user,
+   * every guard_handler() of the analysis workflow, and -- when several rows
+   * are selected -- only what all of them have in common.  All of that is
+   * already computed server-side by senaite.app.listing's ListingTransitions
+   * adapter, so the buttons are fetched rather than written down here.
+   *
+   * Mirrors listing.coffee fetch_transitions() + ButtonBar.coffee.
+   * ------------------------------------------------------------------- */
+
+  var transitionsUrl = root.getAttribute("data-transitions-url");
+  var transitionsBar = root.querySelector(".as-transitions");
+  var modalRoot = document.querySelector(".as-grouped-modal");
+
+  var confirmMessages = (function () {
+    try {
+      return JSON.parse(root.getAttribute("data-confirm-messages") || "{}");
+    } catch (error) {
+      return {};
+    }
+  })();
+
+  /* senaite.core installs the i18n helper globally (senaite.core.js sets
+   * window._t).  The transitions endpoint returns untranslated workflow
+   * titles -- ajax_transitions carries no @translate decorator -- exactly as
+   * ButtonBar.coffee receives them, and translates them the same way. */
+  function translate(text) {
+    if (typeof window._t === "function") {
+      return window._t(text);
+    }
+    return text;
+  }
+
+  /* Copied from ButtonBar.coffee so that a Submit button looks the same
+   * whichever layout renders it. */
+  var TRANSITION_CSS = {
+    "reassign": "btn-secondary",
+    "duplicate": "btn-secondary",
+    "close": "btn-secondary",
+    "assign": "btn-secondary",
+    "receive": "btn-primary",
+    "open": "btn-primary",
+    "verify": "btn-primary",
+    "retest": "btn-primary",
+    "activate": "btn-success",
+    "prepublish": "btn-success",
+    "publish": "btn-success",
+    "republish": "btn-success",
+    "submit": "btn-success",
+    "unassign": "btn-warning",
+    "cancel": "btn-danger",
+    "deactivate": "btn-danger",
+    "invalidate": "btn-danger",
+    "reject": "btn-danger",
+    "retract": "btn-danger",
+    "remove": "btn-danger"
+  };
+
+  /* Transitions the native listing always asks to confirm, whatever the
+   * review state declares (Constants.js: CONFIRM_TRANSITION_IDS). */
+  var CONFIRM_TRANSITION_IDS = [
+    "cancel", "close", "deactivate", "reinstate", "reject", "remove",
+    "retest", "retract", "unassign"
+  ];
+
+  function transitionCss(transition) {
+    var cls = "btn btn-sm mr-1 mb-1";
+    if (TRANSITION_CSS[transition.id]) {
+      return cls + " " + TRANSITION_CSS[transition.id];
+    }
+    if (transition.css_class) {
+      return cls + " " + transition.css_class;
+    }
+    return cls + " btn-outline-secondary";
+  }
+
+  /* A custom transition that opens a modal instead of firing a workflow
+   * transition; the native listing recognises them by their id alone
+   * (listing.coffee doAction).  `modal_set_analysis_remarks` -- the batch
+   * "Set remarks" of the worksheet listing -- is currently the only one. */
+  function isModalTransition(transition) {
+    var id = transition.id || "";
+    return id.indexOf("modal") === 0 || /modal_transition$/.test(id);
+  }
+
+  function buildTransitionButton(transition, count) {
+    var button = document.createElement("button");
+    var title = translate(transition.title || transition.id);
+
+    button.className = transitionCss(transition);
+    button.setAttribute("data-transition-id", transition.id);
+    button.title = transition.help ? translate(transition.help) : title;
+
+    if (isModalTransition(transition)) {
+      // Must not submit the form: the modal brings its own.
+      button.type = "button";
+      button.setAttribute("data-transition-url", transition.url || "");
+    } else {
+      // A plain submit button, so the existing submit handler keeps doing the
+      // work it already does for transitions: flush pending edits first, then
+      // post `uids` + `workflow_action_id` to the native workflow_action.
+      button.type = "submit";
+      button.name = "workflow_action_id";
+      button.value = transition.id;
+    }
+
+    var label = document.createElement("span");
+    label.textContent = title;
+    button.appendChild(label);
+
+    if (count) {
+      var badge = document.createElement("span");
+      badge.className = "badge badge-light";
+      badge.style.marginLeft = "0.25em";
+      badge.textContent = String(count);
+      button.appendChild(badge);
+    }
+
+    var confirmMessage = confirmMessages[transition.id];
+    if (CONFIRM_TRANSITION_IDS.indexOf(transition.id) !== -1 || confirmMessage) {
+      button.setAttribute("data-toggle", "confirmation");
+      button.setAttribute("data-title", title + "?");
+      if (confirmMessage) {
+        button.setAttribute("data-content", confirmMessage);
+      }
+    }
+    return button;
+  }
+
+  function buildClearButton() {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn btn-outline-secondary btn-sm mb-1 mr-1";
+    button.setAttribute("data-transition-id", "clear_selection");
+    button.title = translate("Clear selection");
+    button.innerHTML = '<i class="fas fa-circle-notch"></i>';
+    return button;
+  }
+
+  function clearTransitions() {
+    if (transitionsBar) {
+      transitionsBar.innerHTML = "";
+    }
+  }
+
+  function renderTransitions(transitions, count) {
+    if (!transitionsBar) {
+      return;
+    }
+    clearTransitions();
+    if (!transitions || !transitions.length) {
+      return;
+    }
+    transitionsBar.appendChild(buildClearButton());
+    transitions.forEach(function (transition) {
+      transitionsBar.appendChild(buildTransitionButton(transition, count));
+    });
+
+    // bootstrap-confirmation2 is loaded globally by senaite.core
+    // (webpack/app/resources.pt), same as for the ReactJS listing.  Re-bound
+    // on every render because the buttons are recreated each time, which is
+    // what ButtonBar.coffee does from componentDidUpdate().
+    if (window.jQuery && window.jQuery.fn.confirmation) {
+      window.jQuery(transitionsBar).find("[data-toggle=confirmation]")
+        .confirmation({
+          rootSelector: "[data-toggle=confirmation]",
+          btnOkLabel: translate("Yes"),
+          btnOkClass: "btn btn-outline-primary",
+          btnOkIconClass: "fas fa-check-circle mr-1",
+          btnCancelLabel: translate("No"),
+          btnCancelClass: "btn btn-outline-secondary",
+          btnCancelIconClass: "fas fa-circle mr-1",
+          container: "body",
+          singleton: true
+        });
+    }
+  }
+
+  function fetchTransitions() {
+    var uids = selectedUidsInDisplayOrder();
+
+    // Nothing selected: no request, no buttons.  ButtonBar.coffee returns
+    // null in that case, and fetch_transitions() short-circuits the same way.
+    if (!uids.length || !transitionsUrl) {
+      clearTransitions();
+      return Promise.resolve([]);
+    }
+
+    // IMPORTANT: the payload carries the selection and NOTHING else.
+    //
+    // maitux.esignature's guard adapter keeps a signature-gated transition
+    // *visible* while it is merely being listed, and only enforces the
+    // signature on the execution request; it tells the two apart by looking
+    // for `workflow_action_id` / `execute_transition` in the request
+    // (services/context.py: is_transition_execution_request).  Sending
+    // `workflow_action_id` here would make this request look like an
+    // execution, the guard would find no verified signature context and
+    // return False, and the button would silently never appear.
+    return fetch(transitionsUrl, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-TOKEN": getCsrfToken()
+      },
+      body: JSON.stringify({ selected_uids: uids })
+    })
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+        return response.json();
+      })
+      .then(function (data) {
+        var transitions = (data && data.transitions) || [];
+        // The selection may have moved on while the request was in flight.
+        renderTransitions(transitions, selectedUidsInDisplayOrder().length);
+        return transitions;
+      })
+      .catch(function (error) {
+        clearTransitions();
+        setStatus("Could not load actions: " + error.message, true);
+        throw error;
+      });
+  }
+
+  /* Debounced: ticking a panel's "select all" flips every row at once, and
+   * each flip would otherwise cost a round trip that wakes every selected
+   * analysis to evaluate its guards. */
+  var transitionsTimer = null;
+  function scheduleTransitionsRefresh() {
+    if (transitionsTimer) {
+      window.clearTimeout(transitionsTimer);
+    }
+    transitionsTimer = window.setTimeout(function () {
+      transitionsTimer = null;
+      fetchTransitions().catch(function () {
+        /* status line already reports it */
+      });
+    }, 250);
+  }
+
+  /* Load a custom transition that opens in a modal, mirroring
+   * listing.coffee loadModal(): the uids ride on the URL, the returned markup
+   * is injected as-is, and its form is posted with fetch. */
+  function loadTransitionModal(url) {
+    if (!url || !modalRoot || !window.jQuery) {
+      return;
+    }
+    var uids = selectedUidsInDisplayOrder();
+    var target = new URL(url, window.location.href);
+    target.searchParams.append("uids", uids.join(","));
+
+    var el = window.jQuery(modalRoot);
+    fetch(target.toString(), { credentials: "include" })
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+        return response.text();
+      })
+      .then(function (html) {
+        el.empty();
+        el.append(html);
+        el.one("submit", function (event) {
+          event.preventDefault();
+          var modalForm = event.target;
+          if (!modalForm.action) {
+            return;
+          }
+          fetch(modalForm.action, {
+            method: "POST",
+            credentials: "include",
+            body: new FormData(modalForm)
+          })
+            .then(function (response) {
+              if (!response.ok) {
+                throw new Error("HTTP " + response.status);
+              }
+              return response.text();
+            })
+            .then(function (text) {
+              // The modal may answer with a redirect target instead of markup
+              if (text.indexOf("http") === 0) {
+                window.location = text;
+              } else {
+                window.location.reload();
+              }
+            })
+            .catch(function (error) {
+              setStatus("Action failed: " + error.message, true);
+            })
+            .then(function () {
+              el.modal("hide");
+            });
+        });
+        el.modal("show");
+      })
+      .catch(function (error) {
+        setStatus("Could not open dialog: " + error.message, true);
+      });
+  }
+
+  if (transitionsBar) {
+    transitionsBar.addEventListener("click", function (event) {
+      var button = event.target.closest
+        ? event.target.closest("[data-transition-id]")
+        : null;
+      if (!button) {
+        return;
+      }
+      var id = button.getAttribute("data-transition-id");
+
+      if (id === "clear_selection") {
+        event.preventDefault();
+        Array.prototype.forEach.call(
+          root.querySelectorAll(".as-row-select:checked, .as-select-all:checked"),
+          function (checkbox) {
+            checkbox.checked = false;
+          }
+        );
+        clearTransitions();
+        return;
+      }
+
+      if (button.type === "button") {
+        event.preventDefault();
+        loadTransitionModal(button.getAttribute("data-transition-url"));
+      }
+      // Anything else is a submit button; the form handler takes over.
+    });
+  }
+
   root.addEventListener("change", function (event) {
     var node = event.target;
     if (!node.classList || !node.classList.contains("as-select-all")) {
@@ -597,6 +942,7 @@
         checkbox.checked = node.checked;
       }
     );
+    scheduleTransitionsRefresh();
   });
 
   root.addEventListener("change", function (event) {
@@ -605,6 +951,7 @@
       return;
     }
     syncSelectAll(node);
+    scheduleTransitionsRefresh();
   });
 
   if (saveButton) {
@@ -635,6 +982,17 @@
       // Always sync, whether or not a save is pending below: an untouched
       // page must still submit only the checked rows, not every analysis.
       syncSelectedUidsField();
+
+      // Never post a transition with an empty selection.  WorkflowActionHandler
+      // .get_uids() falls back to the UID of the *context* when `uids` is
+      // empty, so an empty submit from a worksheet asks to transition the
+      // worksheet itself rather than any analysis.  Buttons are already hidden
+      // while nothing is selected; this is the belt to that pair of braces.
+      if (!selectedUidsInDisplayOrder().length) {
+        event.preventDefault();
+        clearTransitions();
+        return;
+      }
 
       if (!isPending()) {
         return; // nothing queued: let it through

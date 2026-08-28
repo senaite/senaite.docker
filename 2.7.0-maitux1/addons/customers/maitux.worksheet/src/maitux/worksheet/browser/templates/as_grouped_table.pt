@@ -22,7 +22,9 @@
      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
      i18n:domain="maitux.worksheet"
      class="as-grouped-listing"
-     tal:attributes="data-save-url view/get_save_url">
+     tal:attributes="data-save-url view/get_save_url;
+                     data-transitions-url view/get_transitions_url;
+                     data-confirm-messages view/get_confirm_messages">
 
   <link rel="stylesheet" type="text/css"
         tal:attributes="href string:${context/portal_url}/++resource++maitux.worksheet.static/as_grouped.css" />
@@ -312,8 +314,21 @@
     <!-- =========================== Action buttons ===========================
          Save mirrors the native listing: hidden until something is edited,
          and it never submits the form; as_grouped.js posts the queue.
-         The transition buttons are plain submits; the script intercepts them
-         to flush pending edits first.
+
+         The workflow buttons are NOT rendered here.  Which transitions are
+         offered depends on what the *currently selected* analyses have in
+         common: their workflow state, the roles of the current user, and the
+         outcome of every guard_handler().  The only correct source is
+         therefore the server, per selection.  as_grouped.js fills
+         `.as-transitions` from the listing `transitions` endpoint on every
+         selection change, and empties it when nothing is selected, exactly
+         like ButtonBar.coffee
+         (`if @props.selected_uids.length == 0 then return null`).
+
+         Hardcoding them here got all four of these wrong: `verify` and
+         `retract` never appeared at all, `reject` appeared for users without
+         the permission, the "cannot be undone" confirmation was lost, and a
+         transition could be fired with nothing selected.
     -->
     <tal:has_groups condition="view/get_as_groups">
       <div class="as-group-actions">
@@ -321,17 +336,22 @@
                 class="btn btn-success btn-sm as-save-button">
           <span i18n:translate="">Save</span> <i class="fas fa-save"></i>
         </button>
-        <button type="submit" name="workflow_action_id" value="submit"
-                class="btn btn-primary btn-sm" i18n:translate="">Submit</button>
-        <button type="submit" name="workflow_action_id" value="unassign"
-                class="btn btn-outline-secondary btn-sm" i18n:translate="">Unassign</button>
-        <button type="submit" name="workflow_action_id" value="reject"
-                class="btn btn-danger btn-sm" i18n:translate="">Reject</button>
+        <span class="as-transitions"></span>
         <span class="as-save-status" role="status" aria-live="polite"></span>
       </div>
     </tal:has_groups>
 
   </form>
+
+  <!-- Container for custom transitions that open in a modal (their id starts
+       with `modal`, e.g. `modal_set_analysis_remarks`).  The native listing
+       renders the same empty div from its ReactJS <Modal> component and fills
+       it in loadModal(); we do the same from as_grouped.js.
+
+       Deliberately OUTSIDE the form: the modal brings its own <form> with its
+       own action, and nesting forms is invalid HTML, so the browser would
+       drop the inner one and the modal would post nothing. -->
+  <div class="modal as-grouped-modal" tabindex="-1"></div>
 
   <script type="text/javascript"
           tal:attributes="src string:${context/portal_url}/++resource++maitux.worksheet.static/as_grouped.js"></script>
