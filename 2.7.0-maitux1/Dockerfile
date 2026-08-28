@@ -48,10 +48,14 @@ RUN mkdir -p $SENAITE_INSTANCE_HOME $SENAITE_FILESTORAGE $SENAITE_BLOBSTORAGE
 
 # Copy Buildout
 COPY requirements.txt buildout.cfg common-addons.cfg versions.cfg zope-versions.cfg zope-versions-prod.cfg $SENAITE_INSTANCE_HOME/
-COPY addons/customers/custom-addon.cfg $SENAITE_INSTANCE_HOME/custom-addon.cfg
+
+# custom-addon.cfg 不从构建上下文 COPY：客户 add-on 的配置由 /gen-custom-addon.sh
+# 在容器启动时按 /opt/addons/customers 的实际内容生成。构建阶段那个目录是空的，
+# 这里只放一个空壳占位，让 buildout.cfg 的 extends 有文件可读。
+RUN echo '# 占位文件：容器启动时由 /gen-custom-addon.sh 整份覆盖，不要手工修改。' > $SENAITE_INSTANCE_HOME/custom-addon.cfg && echo '[buildout]' >> $SENAITE_INSTANCE_HOME/custom-addon.cfg
 
 # Copy the build dependencies and startup scripts
-COPY build_deps.txt run_deps.txt docker-initialize.py docker-entrypoint.sh /
+COPY build_deps.txt run_deps.txt docker-initialize.py docker-entrypoint.sh gen-custom-addon.sh /
 
 # Copy the local translation overrides from the build context
 COPY senaite.impress.po senaite.impress.mo /tmp/install-lc-messages/
@@ -61,8 +65,8 @@ COPY addons/common /opt/addons/common
 RUN mkdir -p /opt/addons/customers
 
 RUN set -eux; \
-    sed -i 's/\r$//' /docker-entrypoint.sh /docker-initialize.py /build_deps.txt /run_deps.txt; \
-    chmod +x /docker-entrypoint.sh
+    sed -i 's/\r$//' /docker-entrypoint.sh /docker-initialize.py /gen-custom-addon.sh /build_deps.txt /run_deps.txt; \
+    chmod +x /docker-entrypoint.sh /gen-custom-addon.sh
 
 RUN set -eux; \
     echo "Acquire::Check-Valid-Until \"false\";" > /etc/apt/apt.conf.d/99no-check-valid-until; \

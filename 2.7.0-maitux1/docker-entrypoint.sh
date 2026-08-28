@@ -35,6 +35,23 @@ function git_fixture {
 # https://github.com/senaite/senaite.docker/issues/17
 git_fixture
 
+# ---------------------------------------------------------------------------
+# 客户 add-on 的 buildout 配置（custom-addon.cfg）每次启动重新生成：
+# 先删掉旧文件，再按 /opt/addons/customers 里实际存在的 add-on 重新写一份。
+#
+# 部署人员不用再手工维护它；物理删掉某个 add-on 目录也不会再出现
+# 「cfg 里还留着 → buildout 失败 → 容器无限重启」。生成规则见脚本顶部注释。
+# ---------------------------------------------------------------------------
+if [ ! -f /gen-custom-addon.sh ]; then
+  echo "ERROR: 缺少 /gen-custom-addon.sh，无法生成客户 add-on 配置" >&2
+  echo "       检查 docker-compose.yml 里的挂载，或重建镜像" >&2
+  exit 1
+fi
+# 该脚本可能是从 Windows 宿主挂载进来的 CRLF 文件，直接执行会 bad interpreter，
+# 所以照 Dockerfile 的老办法先去掉 \r（宿主是只读挂载，写到 /tmp 再跑）
+sed 's/\r$//' /gen-custom-addon.sh > /tmp/gen-custom-addon.sh
+bash /tmp/gen-custom-addon.sh
+
 if [ -e "custom.cfg" ]; then
   buildout -c custom.cfg -o -n
   find /data  -not -user senaite -exec chown senaite:senaite {} \+
