@@ -296,18 +296,27 @@
                       </div>
                     </tal:block>
 
-                    <div class="maitux-esign-field">
-                      <label for="esign-meaning">
-                        Meaning
-                        <span class="maitux-esign-required" tal:condition="python:view.policy().get('meaning_required')">*</span>
-                      </label>
+                    <!-- Meaning is a controlled value, not something the signer
+                         types.  It states the role the signer takes towards
+                         this record (Approval, Authorship, Responsibility...),
+                         which follows from the transition and is configured
+                         per rule in the control panel.  Shown read-only so the
+                         signer can see what they are attesting to, but cannot
+                         reword it; the value posted back comes from the policy,
+                         never from this markup. -->
+                    <div class="maitux-esign-field"
+                         tal:condition="python:view.policy().get('meaning_required')">
+                      <label for="esign-meaning">Meaning</label>
                       <input id="esign-meaning"
                              class="maitux-esign-input"
                              type="text"
-                             name="meaning"
-                             placeholder="Enter the purpose of this signature"
-                             tal:attributes="value python:view.form_meaning()" />
-                      <span class="maitux-esign-help">Describe what this verification is authorizing.</span>
+                             readonly="readonly"
+                             tabindex="-1"
+                             tal:attributes="value python:view.policy_meaning()" />
+                      <span class="maitux-esign-help">
+                        Set by the signature policy for this action; it cannot
+                        be edited here.
+                      </span>
                     </div>
                   </div>
 

@@ -24,6 +24,29 @@
                 Enable electronic signature
               </label>
             </div>
+            <div class="field" style="margin-top: 1em; max-width: 34em;">
+              <label for="esign-meaning-vocabulary"
+                     style="display: block; font-weight: bold; margin-bottom: .25em;">
+                Signature meanings
+              </label>
+              <p class="discreet" style="margin: 0 0 .4em 0;">
+                One meaning per line. Each rule below picks one of these; the
+                signer sees it read-only and cannot reword it.
+              </p>
+              <textarea id="esign-meaning-vocabulary"
+                        name="meaning_vocabulary"
+                        rows="5"
+                        class="form-control"
+                        style="width: 100%; font-family: inherit;"
+                        tal:content="python:view.meaning_vocabulary_text()">Approval</textarea>
+              <p class="discreet" style="margin: .4em 0 0 0;">
+                Part 11 requires the meaning to be recorded but does not fix the
+                wording, so adjust these to your SOP. Editing this list does not
+                change the meaning already assigned to an existing rule &mdash;
+                such a rule keeps its value and shows it as
+                <em>(not in the list)</em> until you pick a new one.
+              </p>
+            </div>
           </fieldset>
 
           <fieldset>
@@ -39,13 +62,14 @@
                   <th>Require Signature</th>
                   <th>Countersign</th>
                   <th>Meaning Required</th>
+                  <th>Meaning</th>
                   <th>Reason Required</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody id="esign-rules-body">
                 <tr>
-                  <td colspan="8">Loading rules...</td>
+                  <td colspan="9">Loading rules...</td>
                 </tr>
               </tbody>
             </table>
@@ -72,6 +96,14 @@
         <script type="application/json"
                 id="esign-current-rules"
                 tal:content="python:view.current_rules_json()">[]</script>
+        <!-- Suggested meaning per transition, served from services/rules.py so
+             the table and the signature policy cannot drift apart. -->
+        <script type="application/json"
+                id="esign-default-meanings"
+                tal:content="python:view.default_meanings_json()">{}</script>
+        <script type="application/json"
+                id="esign-meaning-vocabulary-json"
+                tal:content="python:view.meaning_vocabulary_json()">[]</script>
 
         <script type="text/javascript">
           (function () {
@@ -93,6 +125,67 @@
               portal_type_workflows: {}
             });
             var currentRules = readJson('esign-current-rules', []);
+            var defaultMeanings = readJson('esign-default-meanings', {});
+
+            function defaultMeaningFor(transitionId) {
+              return defaultMeanings[transitionId] || '';
+            }
+
+            var meaningVocabulary = readJson('esign-meaning-vocabulary-json', []);
+
+            /* Make sure `value` is selectable even when it is not in the
+               vocabulary.
+
+               An admin may remove a term from the list long after a rule was
+               configured with it. Without this the select would fall back to
+               its first option, the admin would hit Save, and the meaning of
+               an existing signature rule would change silently -- an audit
+               setting altered by accident, which is worse than the free text
+               box this replaced. The stale value is kept and labelled so the
+               change has to be deliberate. */
+            function ensureOption(select, value) {
+              if (!value) {
+                return;
+              }
+              var options = select.options;
+              for (var i = 0; i < options.length; i++) {
+                if (options[i].value === value) {
+                  return;
+                }
+              }
+              var option = document.createElement('option');
+              option.value = value;
+              option.text = value + '  (not in the list)';
+              select.insertBefore(option, select.firstChild);
+            }
+
+            function buildMeaningSelect(value) {
+              var select = document.createElement('select');
+              select.className = 'js-meaning form-control';
+              select.style.minWidth = '11em';
+
+              var blank = document.createElement('option');
+              blank.value = '';
+              // Escaped, not the literal character: ZPT turns non-ASCII in the
+              // output into numeric entities, and HTML5 does not entity-decode
+              // the contents of a <script>, so a literal em dash here reaches
+              // the browser as the seven characters "&#8212;" and shows up in
+              // the dropdown. Keep this whole block ASCII.
+              blank.text = String.fromCharCode(8212);  // em dash
+              select.appendChild(blank);
+
+              meaningVocabulary.forEach(function (item) {
+                var option = document.createElement('option');
+                option.value = item;
+                option.text = item;
+                select.appendChild(option);
+              });
+
+              ensureOption(select, value);
+              select.value = value || '';
+              return select;
+            }
+
             var tableBody = document.getElementById('esign-rules-body');
             var addButton = document.getElementById('esign-add-rule');
             var payloadInput = document.getElementById('esign-rules-payload');
@@ -237,6 +330,26 @@
               meaningCell.appendChild(createCheckbox(rule.meaning_required !== false, 'js-meaning-required'));
               row.appendChild(meaningCell);
 
+              var meaningValueCell = document.createElement('td');
+              var meaningInput = buildMeaningSelect(
+                rule.meaning || defaultMeaningFor(rule.transition_id));
+              meaningValueCell.appendChild(meaningInput);
+              row.appendChild(meaningValueCell);
+
+              // Fill in the suggested meaning when a transition is chosen,
+              // but only while the field is still empty -- otherwise wording
+              // the site adjusted to its SOP would be wiped out.
+              transitionSelect.addEventListener('change', function () {
+                if (meaningInput.value.trim()) {
+                  return;
+                }
+                var suggested = defaultMeaningFor(transitionSelect.value);
+                if (suggested) {
+                  ensureOption(meaningInput, suggested);
+                  meaningInput.value = suggested;
+                }
+              });
+
               var reasonCell = document.createElement('td');
               reasonCell.appendChild(createCheckbox(rule.reason_required !== false, 'js-reason-required'));
               row.appendChild(reasonCell);
@@ -265,6 +378,7 @@
                   signature_required: true,
                   require_countersign: false,
                   meaning_required: true,
+                  meaning: '',
                   reason_required: true
                 });
               }
@@ -287,13 +401,25 @@
                   errors.push('Please fully select portal type, workflow, and transition for each row.');
                   return;
                 }
+                var meaningRequired = row.querySelector('.js-meaning-required').checked;
+                var meaningValue = row.querySelector('.js-meaning').value.trim();
+                // A rule that demands a meaning but carries none is a
+                // configuration nobody can act on: the prompt shows this
+                // value read-only, so the signer cannot supply it. Stop it
+                // here instead.
+                if (meaningRequired && !meaningValue) {
+                  errors.push('Rule "' + portalType + ' / ' + transitionId +
+                              '" requires a meaning, so the Meaning column cannot be empty.');
+                  return;
+                }
                 result.push({
                   portal_type: portalType,
                   workflow_id: workflowId,
                   transition_id: transitionId,
                   signature_required: row.querySelector('.js-signature-required').checked,
                   require_countersign: row.querySelector('.js-require-countersign').checked,
-                  meaning_required: row.querySelector('.js-meaning-required').checked,
+                  meaning_required: meaningRequired,
+                  meaning: meaningValue,
                   reason_required: row.querySelector('.js-reason-required').checked
                 });
               });

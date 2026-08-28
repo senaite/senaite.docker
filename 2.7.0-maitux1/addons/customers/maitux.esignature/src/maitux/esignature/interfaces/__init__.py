@@ -79,6 +79,19 @@ class IESignatureControlPanelSettings(model.Schema):
         required=False,
     )
 
+    meaning_vocabulary = schema.Text(
+        title=u"Signature meanings",
+        description=(
+            u"One meaning per line. These are the values a rule may assign to "
+            u"a signature; the signer sees the one configured for the action "
+            u"and cannot change it. 21 CFR Part 11 requires the meaning to be "
+            u"recorded but does not fix the wording, so adjust these to your "
+            u"SOP."
+        ),
+        default=u"Approval\nReview\nResponsibility\nAuthorship",
+        required=False,
+    )
+
 
 class ISignaturePolicyResolver(Interface):
     """Resolve whether a transition requires electronic signature."""

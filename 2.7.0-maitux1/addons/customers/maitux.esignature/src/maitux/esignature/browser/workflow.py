@@ -559,10 +559,15 @@ class SignaturePromptView(BrowserView):
             return ""
         return pending.get("primary_signer_user_id") or pending.get("user_id") or ""
 
-    def form_meaning(self):
-        return self.request.get("meaning") or (
-            self.pending_countersign() and self.pending_countersign().get("meaning")
-        ) or ""
+    def policy_meaning(self):
+        """The controlled meaning for this action, from the signature policy.
+
+        Never read back from the form: the prompt renders it read-only, and a
+        read-only input is trivially bypassed by anyone posting the form by
+        hand.  Taking it from the policy is what makes the field controlled
+        rather than merely pre-filled.
+        """
+        return self.policy().get("meaning") or u""
 
     def form_reason(self):
         return self.request.get("reason") or (
@@ -630,7 +635,11 @@ class SignaturePromptView(BrowserView):
             return self.request.response.redirect(self.redirect_url())
 
         password = self.request.get("password", "")
-        meaning = self.request.get("meaning", "").strip()
+        # From the policy, not the form: the meaning states the signer's role
+        # towards the record and is configured per rule, so the signer cannot
+        # reword it -- which is the whole point of moving it out of a free
+        # text box.
+        meaning = self.policy_meaning().strip()
         reason = self.request.get("reason", "").strip()
 
         # ⚠ 这道闸对「需要签名的 transition」而言是自相矛盾的，因此每个入口都传
@@ -660,7 +669,15 @@ class SignaturePromptView(BrowserView):
             return self.index()
 
         if policy.get("meaning_required") and not meaning:
-            self.context.plone_utils.addPortalMessage("Meaning is required.", "error")
+            # No longer something the signer can fix by typing: the rule
+            # demands a meaning but none is configured for it.  Say so, rather
+            # than telling the signer to fill in a field they cannot edit.
+            self.context.plone_utils.addPortalMessage(
+                u"该操作的签名规则要求载明含义，但规则里没有配置含义值。"
+                u"请在电子签名控制面板中为 {} / {} 补上 Meaning。".format(
+                    policy.get("portal_type") or "?", transition_id),
+                "error",
+            )
             return self.index()
         if policy.get("reason_required") and not reason:
             self.context.plone_utils.addPortalMessage("Reason is required.", "error")
