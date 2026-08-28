@@ -70,7 +70,7 @@
                         审核人
                       </span>
                     </div>
-                    <span tal:condition="view/is_assignment_allowed">
+                    <span tal:condition="view/can_assign_reviewer">
                       <select id="reviewer_userid"
                               name="reviewer_userid"
                               class="selectpicker"
@@ -85,14 +85,14 @@
                       </select>
                     </span>
                     <span class="input-group-append"
-                          tal:condition="not: view/is_assignment_allowed">
+                          tal:condition="not: view/can_assign_reviewer">
                       <span class="input-group-text"
                             tal:content="view/get_selected_reviewer_title">
                         未分配
                       </span>
                     </span>
                     <div class="input-group input-group-append"
-                         tal:condition="view/is_assignment_allowed">
+                         tal:condition="view/can_assign_reviewer">
                       <button class="btn btn-sm btn-outline-secondary"
                               type="submit"
                               name="reviewer_assignment_apply"

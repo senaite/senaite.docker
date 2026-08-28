@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rolemap>
+  <permissions>
+    <!-- 给自己是分析员的工作表选审核人：实验员日常操作 -->
+    <permission name="maitux.reviewerassignment: Assign Reviewer"
+                acquire="False">
+      <role name="Analyst"/>
+      <role name="LabManager"/>
+      <role name="Manager"/>
+    </permission>
+    <!-- 改别人的工作表：死结救场，仅高权限 -->
+    <permission name="maitux.reviewerassignment: Reassign Any Reviewer"
+                acquire="False">
+      <role name="LabManager"/>
+      <role name="Manager"/>
+    </permission>
+  </permissions>
+</rolemap>
