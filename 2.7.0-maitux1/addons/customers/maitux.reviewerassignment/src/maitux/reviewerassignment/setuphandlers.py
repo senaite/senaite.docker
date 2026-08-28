@@ -199,12 +199,31 @@ def setup_sidebar():
 
 
 def uninstall_handler(context):
-    """标准插件卸载入口"""
+    """标准插件卸载入口
+
+    卸载 = 拆结构与行为，不碰业务数据。
+
+    - 结构/行为层（behavior、catalog 索引、类型约束、侧边栏、browserlayer）可移除；
+    - 业务数据层（根容器及其内容、工作表上已保存的审核人字段值）**绝不动**。
+
+    审核人字段值在 behavior 停用后前端不再显示，但仍完整保存在 ZODB 里，
+    重新装回本 addon 即原样恢复 —— 这是有意为之的「孤儿属性」策略。
+    """
     uninstall_file = "%s-uninstall.txt" % PROJECTNAME
     if context.readDataFile(uninstall_file) is None:
         return
 
     logger.info("Maitux.Reviewerassignment uninstall handler [BEGIN]")
+    teardown_sidebar()
+    teardown_behaviors()
+    teardown_catalog()
+    teardown_type_constraints()
+    logger.info("Maitux.Reviewerassignment uninstall handler [DONE]")
+
+
+def teardown_sidebar():
+    """从 SENAITE 侧边栏移除入口"""
+    logger.info("*** Teardown Reviewerassignment Sidebar ***")
     setup_tool = api.get_senaite_setup()
     if setup_tool is None:
         raise RuntimeError("SENAITE setup tool not found")
@@ -217,7 +236,53 @@ def uninstall_handler(context):
     else:
         logger.info("Skip missing sidebar folder '%s'", ROOT_ID)
 
-    logger.info("Maitux.Reviewerassignment uninstall handler [DONE]")
+
+def teardown_behaviors():
+    """停用 Worksheet 审核人行为
+
+    只摘掉 schema，不删字段值 —— 值留在 ZODB 里成为孤儿属性，重装即恢复。
+    """
+    logger.info("*** Teardown Reviewerassignment Behaviors ***")
+    api.disable_behavior("Worksheet", WORKSHEET_REVIEWER_BEHAVIOR)
+
+
+def teardown_catalog():
+    """移除工作表 catalog 上的审核人索引与列"""
+    logger.info("*** Teardown Reviewerassignment Catalog ***")
+    catalog = api.get_tool(WORKSHEET_CATALOG)
+    if catalog is None:
+        logger.warn("Worksheet catalog not found, skip catalog teardown")
+        return
+
+    catalogapi.del_column(catalog, REVIEWER_INDEX)
+    catalogapi.del_index(catalog, REVIEWER_INDEX)
+
+
+def teardown_type_constraints():
+    """把 ReviewerassignmentContainer 从 Plone Site 的允许类型里摘掉
+
+    只改约束，不删已存在的根容器 —— 那里面是业务数据。
+    """
+    logger.info("*** Teardown Reviewerassignment Type Constraints ***")
+    types_tool = api.get_tool("portal_types")
+    if types_tool is None:
+        logger.warn("portal_types tool not found, skip type constraint teardown")
+        return
+
+    fti = types_tool.getTypeInfo("Plone Site")
+    if fti is None:
+        logger.warn("FTI 'Plone Site' not found, skip type constraint teardown")
+        return
+
+    allowed = list(getattr(fti, "allowed_content_types", ()) or ())
+    if "ReviewerassignmentContainer" not in allowed:
+        logger.info("Skip allowed_content_types teardown, already absent")
+        return
+
+    allowed.remove("ReviewerassignmentContainer")
+    fti.manage_changeProperties(allowed_content_types=tuple(allowed))
+    logger.info("Removed 'ReviewerassignmentContainer' from "
+                "allowed_content_types of 'Plone Site'")
 
 
 def setup_reviewerassignment_content(context):
