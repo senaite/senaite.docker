@@ -1,0 +1,195 @@
+{{define "content"}}
+<div class="row">
+  <div class="col" style="max-width:780px">
+    <div class="card">
+      <div class="card-header">配置</div>
+      <div class="card-body">
+        <div class="section-title">采集端</div>
+        <div class="field-row">
+          <div>
+            <label>运行模式</label>
+            <select id="cfg-mode">
+              <option value="auto">自动（跟随云 LIMS）</option>
+              <option value="manual">手动（界面控制）</option>
+            </select>
+          </div>
+          <div><label>站点标识 site_id</label><input id="cfg-site" placeholder="如 lab-shanghai-1"></div>
+        </div>
+        <div class="check">
+          <input type="checkbox" id="cfg-push">
+          <label for="cfg-push">采集的读数落盘并上传（关闭 = 只在界面查看）</label>
+        </div>
+        <div class="field">
+          <label>管理接口令牌 api_token（可选，建议设置）</label>
+          <div style="display:flex;gap:8px">
+            <input id="cfg-api-token" type="password" style="flex:1" placeholder="留空 = 管理接口不鉴权（仅限可信内网）">
+            <button class="btn" id="btn-api-token-save">记住到本机</button>
+            <button class="btn" id="btn-api-token-clear">清除</button>
+          </div>
+          <p class="hint">设置后，改配置 / 启停 / 调试注入等管理接口要求
+            <code>Authorization: Bearer &lt;token&gt;</code>；云 LIMS 联动接口
+            （状态查询、开始/停止采集）不受影响。令牌会随「保存配置」写入采集端。</p>
+        </div>
+
+        <div class="section-title">云端 NATS（LeafNode）</div>
+        <p class="hint">读数上云的主链路。这一段修改后需要重启采集端才生效。</p>
+        <div class="check">
+          <input type="checkbox" id="cfg-leaf-enabled">
+          <label for="cfg-leaf-enabled">启用云端连接</label>
+        </div>
+        <div class="field"><label>云端地址</label><input id="cfg-leaf-url" placeholder="nats-leaf://nats.example.com:7422"></div>
+        <div class="field-row">
+          <div><label>用户名</label><input id="cfg-leaf-user" placeholder="留空表示免认证"></div>
+          <div><label>密码</label><input id="cfg-leaf-pass" type="password"></div>
+        </div>
+        <div class="field-row">
+          <div><label>云端 JetStream 域</label><input id="cfg-leaf-domain" placeholder="hub"></div>
+          <div><label>云端读数流</label><input id="cfg-leaf-stream" placeholder="LAB_READINGS"></div>
+        </div>
+
+        <div class="section-title">本地缓冲</div>
+        <p class="hint">读数落盘后保留多久 / 最多占多少磁盘；超出后按时间从旧到新滚动淘汰。</p>
+        <div class="field-row">
+          <div><label>保留时长（小时）</label><input id="cfg-maxage" type="number"></div>
+          <div><label>占用上限（MB）</label><input id="cfg-maxbytes" type="number"></div>
+          <div><label>重试间隔（秒）</label><input id="cfg-retry" type="number"></div>
+        </div>
+
+        <div class="section-title">云 LIMS（SENAITE，可选）</div>
+        <p class="hint">第一阶段可以不填。需要边缘直连 SENAITE 时再打开下面两个开关。</p>
+        <div class="field"><label>LIMS 地址</label><input id="cfg-lims-url" placeholder="http://lims.example.com:8080/lims"></div>
+        <div class="field">
+          <label>Token（对应 LIMS 仪器模板的「采集端 Token」）</label>
+          <div style="display:flex;gap:8px">
+            <input id="cfg-token" type="password" style="flex:1">
+            <button class="btn" id="btn-token-copy">复制</button>
+            <button class="btn" id="btn-token-gen">重新生成</button>
+          </div>
+        </div>
+        <div class="check">
+          <input type="checkbox" id="cfg-lims-poll">
+          <label for="cfg-lims-poll">轮询 LIMS 获取仪器清单与启停指令</label>
+        </div>
+        <div class="check">
+          <input type="checkbox" id="cfg-lims-push">
+          <label for="cfg-lims-push">读数用 HTTP 直推 LIMS（与 NATS 链路并行，各自独立重试）</label>
+        </div>
+        <div class="field-row">
+          <div><label>轮询间隔（秒）</label><input id="cfg-poll" type="number"></div>
+          <div><label>HTTP 超时（秒）</label><input id="cfg-timeout" type="number"></div>
+        </div>
+
+        <hr>
+        <button class="btn btn-primary" id="btn-save">保存配置</button>
+        <span class="muted" id="save-hint" style="margin-left:10px"></span>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+{{define "script"}}
+<script>
+function val(id) { return document.getElementById(id).value.trim(); }
+function num(id, def) { var n = parseInt(document.getElementById(id).value, 10); return isNaN(n) ? def : n; }
+function chk(id) { return document.getElementById(id).checked; }
+
+function load() {
+  apiGet('/api/config', function (c) {
+    document.getElementById('cfg-mode').value = c.agent.mode || 'auto';
+    document.getElementById('cfg-site').value = c.agent.site_id || '';
+    document.getElementById('cfg-push').checked = !!c.agent.push_enabled;
+    document.getElementById('cfg-api-token').value = c.agent.api_token || '';
+
+    var nats = c.nats || {};
+    var leaf = nats.leaf || {};
+    document.getElementById('cfg-leaf-enabled').checked = !!leaf.enabled;
+    document.getElementById('cfg-leaf-url').value = leaf.url || '';
+    document.getElementById('cfg-leaf-user').value = leaf.user || '';
+    document.getElementById('cfg-leaf-pass').value = leaf.password || '';
+    document.getElementById('cfg-leaf-domain').value = leaf.hub_domain || '';
+    document.getElementById('cfg-leaf-stream').value = leaf.hub_stream || '';
+
+    document.getElementById('cfg-maxage').value = nats.max_age_hours || 336;
+    document.getElementById('cfg-maxbytes').value = nats.max_bytes_mb || 1024;
+    document.getElementById('cfg-retry').value = (c.cache && c.cache.retry_delay_seconds) || 5;
+
+    document.getElementById('cfg-lims-url').value = c.cloud.lims_url || '';
+    document.getElementById('cfg-token').value = c.cloud.token || '';
+    document.getElementById('cfg-lims-poll').checked = !!c.cloud.poll_enabled;
+    document.getElementById('cfg-lims-push').checked = !!c.cloud.lims_push_enabled;
+    document.getElementById('cfg-poll').value = c.cloud.config_poll_seconds || 10;
+    document.getElementById('cfg-timeout').value = c.cloud.push_timeout_seconds || 10;
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  load();
+
+  document.getElementById('btn-save').addEventListener('click', function () {
+    apiPost('/api/config', {
+      agent: {
+        mode: document.getElementById('cfg-mode').value,
+        site_id: val('cfg-site'),
+        push_enabled: chk('cfg-push'),
+        api_token: val('cfg-api-token')
+      },
+      nats: {
+        max_age_hours: num('cfg-maxage', 336),
+        max_bytes_mb: num('cfg-maxbytes', 1024),
+        leaf: {
+          enabled: chk('cfg-leaf-enabled'),
+          url: val('cfg-leaf-url'),
+          user: val('cfg-leaf-user'),
+          password: val('cfg-leaf-pass'),
+          hub_domain: val('cfg-leaf-domain') || 'hub',
+          hub_stream: val('cfg-leaf-stream') || 'LAB_READINGS'
+        }
+      },
+      cache: { retry_delay_seconds: num('cfg-retry', 5) },
+      cloud: {
+        lims_url: val('cfg-lims-url'),
+        token: val('cfg-token'),
+        poll_enabled: chk('cfg-lims-poll'),
+        lims_push_enabled: chk('cfg-lims-push'),
+        config_poll_seconds: num('cfg-poll', 10),
+        push_timeout_seconds: num('cfg-timeout', 10)
+      }
+    }, function (d) {
+      toast('配置已保存');
+      document.getElementById('save-hint').textContent =
+        d.restart_required ? '云端 NATS 配置已改，重启采集端后生效' : '已生效';
+    });
+  });
+
+  document.getElementById('btn-api-token-save').addEventListener('click', function () {
+    localStorage.setItem('labgate_api_token', val('cfg-api-token'));
+    toast('令牌已记住到本机浏览器');
+  });
+  document.getElementById('btn-api-token-clear').addEventListener('click', function () {
+    localStorage.removeItem('labgate_api_token');
+    document.getElementById('cfg-api-token').value = '';
+    toast('已清除本机令牌');
+  });
+
+  document.getElementById('btn-token-gen').addEventListener('click', function () {
+    if (!confirm('重新生成后旧 Token 立即失效，需要同步更新到 LIMS 仪器模板。继续？')) { return; }
+    apiPost('/api/token/regenerate', {}, function (d) {
+      document.getElementById('cfg-token').value = d.token;
+      toast('已生成新 Token，请复制到 LIMS');
+    });
+  });
+
+  document.getElementById('btn-token-copy').addEventListener('click', function () {
+    var el = document.getElementById('cfg-token');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(el.value).then(function () { toast('Token 已复制'); });
+      return;
+    }
+    el.type = 'text';
+    el.select();
+    try { document.execCommand('copy'); toast('Token 已复制'); } catch (e) { toast('复制失败，请手动选中', 'error'); }
+    el.type = 'password';
+  });
+});
+</script>
+{{end}}

@@ -1,0 +1,64 @@
+{
+  "agent": {
+    "host": "0.0.0.0",
+    "port": 8090,
+    "mode": "manual",
+    "site_id": "lab-1",
+    "instrument_code": "",
+    "push_enabled": true
+  },
+  "instruments": [
+    {
+      "code": "instrument-3",
+      "host": "192.168.1.5",
+      "port": 55097,
+      "enabled": true,
+      "push": true
+    }
+  ],
+  "instrument": {
+    "connect_timeout_seconds": 3,
+    "reconnect_delay_seconds": 3,
+    "line_terminator": "\n",
+    "idle_flush_milliseconds": 500,
+    "max_line_bytes": 65536
+  },
+  "nats": {
+    "server_name": "labgate",
+    "listen": "",
+    "monitor_listen": "",
+    "store_dir": "",
+    "domain": "edge",
+    "stream": "READINGS",
+    "subject_prefix": "edge",
+    "max_age_hours": 336,
+    "max_bytes_mb": 1024,
+    "leaf": {
+      "enabled": false,
+      "url": "nats-leaf://nats.example.com:7422",
+      "user": "labgate",
+      "password": "",
+      "credentials": "",
+      "hub_domain": "hub",
+      "hub_stream": "LAB_READINGS",
+      "hub_subject_prefix": "lab",
+      "ensure_hub_stream": false,
+      "ack_timeout_seconds": 10,
+      "retry_delay_seconds": 5,
+      "tls_insecure": false
+    }
+  },
+  "cache": {
+    "dir": "data",
+    "max_retries": 5,
+    "retry_delay_seconds": 5
+  },
+  "cloud": {
+    "lims_url": "",
+    "token": "",
+    "config_poll_seconds": 10,
+    "push_timeout_seconds": 10,
+    "lims_push_enabled": false,
+    "poll_enabled": false
+  }
+}

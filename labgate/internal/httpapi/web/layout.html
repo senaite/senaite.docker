@@ -1,0 +1,27 @@
+{{define "layout"}}<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{.Title}} · labgate</title>
+<link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:,">
+</head>
+<body>
+<nav class="navbar">
+  <span class="brand">labgate <small>仪器采集网关</small></span>
+  <a href="/"           {{if eq .Active "index"}}class="active"{{end}}>采集</a>
+  <a href="/status"     {{if eq .Active "status"}}class="active"{{end}}>状态</a>
+  <a href="/debug"      {{if eq .Active "debug"}}class="active"{{end}}>调试</a>
+  <a href="/config_page"{{if eq .Active "config"}}class="active"{{end}}>配置</a>
+  <a href="/logs"       {{if eq .Active "logs"}}class="active"{{end}}>日志</a>
+  <span class="nav-status" id="nav-status"></span>
+</nav>
+<div class="container">
+{{template "content" .}}
+</div>
+<div id="toast-box"></div>
+<script src="/static/app.js"></script>
+{{template "script" .}}
+</body>
+</html>{{end}}

@@ -1,0 +1,36 @@
+{{define "content"}}
+<div class="card">
+  <div class="card-header">
+    <span>运行日志 <span class="badge badge-info" id="log-count">0</span></span>
+    <button class="btn" id="btn-refresh">刷新</button>
+  </div>
+  <div class="card-body flush scroll" style="max-height:70vh">
+    <table>
+      <thead><tr><th style="width:160px">时间</th><th style="width:80px">级别</th><th>内容</th></tr></thead>
+      <tbody id="log-tbody"></tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+{{define "script"}}
+<script>
+function refresh() {
+  apiGet('/api/logs', function (d) {
+    var logs = d.logs || [];
+    document.getElementById('log-tbody').innerHTML = logs.length
+      ? logs.map(function (x) {
+          var cls = x.level === 'warning' ? 'warn' : x.level === 'error' ? 'danger' : 'muted';
+          return '<tr><td class="muted mono">' + esc(x.time) + '</td><td class="' + cls + '">' +
+            esc(x.level) + '</td><td>' + esc(x.message) + '</td></tr>';
+        }).join('')
+      : '<tr><td colspan="3" class="muted">暂无日志</td></tr>';
+    document.getElementById('log-count').textContent = logs.length;
+  });
+}
+document.addEventListener('DOMContentLoaded', function () {
+  refresh();
+  setInterval(refresh, 3000);
+  document.getElementById('btn-refresh').addEventListener('click', refresh);
+});
+</script>
+{{end}}

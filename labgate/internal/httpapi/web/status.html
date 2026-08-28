@@ -1,0 +1,132 @@
+{{define "content"}}
+<div class="row">
+  <div class="col">
+    <div class="card">
+      <div class="card-header">采集统计</div>
+      <div class="card-body"><dl class="kv" id="stats-kv"></dl></div>
+    </div>
+    <div class="card">
+      <div class="card-header">仪器连接</div>
+      <div class="card-body flush">
+        <table>
+          <thead><tr><th>仪器</th><th>状态</th><th>地址</th><th>信息</th><th>收到</th></tr></thead>
+          <tbody id="instr-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <div class="card-header">
+        <span>云端链路（NATS LeafNode）</span>
+        <span id="cloud-badge"></span>
+      </div>
+      <div class="card-body">
+        <dl class="kv" id="cloud-kv"></dl>
+        <p class="hint">
+          读数先写入本地 JetStream 落盘，再由转发器送到云端。
+          云端断开时数据留在本地，恢复后自动续传，不需要人工干预。
+        </p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">本地缓冲（JetStream）</div>
+      <div class="card-body"><dl class="kv" id="stream-kv"></dl></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span>云 LIMS 轮询</span>
+        <button class="btn" id="btn-pull">立即拉取一次</button>
+      </div>
+      <div class="card-body">
+        <div id="pull-info" class="mono"><span class="muted">未启用</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+{{define "script"}}
+<script>
+function kv(el, entries) {
+  document.getElementById(el).innerHTML = entries.map(function (r) {
+    return '<dt>' + esc(r[0]) + '</dt><dd>' + (r[2] ? r[1] : esc(r[1])) + '</dd>';
+  }).join('');
+}
+
+function bytes(n) {
+  if (!n) { return '0 B'; }
+  var units = ['B', 'KB', 'MB', 'GB'], i = 0;
+  while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
+  return n.toFixed(i ? 1 : 0) + ' ' + units[i];
+}
+
+function refresh() {
+  apiGet('/api/state', function (d) {
+    var s = d.stats || {};
+    kv('stats-kv', [
+      ['运行模式', d.mode === 'manual' ? '手动（界面控制）' : '自动（跟随云 LIMS）'],
+      ['站点标识', d.site_id || '—'],
+      ['已收到读数', s.total_received],
+      ['已解析读数', s.total_parsed],
+      ['已上传云端', s.push_ok],
+      ['上传失败/重试', s.push_fail],
+      ['未上传（仅本地）', s.push_skipped],
+      ['待上传', s.cache_pending]
+    ]);
+
+    var list = d.instruments || [];
+    document.getElementById('instr-tbody').innerHTML = list.length
+      ? list.map(function (it) {
+          var badge = it.connected ? '<span class="badge badge-ok">已连接</span>'
+            : it.connecting ? '<span class="badge badge-warn">连接中</span>'
+            : '<span class="badge badge-off">未连接</span>';
+          return '<tr><td class="mono">' + esc(it.code) + '</td><td>' + badge +
+            '</td><td class="mono">' + (it.current_host ? esc(it.current_host) + ':' + it.current_port : '—') +
+            '</td><td class="muted">' + esc(it.last_message) + '</td><td class="num">' +
+            (it.total_received || 0) + '</td></tr>';
+        }).join('')
+      : '<tr><td colspan="5" class="muted">暂无仪器</td></tr>';
+
+    var c = d.cloud || {};
+    document.getElementById('cloud-badge').innerHTML = !c.leaf_enabled
+      ? '<span class="badge badge-off">未配置</span>'
+      : c.leaf_connected ? '<span class="badge badge-ok">已连接</span>'
+      : '<span class="badge badge-danger">断开</span>';
+    kv('cloud-kv', [
+      ['云端地址', c.leaf_url || '（未配置 nats.leaf.url）'],
+      ['云端流', c.hub_stream || '—'],
+      ['最近上传成功', c.last_forward_at || '—'],
+      ['最近错误', c.last_error
+        ? '<span class="danger">' + esc(c.last_error) + '</span>'
+        : '<span class="muted">无</span>', true]
+    ]);
+
+    var pull = d.cloud_last_pull || {};
+    document.getElementById('pull-info').innerHTML =
+      (Object.keys(pull).length ? '<pre>' + esc(JSON.stringify(pull, null, 2)) + '</pre>'
+                                : '<span class="muted">未启用或尚未拉取</span>') +
+      (d.cloud_last_error ? '<p class="danger">' + esc(d.cloud_last_error) + '</p>' : '');
+  });
+
+  apiGet('/api/stats', function (d) {
+    var st = (d.stream) || {};
+    kv('stream-kv', [
+      ['流名称', st.name || '—'],
+      ['已缓冲消息', st.messages || 0],
+      ['占用磁盘', bytes(st.bytes || 0)],
+      ['最早序号', st.first_seq || 0],
+      ['最新序号', st.last_seq || 0],
+      ['存储目录', '<span class="mono">' + esc(d.store_dir || '—') + '</span>', true]
+    ]);
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  refresh();
+  setInterval(refresh, 3000);
+  document.getElementById('btn-pull').addEventListener('click', function () {
+    apiPost('/api/pull_now', {}, function (d) { toast('拉取成功'); refresh(); });
+  });
+});
+</script>
+{{end}}
