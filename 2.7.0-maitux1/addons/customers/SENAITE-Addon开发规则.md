@@ -43,6 +43,16 @@ SENAITE 的自定义权限声明分散在 `bika/lims/browser/**/configure.zcml` 
 
 ---
 
+**等价写法（推荐给已经写在 `configure.zcml` 里的注册）**：在本包的 `configure.zcml`
+顶部 `<include package="senaite.core.permissions" />`，把权限的注册顺序钉在自己前面。
+`custom-addon.cfg` 的显式 slug 和 autoinclude **都不保证**本包排在 `senaite.core`
+之后（2026-08-28 实测两种都会炸），所以这一行是 addon 自己的责任。
+`maitux.esignature` / `maitux.instrument_acquisition` 一直这么写；
+`maitux.audittrail` / `groupmanagement` / `reviewerassignment` / `worksheet`
+当天补上后启动恢复。
+
+---
+
 ### R2. 新增 `overrides.zcml` 内容时，必须同步补 package-includes slug
 
 **规则**：addon 首次往 `overrides.zcml` 写入实际内容时，
@@ -155,6 +165,31 @@ package-includes/
 
 ---
 
+### R5d. `custom-addon.cfg` 是自动生成的，不要手工改
+
+**规则**：客户 add-on 的 buildout 配置**不再手工维护**。容器启动时
+`/gen-custom-addon.sh` 会先删除旧的 `custom-addon.cfg`，再遍历
+`/opt/addons/customers` 重新生成。addon 作者要做的只是把
+`setup.py` 写对：
+
+| 生成项 | 来源 |
+|---|---|
+| `develop +=` | 一级子目录名（必须含 `setup.py`，否则整个目录被跳过） |
+| `eggs +=` | `setup.py` 的 `name=`（不是目录名） |
+| `[instance] zcml +=` | 每个有 `configure.zcml` 的包都写；分发名与代码目录大小写不一致的除外（R5c） |
+| `<egg>-overrides` slug | 包里存在 `overrides.zcml` 就自动补（R2 / R5b） |
+
+**依据**：手工维护这份 cfg 的三类事故——写错包名、漏写 `-overrides` slug、
+物理删掉 add-on 目录但忘了从 cfg 剔除（→ buildout 失败 → 容器无限重启）——
+都是"人写清单"造成的，改成从磁盘现状推导即可根除。
+
+**违反后果**：手改的内容下次启动就被覆盖，且会误导后来人以为配置是手写的。
+
+**注意**：`[plonesite] profiles` 不会被生成，profile 一律在后台
+`prefs_install_products_form` 手工安装（原因见 `README.md`）。
+
+---
+
 ## 四、部署（8085 Docker 环境）
 
 ### R7. 同步用 `/E` 不要用 `/MIR`
@@ -230,6 +265,7 @@ robocopy "<源>" "<目标>" /E /XF *.pyc /NFL /NDL /NJH /NJS
 - [ ] 覆盖原生同名组件的注册，写在 `overrides.zcml`
 - [ ] 跨 addon 同接口同名 adapter，全部只落在 `overrides.zcml`（R5b）
 - [ ] `setup.py` 分发名与代码目录名大小写一致；不手动 include 已配 autoinclude 入口点的包（R5c）
+- [ ] `setup.py` 有正确的 `name=`（egg 名由它生成，不是目录名），目录直接放在 `addons/customers/` 一级下（R5d）
 - [ ] `registerProfile` 声明的每个目录都真实存在且含 `metadata.xml`
 - [ ] 新增 profile 文件后，部署文档写明"需重跑 profile"
 - [ ] 部署说明区分了"重启"与"重启 + 硬刷新"
