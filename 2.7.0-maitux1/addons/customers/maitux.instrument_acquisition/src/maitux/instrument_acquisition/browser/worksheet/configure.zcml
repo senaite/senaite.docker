@@ -1,0 +1,47 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.instrument_acquisition">
+
+  <!-- Worksheets 列表底部工具栏「仪器采集」按钮：
+       通过官方 IListingViewAdapter 订阅者注入，
+       不覆盖视图、不声明 permission、不依赖 browser layer，
+       避免 Zope 4 的 ZCML 加载顺序 / 权限注册冲突问题 -->
+  <subscriber
+      for="senaite.app.listing.interfaces.IListingView
+           senaite.core.interfaces.IWorksheets"
+      factory="maitux.instrument_acquisition.browser.worksheet.worksheets_view.ListingViewAdapter"
+      provides="senaite.app.listing.interfaces.IListingViewAdapter"
+      />
+
+  <!-- 列表底部工具栏「仪器采集」动作：只能单选，进入采集页
+       （不依赖 browser layer，context 为 Worksheets 文件夹） -->
+  <adapter
+      name="workflow_action_instrument_acquisition"
+      for="senaite.core.interfaces.IWorksheets
+           zope.publisher.interfaces.browser.IBrowserRequest"
+      factory="maitux.instrument_acquisition.browser.workflow.WorkflowActionInstrumentAcquisitionAdapter"
+      provides="bika.lims.interfaces.IWorkflowActionAdapter"
+      permission="zope.Public" />
+
+  <!-- 覆盖 manage_results：在 reviewerassignment 实现基础上增加仪器采集入口与只读控制
+       layer 使用 IInstrumentAcquisitionLayer（继承 IReviewerAssignmentLayer），
+       保证覆盖优先级高于 reviewerassignment，同时保留审核人功能 -->
+  <browser:page
+      name="manage_results"
+      for="senaite.core.interfaces.IWorksheet"
+      class="maitux.instrument_acquisition.browser.worksheet.manage_results.ManageResultsView"
+      permission="senaite.core.permissions.ViewResults"
+      layer="maitux.instrument_acquisition.interfaces.IInstrumentAcquisitionLayer"
+      />
+
+  <!-- 仪器采集页面 -->
+  <browser:page
+      name="worksheet_instrument_acquisition"
+      for="senaite.core.interfaces.IWorksheet"
+      class="maitux.instrument_acquisition.browser.worksheet.acquisition.InstrumentAcquisitionView"
+      permission="senaite.core.permissions.ViewResults"
+      layer="maitux.instrument_acquisition.interfaces.IInstrumentAcquisitionLayer"
+      />
+
+</configure>

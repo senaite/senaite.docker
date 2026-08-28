@@ -1,0 +1,36 @@
+# -*- coding: utf-8 -*-
+# 仪器采集中转站 - systemd 服务单元（Linux 虚拟机部署用）
+#
+# 使用步骤：
+#   1. 把 relay_station.py 放到服务器目录，例如 /opt/instrument-relay/
+#   2. 把本文件复制为 /etc/systemd/system/instrument-relay.service
+#   3. 按实际环境修改下面的路径 / LIMS 地址 / 端口 / token
+#   4. sudo systemctl daemon-reload
+#   5. sudo systemctl enable --now instrument-relay   # 开机自启并立即启动
+#   6. sudo systemctl status instrument-relay         # 查看状态
+#   7. journalctl -u instrument-relay -f              # 查看日志
+#
+# 说明：
+#   - Restart=always：进程崩溃/退出后 5 秒自动重启
+#   - enable：开机自动启动，无需手动执行
+#   - 升级脚本后：sudo systemctl restart instrument-relay
+
+[Unit]
+Description=Instrument Acquisition Relay Station (maitux)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/instrument-relay
+ExecStart=/usr/bin/python3 /opt/instrument-relay/relay_station.py \
+    --listen-host 0.0.0.0 \
+    --listen-port 9000 \
+    --lims-url http://192.168.1.18:8080 \
+    --token maitux-phase1-instrument-acquisition-token
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/instrument-relay.log
+StandardError=append:/var/log/instrument-relay.log
+
+[Install]
+WantedBy=multi-user.target

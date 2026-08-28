@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from bika.lims import api
 from bika.lims.interfaces import IDeactivable
 from bika.lims.interfaces import IHaveInstrument
@@ -65,6 +65,25 @@ class IInstrumentParsingTemplateSchema(model.Schema):
 
     ip_address = TextLineField(
         title=_(u"title_instrumentparsingtemplate_ip", default=u"IP Address"),
+        required=False,
+    )
+
+    agent_api_url = TextLineField(
+        title=_(u"title_instrumentparsingtemplate_agent_api_url",
+                default=u"采集端接口地址 (Agent API URL)"),
+        description=_(u"desc_instrumentparsingtemplate_agent_api_url",
+                      default=u"本地采集端（中转平台）的 HTTP 接口地址，"
+                              u"与上方天平 IP/端口不同，如 http://192.168.1.5:8090"),
+        required=False,
+    )
+
+    agent_token = TextLineField(
+        title=_(u"title_instrumentparsingtemplate_agent_token",
+                default=u"采集端 Token"),
+        description=_(u"desc_instrumentparsingtemplate_agent_token",
+                      default=u"采集端（中转平台）生成的 Token 凭证，"
+                              u"一个中转站一个 Token；多台仪器共用同一中转站可填相同值。"
+                              u"采集端推送/拉取配置时用该 Token 鉴权。"),
         required=False,
     )
 
