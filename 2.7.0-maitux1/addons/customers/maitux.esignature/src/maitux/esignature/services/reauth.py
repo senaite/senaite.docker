@@ -5,6 +5,9 @@ from AccessControl import getSecurityManager
 from bika.lims.api.user import get_user_id
 from plone import api
 from Products.PluggableAuthService.interfaces.plugins import IAuthenticationPlugin
+from zope.interface import implementer
+
+from maitux.esignature.interfaces import IReAuthenticationProvider
 
 
 class ReAuthResult(dict):
@@ -45,13 +48,25 @@ class BaseReAuthenticationProvider(object):
         raise NotImplementedError()
 
 
+@implementer(IReAuthenticationProvider)
 class PasReAuthenticationProvider(BaseReAuthenticationProvider):
     """MVP provider that reuses the portal PAS authentication chain."""
 
     backend_id = "pas"
+    title = u"Local accounts (Plone PAS)"
 
     def __init__(self, portal=None):
-        self.portal = portal or api.portal.get()
+        # Resolved lazily on purpose. This class is registered as a named
+        # utility, which ZCML instantiates while loading configuration -- long
+        # before there is a site to ask. Calling api.portal.get() here would
+        # break startup.
+        self._portal = portal
+
+    @property
+    def portal(self):
+        if self._portal is None:
+            return api.portal.get()
+        return self._portal
 
     def _candidate_acl_users(self):
         """返回可能的用户目录，优先使用当前登录用户实际所在的 user folder。"""

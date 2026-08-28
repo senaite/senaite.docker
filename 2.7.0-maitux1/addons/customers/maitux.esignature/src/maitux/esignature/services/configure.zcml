@@ -1,4 +1,20 @@
-﻿<configure xmlns="http://namespaces.zope.org/zope"
+<configure xmlns="http://namespaces.zope.org/zope"
            i18n_domain="maitux.esignature">
-</configure>
 
+  <!-- Re-authentication backend for signing, addressed by its backend_id.
+
+       The site chooses one through the `auth_backend` registry record; the
+       control panel lists whatever is registered here. Adding a backend is a
+       single <utility> line in the add-on that knows that identity source,
+       with no change to this package.
+
+       This is the seam the SSO work will use: once login moves to the IdP,
+       the local PAS check below can no longer validate anything, because the
+       local account has no password to check.
+  -->
+  <utility
+      name="pas"
+      factory=".reauth.PasReAuthenticationProvider"
+      provides="maitux.esignature.interfaces.IReAuthenticationProvider" />
+
+</configure>

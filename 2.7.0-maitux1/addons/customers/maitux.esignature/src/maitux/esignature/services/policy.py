@@ -65,6 +65,10 @@ class SignaturePolicyResolver(object):
         auditlog_summary_enabled = bool(
             self._registry_value("auditlog_summary_enabled", True)
         )
+        # 站点级：由哪个身份源校验签名人凭据。SSO 上线后改这一项即可，
+        # 不需要动任何规则。
+        auth_backend = (
+            self._registry_value("auth_backend", u"pas") or u"pas")
         settings = {
             "enabled": enabled,
             "pilot_portal_type": self._registry_value("pilot_portal_type", "Analysis"),
@@ -92,6 +96,7 @@ class SignaturePolicyResolver(object):
             "verified_context_ttl_seconds": verified_context_ttl_seconds,
             "auditlog_summary_enabled": auditlog_summary_enabled,
             "workflow_id": workflow_id,
+            "auth_backend": auth_backend,
             "policy_rules_count": len(policy_rules),
         })
 
@@ -114,7 +119,6 @@ class SignaturePolicyResolver(object):
                 "reason_required": rule.get("reason_required", reason_required),
                 # 受控含义：由规则决定，签名页只读展示，签名人不能改。
                 "meaning": rule.get("meaning") or default_meaning_for(transition_id),
-                "auth_backend": "pas",
                 "source": "rules_table",
             })
             return policy

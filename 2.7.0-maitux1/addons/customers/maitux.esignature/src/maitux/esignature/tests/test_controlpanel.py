@@ -73,11 +73,19 @@ def load_controlpanel_module(registry):
 
     component_module = types.ModuleType("zope.component")
     component_module.getUtility = lambda iface: registry
+    # Registered re-auth providers. The dropdown is built from whatever is
+    # registered, so the stub returns the local one only -- exactly what a
+    # site without an SSO add-on sees.
+    component_module.getUtilitiesFor = lambda iface: [
+        ("pas", types.SimpleNamespace(
+            backend_id="pas", title=u"Local accounts (Plone PAS)")),
+    ]
     sys.modules["zope"] = types.ModuleType("zope")
     sys.modules["zope.component"] = component_module
 
     interface_module = types.ModuleType("maitux.esignature.interfaces")
     interface_module.IESignatureControlPanelSettings = object
+    interface_module.IReAuthenticationProvider = object
     sys.modules["maitux"] = types.ModuleType("maitux")
     sys.modules["maitux.esignature"] = types.ModuleType("maitux.esignature")
     sys.modules["maitux.esignature.interfaces"] = interface_module
@@ -141,6 +149,7 @@ class TestESignatureControlPanel(unittest.TestCase):
         registry.records["maitux.esignature.signature_type"] = DummyRegistryRecord("TextLine", u"custom")
         registry.records["maitux.esignature.policy_rules_json"] = DummyRegistryRecord("Text", u"[]")
         registry.records["maitux.esignature.meaning_vocabulary"] = DummyRegistryRecord("Text", u"")
+        registry.records["maitux.esignature.auth_backend"] = DummyRegistryRecord("TextLine", u"pas")
 
         module = load_controlpanel_module(registry)
         view = module.ESignatureControlPanelView()

@@ -24,6 +24,7 @@ from six.moves.urllib.parse import urlencode
 from zope.component.hooks import setSite
 from zope.event import notify
 from zope.globalrequest import setRequest
+from zope.component import queryUtility
 from zope.interface import implementer
 from zope.traversing.interfaces import BeforeTraverseEvent
 
@@ -32,6 +33,7 @@ from maitux.esignature.services.context import (
     clear_verified_signature_context,
     set_verified_signature_context,
 )
+from maitux.esignature.interfaces import IReAuthenticationProvider
 from maitux.esignature.services.policy import SignaturePolicyResolver
 from maitux.esignature.services.reauth import PasReAuthenticationProvider
 from maitux.esignature.services.signflow import authenticate_countersign_users
@@ -485,8 +487,30 @@ class ListingReceivePromptTransition(SampleReceiveWorkflowTransition):
 class SignaturePromptView(BrowserView):
     """Prompt for password/meaning/reason and execute the transition."""
 
+    #: Last-resort fallback when the configured backend is not registered --
+    #: e.g. the add-on providing it was uninstalled while the setting still
+    #: names it. Falling back to the local check keeps signing possible rather
+    #: than locking the lab out; the audit record still says which backend
+    #: actually verified the credentials.
     provider_factory = PasReAuthenticationProvider
     index = ViewPageTemplateFile("templates/esignature_prompt.pt")
+
+    def reauth_provider(self):
+        """The provider that verifies the signer's credentials.
+
+        Resolved by name from the `auth_backend` setting, so an SSO
+        integration can take over by registering its own named utility --
+        this package never needs to know it exists.
+        """
+        backend_id = self.policy().get("auth_backend") or u"pas"
+        provider = queryUtility(IReAuthenticationProvider, name=backend_id)
+        if provider is not None:
+            return provider
+        if backend_id != u"pas":
+            logger.warning(
+                "esignature: re-auth backend '{}' is configured but not "
+                "registered; falling back to local accounts".format(backend_id))
+        return self.provider_factory()
 
     def __call__(self):
         if self.request.get("form.submitted"):
@@ -684,7 +708,7 @@ class SignaturePromptView(BrowserView):
             return self.index()
 
         user_id = self.current_user_id()
-        provider = self.provider_factory()
+        provider = self.reauth_provider()
         countersign_result = None
         if policy.get("require_countersign"):
             # 双人复核改为同页一次性录入两个账号密码，不再走“先挂起再二次进入”的旧流程。

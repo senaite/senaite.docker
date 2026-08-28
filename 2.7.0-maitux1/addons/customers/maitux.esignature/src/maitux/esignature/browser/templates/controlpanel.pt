@@ -25,6 +25,31 @@
               </label>
             </div>
             <div class="field" style="margin-top: 1em; max-width: 34em;">
+              <label for="esign-auth-backend"
+                     style="display: block; font-weight: bold; margin-bottom: .25em;">
+                Authentication backend
+              </label>
+              <p class="discreet" style="margin: 0 0 .4em 0;">
+                Which identity source verifies the signer's credentials when
+                they sign.
+              </p>
+              <select id="esign-auth-backend"
+                      name="auth_backend"
+                      class="form-control"
+                      style="min-width: 18em;">
+                <option tal:repeat="backend python:view.auth_backends()"
+                        tal:attributes="value backend/id;
+                                        selected python:backend['id'] == view.auth_backend() and 'selected' or None"
+                        tal:content="backend/title">Local accounts</option>
+              </select>
+              <p class="discreet" style="margin: .4em 0 0 0;">
+                The list shows the re-authentication providers registered on
+                this instance. A single sign-on integration adds its own; until
+                one is installed, only the local accounts are available.
+              </p>
+            </div>
+
+            <div class="field" style="margin-top: 1em; max-width: 34em;">
               <label for="esign-meaning-vocabulary"
                      style="display: block; font-weight: bold; margin-bottom: .25em;">
                 Signature meanings
