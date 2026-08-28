@@ -8,7 +8,7 @@ from Products.CMFCore.permissions import View
 from senaite.core.browser.listing.base import ListingView
 
 from maitux.projects import _
-from INNOCARE.arextension.setuphandlers import translate_with_fallback
+from maitux.projects.translation import translate_with_fallback
 
 from maitux.projects.interfaces import IProjects
 

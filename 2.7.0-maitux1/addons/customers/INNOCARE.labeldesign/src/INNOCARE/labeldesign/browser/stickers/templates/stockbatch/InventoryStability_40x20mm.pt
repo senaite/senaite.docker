@@ -2,6 +2,12 @@
                      stock_type python:(getattr(item, 'stock', None) and getattr(item.stock, 'number', None)) or '';
                      batch_id python:(getattr(item, 'getBatchID', None) and item.getBatchID()) or (getattr(item, 'getId', None) and item.getId()) or '';">
   <div class="label inv-stability">
+    <div class="qrcode"
+         data-size="48"
+         data-render="image"
+         data-quiet="2"
+         tal:attributes="data-text python:batch_id">
+    </div>
     <div class="label-header inv-stability">
       <span class="label-title">稳定性标签</span>
       <span class="material-name" tal:content="python:getattr(item.stock, 'sample_matrix', None) and getattr(item.stock.sample_matrix, 'Title', lambda: '')() or ''">材料名称</span>
@@ -29,21 +35,5 @@
         <td class="lbl-value" tal:content="python:getattr(item, 'placement_location', '') or ''">INC-01</td>
       </tr>
     </table>
-
-    <div class="code-row">
-      <div class="barcode"
-           tal:attributes="data-id python:batch_id;"
-           data-code="code128"
-           data-barHeight="8"
-           data-addQuietZone="true"
-           data-showHRI="false">
-      </div>
-      <div class="qrcode"
-           data-size="48"
-           data-render="image"
-           data-quiet="2"
-           tal:attributes="data-text python:batch_id">
-      </div>
-    </div>
   </div>
 </tal:sticker>

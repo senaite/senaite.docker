@@ -6,7 +6,7 @@ from Products.CMFPlone.interfaces import INonInstallable
 from zope.interface import implementer
 
 from maitux.projects import _
-from INNOCARE.arextension.setuphandlers import translate_with_fallback
+from maitux.projects.translation import translate_with_fallback
 from maitux.projects.config import PROJECTNAME
 from maitux.projects.config import PROFILE_ID
 from maitux.projects.config import PROJECTS_FOLDER_ID
