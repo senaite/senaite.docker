@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='maitux.reviewerassignment',
-    version='1.2.0',
+    version='1.3.0',
     description="Maitux reviewer assignment add-on for SENAITE",
     packages=find_packages("src"),
     package_dir={"": "src"},

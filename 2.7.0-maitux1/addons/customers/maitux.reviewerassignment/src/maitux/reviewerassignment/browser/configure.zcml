@@ -20,6 +20,14 @@
       permission="zope.Public" />
 
   <browser:page
+      name="maitux-reviewerassignment-controlpanel"
+      for="*"
+      class=".controlpanel.ReviewerAssignmentControlPanelView"
+      permission="senaite.core.permissions.ManageBika"
+      layer="maitux.reviewerassignment.interfaces.IReviewerAssignmentLayer"
+      />
+
+  <browser:page
       for="senaite.core.interfaces.IWorksheet"
       name="manage_results"
       class="maitux.reviewerassignment.browser.manage_results.ManageResultsView"

@@ -3,13 +3,19 @@
 
 from bika.lims import api
 from plone import api as ploneapi
+from plone.registry.interfaces import IRegistry
 from Products.CMFPlone.interfaces import INonInstallable
 from senaite.core import logger
 from senaite.core.api import catalog as catalogapi
 from senaite.core.catalog import WORKSHEET_CATALOG
+from zope.component import getUtility
 from zope.interface import implementer
 
+from maitux.reviewerassignment.interfaces import (
+    IReviewerAssignmentControlPanelSettings,
+)
 from maitux.reviewerassignment.config import PROJECTNAME
+from maitux.reviewerassignment.config import REGISTRY_PREFIX
 from maitux.reviewerassignment.config import REVIEWER_FIELD
 from maitux.reviewerassignment.config import REVIEWER_INDEX
 from maitux.reviewerassignment.config import ROOT_ID
@@ -65,7 +71,20 @@ def run_install_steps(portal):
     root_container = setup_site_structure(portal)
     setup_permissions(root_container)
     setup_sidebar()
+    register_registry_defaults()
     check_site_prerequisites()
+
+
+def register_registry_defaults():
+    """按接口注册 registry 默认值
+
+    与 maitux.esignature 同一做法：用 registerInterface 而不是 registry.xml，
+    避免旧站点导入时因记录已存在/缺失而报错。
+    """
+    logger.info("*** Setup Reviewerassignment Registry ***")
+    registry = getUtility(IRegistry)
+    registry.registerInterface(
+        IReviewerAssignmentControlPanelSettings, prefix=REGISTRY_PREFIX)
 
 
 def check_site_prerequisites():

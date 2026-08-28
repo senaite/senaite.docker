@@ -12,6 +12,15 @@ from maitux.reviewerassignment.review_logic import (
 )
 from maitux.reviewerassignment.review_logic import has_selected_reviewer
 from maitux.reviewerassignment.review_logic import is_assigned_verifier
+from maitux.reviewerassignment.settings import (
+    require_reviewer_on_analysis_submit,
+)
+from maitux.reviewerassignment.settings import (
+    require_reviewer_on_worksheet_submit,
+)
+from maitux.reviewerassignment.settings import (
+    restrict_verify_to_assigned_reviewer,
+)
 from maitux.reviewerassignment.siteinstall import is_installed_in_current_site
 
 ANALYSIS_REVIEW_TRANSITIONS = ("verify", "multi_verify")
@@ -36,8 +45,10 @@ class ReviewerAssignmentGuardAdapter(object):
         return True
 
     def guard_worksheet(self, transition):
-        """工作表 submit 时必须已有审核人"""
+        """工作表 submit 时必须已有审核人（可由站点开关关闭）"""
         if transition != "submit":
+            return True
+        if not require_reviewer_on_worksheet_submit():
             return True
         reviewer_userid = get_reviewer_userid(self.context)
         return has_selected_reviewer(reviewer_userid)
@@ -45,6 +56,8 @@ class ReviewerAssignmentGuardAdapter(object):
     def guard_analysis(self, transition):
         """只有被分配的审核人才能审核工作表中的分析项"""
         if transition in ANALYSIS_SUBMIT_TRANSITIONS:
+            if not require_reviewer_on_analysis_submit():
+                return True
             worksheet = self.context.getWorksheet()
             has_worksheet = worksheet is not None
             reviewer_userid = has_worksheet and get_reviewer_userid(worksheet) or u""
@@ -52,6 +65,12 @@ class ReviewerAssignmentGuardAdapter(object):
                 has_worksheet, reviewer_userid)
 
         if transition not in ANALYSIS_REVIEW_TRANSITIONS:
+            return True
+
+        # 关闭后不再校验「必须是被指派的那个人」，审核权限回落到 SENAITE 自身的
+        # 判断 —— core 的 guard_verify（自审限制、依赖项、需审次数）与 Verify
+        # 权限仍然生效，因为 guard_handler 会在适配器全部放行后继续跑它们。
+        if not restrict_verify_to_assigned_reviewer():
             return True
 
         worksheet = self.context.getWorksheet()

@@ -10,6 +10,7 @@ from maitux.reviewerassignment.behaviors.reviewer import (
 )
 from maitux.reviewerassignment.review_logic import filter_reviewer_candidates
 from maitux.reviewerassignment.review_logic import should_exclude_submitter
+from maitux.reviewerassignment.settings import exclude_submitter_from_reviewers
 
 REVIEWER_ANNOTATION_KEY = "maitux.reviewerassignment.reviewer_userid"
 
@@ -76,6 +77,9 @@ def get_excluded_reviewer_userid(context):
     就把提交人排除掉。这里读的是 SENAITE 的设置，不是本 addon 自己定的规则 ——
     站点把自审打开，过滤自动失效。
     """
+    if not exclude_submitter_from_reviewers():
+        return u""
+
     analyst = u""
     getter = getattr(context, "getAnalyst", None)
     if callable(getter):
