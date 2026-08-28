@@ -18,23 +18,18 @@ from maitux.reviewerassignment.config import VERIFIER_ROLE
 from maitux.reviewerassignment.config import WORKSHEET_REVIEWER_BEHAVIOR
 
 
-ANALYSIS_WORKFLOW_ID = "senaite_analysis_workflow"
-WORKSHEET_WORKFLOW_ID = "senaite_worksheet_workflow"
-
-ANALYSIS_TO_BE_VERIFIED_TRANSITIONS = (
-    "multi_verify",
-    "verify",
-    "retest",
-    "retract",
-    "reject",
-)
-WORKSHEET_OPEN_TRANSITIONS = ("submit", "remove")
-WORKSHEET_TO_BE_VERIFIED_TRANSITIONS = ("verify", "retract", "rollback_to_open")
-
-ANALYSIS_PERMISSION_VERIFY = "senaite.core: Transition: Verify"
-ANALYSIS_PERMISSION_RETEST = "senaite.core: Transition: Retest"
-ANALYSIS_PERMISSION_RETRACT = "senaite.core: Transition: Retract"
-ANALYSIS_PERMISSION_REJECT = "senaite.core: Transition: Reject Analysis"
+# 本 addon 不再改动 workflow。
+#
+# 曾经这里有一个 setup_workflows()，用 state.setPermission() / state.transitions
+# 直接写 live workflow。逐项比对 SENAITE 原生 definition.xml 后确认：7 项里 6 项
+# 是原生值照抄（analysis 与 worksheet 的状态出口、Retract / Retest / Reject 权限），
+# 唯一的真改动是把 analysis "to_be_verified" 的 Verify 权限从原生的
+# [LabManager, Manager, Verifier] 收窄成 [Verifier]。
+#
+# 那是越界：该权限归 maitux.workflow 管（它设的正是原生值）。两个 addon 同写一个
+# 权限，谁的 profile 后跑谁赢，导致同一套代码在不同站点表现不一致。
+#
+# 详见 Docs/maitux.reviewerassignment-遗留问题分阶段整改方案.md 阶段 A。
 
 
 @implementer(INonInstallable)
@@ -70,7 +65,6 @@ def run_install_steps(portal):
     root_container = setup_site_structure(portal)
     setup_permissions(root_container)
     setup_sidebar()
-    setup_workflows()
 
 
 def setup_type_constraints():
@@ -164,67 +158,6 @@ def setup_sidebar():
         logger.info("Added '%s' to SENAITE sidebar", ROOT_ID)
     else:
         logger.info("Skip existing sidebar folder '%s'", ROOT_ID)
-
-
-def setup_workflows():
-    """安全修补 live workflow，避免覆盖官方 workflow XML"""
-    logger.info("*** Setup Reviewerassignment Workflows ***")
-    workflow_tool = api.get_tool("portal_workflow")
-    if workflow_tool is None:
-        raise RuntimeError("portal_workflow tool not found")
-
-    analysis_workflow = workflow_tool.getWorkflowById(ANALYSIS_WORKFLOW_ID)
-    worksheet_workflow = workflow_tool.getWorkflowById(WORKSHEET_WORKFLOW_ID)
-    if analysis_workflow is None:
-        raise RuntimeError("Workflow '%s' not found" % ANALYSIS_WORKFLOW_ID)
-    if worksheet_workflow is None:
-        raise RuntimeError("Workflow '%s' not found" % WORKSHEET_WORKFLOW_ID)
-
-    ensure_state_transitions(
-        analysis_workflow,
-        "to_be_verified",
-        ANALYSIS_TO_BE_VERIFIED_TRANSITIONS)
-    ensure_state_transitions(
-        worksheet_workflow,
-        "open",
-        WORKSHEET_OPEN_TRANSITIONS)
-    ensure_state_transitions(
-        worksheet_workflow,
-        "to_be_verified",
-        WORKSHEET_TO_BE_VERIFIED_TRANSITIONS)
-
-    ensure_state_permission_setup(
-        analysis_workflow,
-        "to_be_verified",
-        {
-            ANALYSIS_PERMISSION_VERIFY: (0, (VERIFIER_ROLE, )),
-            ANALYSIS_PERMISSION_RETEST: (1, ()),
-            ANALYSIS_PERMISSION_RETRACT: (0, ("Analyst", "LabManager", "Manager", "Sampler")),
-            ANALYSIS_PERMISSION_REJECT: (1, ()),
-        })
-
-
-def ensure_state_transitions(workflow, state_id, transition_ids):
-    """恢复指定状态的完整出口列表"""
-    state = workflow.states.get(state_id)
-    if state is None:
-        raise RuntimeError("Workflow state '%s' not found in '%s'" % (state_id, workflow.id))
-    state.transitions = tuple(transition_ids)
-    logger.info("Ensured workflow state '%s.%s' transitions=%s",
-                workflow.id, state_id, state.transitions)
-
-
-def ensure_state_permission_setup(workflow, state_id, permission_map):
-    """恢复指定状态的关键权限映射"""
-    state = workflow.states.get(state_id)
-    if state is None:
-        raise RuntimeError("Workflow state '%s' not found in '%s'" % (state_id, workflow.id))
-
-    for permission_id, value in permission_map.items():
-        acquired, roles = value
-        if permission_id not in workflow.permissions:
-            workflow.permissions = workflow.permissions + (permission_id,)
-        state.setPermission(permission_id, acquired, roles)
 
 
 def uninstall_handler(context):
