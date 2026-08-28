@@ -8,6 +8,7 @@ from maitux.esignature.services.context import (
     is_verified_signature_context_valid,
 )
 from maitux.esignature.services.policy import SignaturePolicyResolver
+from maitux.esignature.siteinstall import is_installed_in_current_site
 
 
 class ESignatureGuardAdapter(object):
@@ -18,6 +19,12 @@ class ESignatureGuardAdapter(object):
         self.policy_resolver = SignaturePolicyResolver()
 
     def guard(self, transition):
+        # 本适配器是 for="*" 的进程级注册，所有站点都会调到。未装本 addon 的
+        # 站点没有 registry 记录，policy resolver 会退回 legacy pilot 规则并
+        # 判成 signature_required=True，因此必须先按站点收口。详见 siteinstall。
+        if not is_installed_in_current_site():
+            return True
+
         user_id = get_user_id()
         policy = self.policy_resolver.resolve(self.context, transition, user_id=user_id)
         if not policy.get("signature_required"):

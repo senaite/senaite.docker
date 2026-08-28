@@ -7,11 +7,16 @@ from bika.lims import api
 from plone.registry.interfaces import IRegistry
 from Products.Five.browser import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from zope.component import getUtilitiesFor
 from zope.component import getUtility
 
 from maitux.esignature.interfaces import IESignatureControlPanelSettings
+from maitux.esignature.interfaces import IReAuthenticationProvider
 from maitux.esignature.services.rules import build_legacy_rule
+from maitux.esignature.services.rules import DEFAULT_MEANINGS
+from maitux.esignature.services.rules import dumps_meaning_vocabulary
 from maitux.esignature.services.rules import dumps_policy_rules
+from maitux.esignature.services.rules import parse_meaning_vocabulary
 from maitux.esignature.services.rules import loads_policy_rules
 
 
@@ -176,6 +181,46 @@ class ESignatureControlPanelView(BrowserView):
             "portal_type_workflows": portal_type_workflows,
         }
 
+    def auth_backends(self):
+        """Registered re-authentication providers, for the settings dropdown.
+
+        Enumerated rather than hardcoded: an SSO add-on registers its own
+        named utility and shows up here without this package knowing it.
+        """
+        items = []
+        for name, provider in getUtilitiesFor(IReAuthenticationProvider):
+            items.append({
+                "id": name,
+                "title": getattr(provider, "title", None) or name,
+            })
+        return sorted(items, key=lambda item: item["title"])
+
+    def auth_backend(self):
+        """The configured backend id, defaulting to the local accounts."""
+        return self._registry_value("auth_backend", u"pas") or u"pas"
+
+    def meaning_vocabulary(self):
+        """The configured list of signature meanings."""
+        return parse_meaning_vocabulary(
+            self._registry_value("meaning_vocabulary", u""))
+
+    def meaning_vocabulary_text(self):
+        """The vocabulary as the textarea shows it, one per line."""
+        return u"\n".join(self.meaning_vocabulary())
+
+    def meaning_vocabulary_json(self):
+        """The vocabulary for the rule table dropdowns."""
+        return json.dumps(self.meaning_vocabulary(), ensure_ascii=False)
+
+    def default_meanings_json(self):
+        """Suggested meaning per transition, for the rule table.
+
+        Served from services/rules.py rather than duplicated in the template,
+        so what the admin is offered and what the signature policy falls back
+        to cannot drift apart.
+        """
+        return json.dumps(DEFAULT_MEANINGS, ensure_ascii=False, sort_keys=True)
+
     def workflow_catalog_json(self):
         return json.dumps(self.workflow_catalog(), ensure_ascii=False)
 
@@ -204,6 +249,16 @@ class ESignatureControlPanelView(BrowserView):
         )
         self._set_registry_value("signature_type", DEFAULT_SIGNATURE_TYPE)
         self._set_registry_value("policy_rules_json", dumps_policy_rules(rules))
+        self._set_registry_value(
+            "auth_backend",
+            self._string_value(self.request.get("auth_backend", u"")) or u"pas",
+        )
+        self._set_registry_value(
+            "meaning_vocabulary",
+            dumps_meaning_vocabulary(
+                parse_meaning_vocabulary(
+                    self.request.get("meaning_vocabulary", u""))),
+        )
 
         # 为兼容旧逻辑和已有概览页，继续把第一条有效规则同步回单条 pilot 字段。
         first_rule = rules[0] if rules else None

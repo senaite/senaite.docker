@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import importlib.util
+import io
 import os
 import sys
 import types
@@ -72,11 +73,19 @@ def load_controlpanel_module(registry):
 
     component_module = types.ModuleType("zope.component")
     component_module.getUtility = lambda iface: registry
+    # Registered re-auth providers. The dropdown is built from whatever is
+    # registered, so the stub returns the local one only -- exactly what a
+    # site without an SSO add-on sees.
+    component_module.getUtilitiesFor = lambda iface: [
+        ("pas", types.SimpleNamespace(
+            backend_id="pas", title=u"Local accounts (Plone PAS)")),
+    ]
     sys.modules["zope"] = types.ModuleType("zope")
     sys.modules["zope.component"] = component_module
 
     interface_module = types.ModuleType("maitux.esignature.interfaces")
     interface_module.IESignatureControlPanelSettings = object
+    interface_module.IReAuthenticationProvider = object
     sys.modules["maitux"] = types.ModuleType("maitux")
     sys.modules["maitux.esignature"] = types.ModuleType("maitux.esignature")
     sys.modules["maitux.esignature.interfaces"] = interface_module
@@ -91,6 +100,15 @@ def load_controlpanel_module(registry):
         "meaning_required": settings.get("meaning_required", True),
         "reason_required": settings.get("reason_required", True),
     }
+    rules_module.DEFAULT_MEANINGS = {u"verify": u"Approval"}
+    rules_module.DEFAULT_MEANING_VOCABULARY = [u"Approval", u"Review"]
+    rules_module.parse_meaning_vocabulary = lambda raw: (
+        [l.strip() for l in (raw or u"").splitlines() if l.strip()]
+        or list(rules_module.DEFAULT_MEANING_VOCABULARY))
+    rules_module.dumps_meaning_vocabulary = (
+        lambda items: u"\n".join(items or []))
+    rules_module.default_meaning_for = lambda tid: (
+        rules_module.DEFAULT_MEANINGS.get(tid, u""))
     rules_module.dumps_policy_rules = lambda rules: u"[]"
     rules_module.loads_policy_rules = lambda text, legacy_rule=None: []
     sys.modules["maitux.esignature.services"] = types.ModuleType("maitux.esignature.services")
@@ -110,7 +128,9 @@ class TestESignatureControlPanel(unittest.TestCase):
         """设置页不再显示已固定的基础参数。"""
         template_path = os.path.abspath(os.path.join(
             os.path.dirname(__file__), "..", "browser", "templates", "controlpanel.pt"))
-        with open(template_path, "r") as handle:
+        # encoding is explicit on purpose: without it Python 3 on Windows
+        # defaults to GBK and cannot read these UTF-8 sources.
+        with io.open(template_path, "r", encoding="utf-8") as handle:
             content = handle.read()
 
         self.assertNotIn("Show signature summary in Audit Log", content)
@@ -128,6 +148,8 @@ class TestESignatureControlPanel(unittest.TestCase):
         registry.records["maitux.esignature.verified_context_ttl_seconds"] = DummyRegistryRecord("Int", 600)
         registry.records["maitux.esignature.signature_type"] = DummyRegistryRecord("TextLine", u"custom")
         registry.records["maitux.esignature.policy_rules_json"] = DummyRegistryRecord("Text", u"[]")
+        registry.records["maitux.esignature.meaning_vocabulary"] = DummyRegistryRecord("Text", u"")
+        registry.records["maitux.esignature.auth_backend"] = DummyRegistryRecord("TextLine", u"pas")
 
         module = load_controlpanel_module(registry)
         view = module.ESignatureControlPanelView()

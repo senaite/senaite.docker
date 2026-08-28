@@ -2,8 +2,10 @@
 """AuditLog and signature record integration for successful transitions."""
 
 import json
+import transaction
 
 from bika.lims import api
+from bika.lims import logger
 from bika.lims.api.snapshot import get_storage as get_snapshot_storage
 from bika.lims.api.snapshot import take_snapshot
 from bika.lims.api.user import get_user_id
@@ -12,10 +14,12 @@ from bika.lims.subscribers.auditlog import reindex_object
 from maitux.esignature.services.context import (
     build_signature_summary,
     clear_verified_signature_context,
+    consume_verified_signature_context,
     get_verified_signature_context,
     is_verified_signature_context_valid,
 )
 from maitux.esignature.services.policy import SignaturePolicyResolver
+from maitux.esignature.siteinstall import is_installed_in_current_site
 from maitux.esignature.storage.store import SignatureRecordStore
 
 
@@ -44,17 +48,52 @@ def _build_esignature_metadata(verified_context, action):
     }
 
 
-def _update_latest_snapshot(obj, verified_context, action):
+def _find_transition_snapshot_index(storage, transition_id):
+    """Index of the audit entry this transition wrote, or None.
+
+    Located by identity rather than by position.  Both this subscriber and
+    senaite's ObjectTransitionedEventHandler listen to IActionSucceededEvent,
+    and ours runs first -- so at this point the entry we are looking for may
+    not exist yet, and storage[-1] is still the *previous* transition.  Writing
+    there put the signature on an unrelated audit entry.
+
+    Scans backwards so the newest matching entry wins when an object went
+    through the same transition more than once.
+    """
+    for index in range(len(storage) - 1, -1, -1):
+        try:
+            metadata = json.loads(storage[index]).get("__metadata__", {})
+        except ValueError:
+            continue
+        if metadata.get("action") == transition_id:
+            return index
+    return None
+
+
+def _enrich_transition_snapshot(obj, verified_context, action):
+    """Attach the structured signature data to the transition's own entry.
+
+    The human-readable summary already travels through DCWorkflow into the
+    entry's `comments` (see browser/workflow.py: do_action_with_comment), so if
+    this does not find its target the signature is still recorded -- only the
+    machine-readable dict for the audit UI is missing.
+    """
     storage = get_snapshot_storage(obj)
     if not storage:
-        return
+        return False
 
-    latest = json.loads(storage[-1])
+    transition_id = verified_context.get("transition_id") or action
+    index = _find_transition_snapshot_index(storage, transition_id)
+    if index is None:
+        return False
+
+    latest = json.loads(storage[index])
     metadata = latest.get("__metadata__", {})
     metadata["comments"] = build_signature_summary(verified_context)
     metadata["esignature"] = _build_esignature_metadata(verified_context, action)
     latest["__metadata__"] = metadata
-    storage[-1] = json.dumps(latest)
+    storage[index] = json.dumps(latest)
+    return True
 
 
 def _build_signature_record(obj, verified_context, action):
@@ -116,6 +155,41 @@ def _append_signature_audit_snapshot(obj, verified_context, action, audit_action
     get_snapshot_storage(obj).append(json.dumps(snapshot))
 
 
+def _schedule_snapshot_enrichment(obj, verified_context, action):
+    """Enrich the transition's audit entry, but not until commit time.
+
+    We are inside an IActionSucceededEvent handler and we run *before*
+    senaite's ObjectTransitionedEventHandler, so the entry we want to enrich
+    does not exist yet.  Deferring to a before-commit hook lets it be written
+    first; by then `_find_transition_snapshot_index` can locate it.
+
+    Deferring is only safe because the lookup goes by identity (the entry whose
+    action is this transition) rather than by position.  A hook that still
+    wrote to storage[-1] would merely be betting that nothing else appends in
+    the meantime.
+
+    The hook must never raise: an exception from a before-commit hook aborts
+    the whole transaction, which would undo a transition that legitimately
+    succeeded.  A failure here costs the structured dict for the audit UI, not
+    the signature itself -- the readable summary already reached the entry
+    through DCWorkflow.
+    """
+    def hook():
+        try:
+            if not _enrich_transition_snapshot(obj, verified_context, action):
+                logger.warning(
+                    "esignature: no audit entry found for transition '{}' on "
+                    "{}; signature summary is still in the workflow comment"
+                    .format(verified_context.get("transition_id") or action,
+                            api.get_id(obj)))
+        except Exception as error:  # noqa: BLE001 - must not abort the txn
+            logger.error(
+                "esignature: could not enrich the audit entry of {}: {}"
+                .format(api.get_id(obj), error))
+
+    transaction.get().addBeforeCommitHook(hook)
+
+
 def record_pending_countersign(context, verified_context, action):
     """记录第一人已签、等待第二人复核的状态和审计轨迹。"""
     portal = api.get_portal()
@@ -130,6 +204,11 @@ def record_pending_countersign(context, verified_context, action):
 
 def on_action_succeeded(context, event):
     """Persist the signature record and enrich the latest audit snapshot."""
+    # 本订阅器是 for="*" 的进程级注册，所有站点都会调到，而它会往站点写签名
+    # 记录和审计快照。未装本 addon 的站点直接不参与。详见 siteinstall。
+    if not is_installed_in_current_site():
+        return
+
     action = getattr(event, "action", None)
     if not action:
         return
@@ -152,8 +231,16 @@ def on_action_succeeded(context, event):
     record = _build_signature_record(context, verified_context, action)
     stored = store.save(record)
 
-    # 正式记录始终保留；若现场仍希望保留 metadata 摘要，则继续附加到最新审计项。
+    # 正式记录始终保留；若现场仍希望保留 metadata 摘要，则补到该 transition
+    # 自己的那条审计项上。
+    #
+    # 注意传的是 verified_context 而不是 stored：SignatureRecord 用的是
+    # initiator_userid / signer_userid（无下划线），而 build_signature_summary
+    # 读的是 initiator_user_id / user_id，键名对不上会全部回落成 "unknown"。
     if policy.get("auditlog_summary_enabled", True):
-        _update_latest_snapshot(context, dict(stored), action)
+        _schedule_snapshot_enrichment(context, verified_context, action)
     reindex_object(context)
-    clear_verified_signature_context()
+
+    # 一次签名可覆盖多个对象：此处只销掉当前对象，全部完成后上下文才作废。
+    # 过去这里无条件清空，导致批次里第 2 个对象的 guard 必然失败。
+    consume_verified_signature_context(context)

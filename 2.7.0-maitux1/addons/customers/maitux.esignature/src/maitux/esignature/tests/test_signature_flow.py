@@ -5,6 +5,13 @@ import sys
 import types
 import unittest
 
+# Imported for its side effect of caching the real module, before any loader
+# below replaces sys.modules["zope"] with a stub.  adapters/auditlog.py imports
+# `transaction`, which imports zope.interface; test_controlpanel.py runs first
+# (alphabetical order) and leaves a fake bare "zope" module behind, so without
+# this the import inside the loader resolves against the stub and blows up.
+import transaction  # noqa: F401
+
 
 def load_signflow_module():
     """加载 signflow 模块。"""
@@ -39,9 +46,16 @@ def load_auditlog_module():
     audit_subscriber_module = types.ModuleType("bika.lims.subscribers.auditlog")
     audit_subscriber_module.reindex_object = lambda obj: None
 
+    logger_stub = types.SimpleNamespace(
+        warning=lambda *a, **kw: None,
+        error=lambda *a, **kw: None,
+        info=lambda *a, **kw: None,
+    )
+
     sys.modules["bika"] = types.ModuleType("bika")
     sys.modules["bika.lims"] = types.ModuleType("bika.lims")
     sys.modules["bika.lims"].api = api_module
+    sys.modules["bika.lims"].logger = logger_stub
     sys.modules["bika.lims.api"] = api_module
     sys.modules["bika.lims.api.snapshot"] = snapshot_module
     sys.modules["bika.lims.api.user"] = user_module
@@ -56,6 +70,13 @@ def load_auditlog_module():
         )
     )
     context_module.clear_verified_signature_context = lambda request=None: None
+    # Records which objects the audit subscriber marked as done, so a test can
+    # assert that a batch is consumed one object at a time instead of the
+    # context being torn down by the first success.
+    context_module.consumed = []
+    context_module.consume_verified_signature_context = (
+        lambda context, request=None: context_module.consumed.append(context)
+    )
     context_module.get_verified_signature_context = lambda request=None: {
         "object_uid": "UID-1",
         "object_path": "/portal/item",
@@ -80,6 +101,15 @@ def load_auditlog_module():
     sys.modules["maitux.esignature"] = types.ModuleType("maitux.esignature")
     sys.modules["maitux.esignature.services"] = types.ModuleType("maitux.esignature.services")
     sys.modules["maitux.esignature.services.context"] = context_module
+
+    # auditlog 现在会先问「本站点装了 esignature 吗」。这里做成可切换的桩，
+    # 默认 True 走原有路径，未安装的分支由 test 自己翻转。
+    siteinstall_module = types.ModuleType("maitux.esignature.siteinstall")
+    siteinstall_module.installed = True
+    siteinstall_module.is_installed_in_current_site = (
+        lambda: siteinstall_module.installed
+    )
+    sys.modules["maitux.esignature.siteinstall"] = siteinstall_module
 
     policy_module = types.ModuleType("maitux.esignature.services.policy")
     class DummyResolver(object):
@@ -108,6 +138,7 @@ def load_auditlog_module():
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     module._test_snapshot_storage = snapshot_storage
+    module._test_siteinstall = siteinstall_module
     return module
 
 
@@ -200,6 +231,160 @@ class TestSignatureFlow(unittest.TestCase):
         auditlog.on_action_succeeded(DummyContext(), DummyEvent())
 
         self.assertEqual(len(auditlog._test_snapshot_storage), 1)
+
+    def test_success_consumes_only_the_current_object(self):
+        """成功一个对象只销掉它自己，不清空整批的已验证签名上下文。
+
+        过去这里是无条件 clear_verified_signature_context()，批量签名时
+        第 2 个对象的 guard 必然失败。
+        """
+        auditlog = load_auditlog_module()
+        auditlog._test_snapshot_storage.append('{"__metadata__": {"comments": ""}}')
+        context_module = sys.modules["maitux.esignature.services.context"]
+        context_module.consumed = []
+
+        one = DummyContext()
+        auditlog.on_action_succeeded(one, DummyEvent())
+
+        self.assertEqual(context_module.consumed, [one])
+
+    def test_not_installed_site_writes_nothing(self):
+        """本订阅器是 for="*" 的进程级注册，所有站点都会调到。
+
+        未装本 addon 的站点不该被写入签名记录或审计快照 —— 这里断言的是
+        跨站点污染的收口，不是签名逻辑本身。
+        """
+        auditlog = load_auditlog_module()
+        auditlog._test_siteinstall.installed = False
+        auditlog._test_snapshot_storage.append('{"__metadata__": {"comments": ""}}')
+        context_module = sys.modules["maitux.esignature.services.context"]
+        context_module.consumed = []
+
+        auditlog.on_action_succeeded(DummyContext(), DummyEvent())
+
+        # 审计快照原样未动，也没有任何对象被 consume
+        self.assertEqual(
+            auditlog._test_snapshot_storage,
+            ['{"__metadata__": {"comments": ""}}'])
+        self.assertEqual(context_module.consumed, [])
+
+
+class TestVerifiedSignatureContext(unittest.TestCase):
+    """针对 services/context.py 真实实现的批量语义测试。"""
+
+    def setUp(self):
+        # These tests stub out whole packages ("zope", "bika.lims"); restoring
+        # sys.modules afterwards keeps that from leaking into whatever runs
+        # next, which is how the loaders in this file broke each other before.
+        self._saved_modules = dict(sys.modules)
+
+    def tearDown(self):
+        sys.modules.clear()
+        sys.modules.update(self._saved_modules)
+
+    def load_context_module(self):
+        api_module = types.ModuleType("bika.lims.api")
+        api_module.get_uid = lambda obj: obj.uid
+        # Must be truthy: _annotations() bails out on a None request, which
+        # would silently make every set/get a no-op.
+        fake_request = object()
+        api_module.get_request = lambda: fake_request
+
+        annotations_module = types.ModuleType("zope.annotation.interfaces")
+        store = {}
+        annotations_module.IAnnotations = lambda request: store
+
+        sys.modules["bika"] = types.ModuleType("bika")
+        sys.modules["bika.lims"] = types.ModuleType("bika.lims")
+        sys.modules["bika.lims"].api = api_module
+        sys.modules["bika.lims.api"] = api_module
+        sys.modules["zope"] = types.ModuleType("zope")
+        sys.modules["zope.annotation"] = types.ModuleType("zope.annotation")
+        sys.modules["zope.annotation.interfaces"] = annotations_module
+
+        file_path = os.path.abspath(os.path.join(
+            os.path.dirname(__file__), "..", "services", "context.py"))
+        spec = importlib.util.spec_from_file_location("test_context_module", file_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+
+    def make(self, uid):
+        obj = DummyContext()
+        obj.uid = uid
+        return obj
+
+    def test_batch_context_validates_for_every_member(self):
+        ctx = self.load_context_module()
+        anchor, second, third = self.make("A"), self.make("B"), self.make("C")
+
+        ctx.set_verified_signature_context(
+            anchor, "reject", "op1", object_uids=["A", "B", "C"])
+
+        for obj in (anchor, second, third):
+            self.assertTrue(
+                ctx.is_verified_signature_context_valid(obj, "reject", "op1"),
+                "%s should be authorised by the batch signature" % obj.uid)
+
+    def test_outsider_is_not_authorised(self):
+        ctx = self.load_context_module()
+        ctx.set_verified_signature_context(
+            self.make("A"), "reject", "op1", object_uids=["A", "B"])
+
+        self.assertFalse(
+            ctx.is_verified_signature_context_valid(self.make("Z"), "reject", "op1"))
+
+    def test_context_survives_until_the_last_object_is_consumed(self):
+        ctx = self.load_context_module()
+        anchor, second = self.make("A"), self.make("B")
+        ctx.set_verified_signature_context(
+            anchor, "reject", "op1", object_uids=["A", "B"])
+
+        remaining = ctx.consume_verified_signature_context(anchor)
+        self.assertEqual(remaining, 1)
+        # The second object must still pass its guard after the first succeeded
+        self.assertTrue(
+            ctx.is_verified_signature_context_valid(second, "reject", "op1"))
+
+        remaining = ctx.consume_verified_signature_context(second)
+        self.assertEqual(remaining, 0)
+        self.assertIsNone(ctx.get_verified_signature_context())
+
+    def test_legacy_single_uid_context_still_validates(self):
+        """批量之前写下的上下文只有 object_uid，仍须被认。"""
+        ctx = self.load_context_module()
+        ctx.set_verified_signature_context(self.make("A"), "reject", "op1")
+        value = ctx.get_verified_signature_context()
+        del value["object_uids"]
+
+        self.assertTrue(
+            ctx.is_verified_signature_context_valid(self.make("A"), "reject", "op1"))
+
+    def test_countersign_covers_the_whole_batch(self):
+        """一次复签覆盖整批：每个成员都认同一个 countersigner。"""
+        ctx = self.load_context_module()
+        ctx.set_verified_signature_context(
+            self.make("A"), "reject", "op1",
+            object_uids=["A", "B"],
+            require_countersign=True,
+            countersigner_user_id="op2",
+        )
+
+        for uid in ("A", "B"):
+            self.assertTrue(
+                ctx.is_verified_signature_context_valid(self.make(uid), "reject", "op1"))
+
+    def test_countersign_required_but_missing_blocks_every_member(self):
+        ctx = self.load_context_module()
+        ctx.set_verified_signature_context(
+            self.make("A"), "reject", "op1",
+            object_uids=["A", "B"],
+            require_countersign=True,
+        )
+
+        for uid in ("A", "B"):
+            self.assertFalse(
+                ctx.is_verified_signature_context_valid(self.make(uid), "reject", "op1"))
 
 
 if __name__ == "__main__":

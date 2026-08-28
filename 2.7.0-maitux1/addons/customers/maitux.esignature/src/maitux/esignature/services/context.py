@@ -45,8 +45,24 @@ def build_verified_signature_context(context, transition_id, user_id, ttl_second
                                      require_countersign=False,
                                      countersigner_user_id=None,
                                      countersign_auth_backend_id=None,
+                                     object_uids=None,
                                      request=None):
+    """Build the record of one signature act.
+
+    One act may authorise several objects: an analyst rejecting eight analyses
+    of a worksheet signs once, and each of the eight is then transitioned and
+    audited on its own.  `object_uids` carries that batch; `object_uid` keeps
+    the anchor object so existing readers (and the audit summary) still see a
+    single subject.
+
+    `consumed_uids` grows as the transitions succeed, which is what lets the
+    context survive past the first object instead of being torn down by the
+    first IActionSucceededEvent.
+    """
     object_uid = api.get_uid(context)
+    uids = [u for u in (object_uids or []) if u]
+    if object_uid not in uids:
+        uids.insert(0, object_uid)
     expires_at = datetime.utcnow() + timedelta(seconds=int(ttl_seconds))
     initiator_user_id = initiator_user_id or user_id
     execution_user_id = execution_user_id or user_id
@@ -56,6 +72,8 @@ def build_verified_signature_context(context, transition_id, user_id, ttl_second
         signer_userids.append(countersigner_user_id)
     return {
         "object_uid": object_uid,
+        "object_uids": uids,
+        "consumed_uids": [],
         "object_path": "/".join(context.getPhysicalPath()),
         "portal_type": getattr(context, "portal_type", None),
         "transition_id": transition_id,
@@ -85,6 +103,7 @@ def set_verified_signature_context(context, transition_id, user_id, ttl_seconds=
                                    require_countersign=False,
                                    countersigner_user_id=None,
                                    countersign_auth_backend_id=None,
+                                   object_uids=None,
                                    request=None):
     annotations = _annotations(request)
     if annotations is None:
@@ -105,6 +124,7 @@ def set_verified_signature_context(context, transition_id, user_id, ttl_seconds=
         require_countersign=require_countersign,
         countersigner_user_id=countersigner_user_id,
         countersign_auth_backend_id=countersign_auth_backend_id,
+        object_uids=object_uids,
         request=request,
     )
     annotations[CONTEXT_KEY] = value
@@ -125,11 +145,45 @@ def clear_verified_signature_context(request=None):
     return annotations.pop(CONTEXT_KEY, None)
 
 
+def consume_verified_signature_context(context, request=None):
+    """Mark one object of the batch as done, and clear once none are left.
+
+    Replaces the unconditional clear that used to run on the first successful
+    transition: with several objects riding on one signature, tearing the
+    context down after the first one made every later object fail its guard.
+
+    Returns the number of objects still awaiting their transition.
+    """
+    annotations = _annotations(request)
+    if annotations is None:
+        return 0
+
+    value = annotations.get(CONTEXT_KEY)
+    if not value:
+        return 0
+
+    uid = api.get_uid(context)
+    consumed = list(value.get("consumed_uids") or [])
+    if uid not in consumed:
+        consumed.append(uid)
+    value["consumed_uids"] = consumed
+    # Re-assign: the annotation may live in a persistent mapping that does not
+    # notice in-place mutation of the value it holds.
+    annotations[CONTEXT_KEY] = value
+
+    remaining = [
+        u for u in get_context_object_uids(value) if u not in consumed
+    ]
+    if not remaining:
+        clear_verified_signature_context(request=request)
+    return len(remaining)
+
+
 def build_signature_summary(context_data):
     if not context_data:
         return ""
 
-    # 瀹¤鎽樿淇濇寔鍗曡鏂囨湰锛屼究浜庣洿鎺ユ寕鍒扮幇鏈?AuditLog comments 瀛楁銆?
+    # 审计摘要保持单行文本，便于直接挂到现有 AuditLog comments 字段。
     pieces = [
         "Electronic signature",
         "first_signer={}".format(
@@ -155,12 +209,30 @@ def build_signature_summary(context_data):
     return "; ".join(pieces)
 
 
+def get_context_object_uids(value):
+    """UIDs authorised by one signature act.
+
+    Falls back to the single `object_uid` so a context written before batch
+    signing existed still validates.
+    """
+    if not value:
+        return []
+    uids = list(value.get("object_uids") or [])
+    if not uids:
+        single = value.get("object_uid")
+        uids = [single] if single else []
+    return uids
+
+
 def is_verified_signature_context_valid(context, transition_id, user_id, request=None):
     value = get_verified_signature_context(request=request)
     if not value:
         return False
 
-    if value.get("object_uid") != api.get_uid(context):
+    # Membership, not equality: one signature act authorises every object of
+    # the batch, and each of them arrives here separately as the workflow
+    # transitions them one by one.
+    if api.get_uid(context) not in get_context_object_uids(value):
         return False
     if value.get("transition_id") != transition_id:
         return False

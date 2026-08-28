@@ -37,6 +37,58 @@ def _as_bool(value, default=False):
     return default
 
 
+#: 各 transition 的默认签名含义。
+#:
+#: 含义描述的不是「结果是什么」，而是签名人相对这条记录扮演什么角色 ——
+#: 批准还是拒绝由点击哪个 transition 决定，含义回答的是另一个问题。所以
+#: reject 配 "Approval" 是荒谬的，配 "Responsibility"（为这个决定负责）才通顺。
+#:
+#: 21 CFR Part 11 §11.50(a)(3) 要求签名 manifestation 载明含义，原文用的是
+#: "such as review, approval, responsibility, or authorship" —— 是举例而非
+#: 强制词表，现场可按内部 SOP 改写。这里只提供建议默认值。
+DEFAULT_MEANINGS = {
+    u"submit": u"Authorship",
+    u"verify": u"Approval",
+    u"multi_verify": u"Approval",
+    u"reject": u"Responsibility",
+    u"retract": u"Responsibility",
+}
+
+
+def default_meaning_for(transition_id):
+    """给定 transition 的建议签名含义；未知 transition 返回空串。"""
+    return DEFAULT_MEANINGS.get(_as_text(transition_id).strip(), u"")
+
+
+#: 新装站点的初始词表。不是强制词表 —— 现场可在控制面板按 SOP 改写。
+DEFAULT_MEANING_VOCABULARY = [
+    u"Approval",
+    u"Review",
+    u"Responsibility",
+    u"Authorship",
+]
+
+
+def parse_meaning_vocabulary(raw_value):
+    """把「一行一个」的词表文本解析成列表。
+
+    去空行、去首尾空白、按首次出现顺序去重（顺序即下拉里的顺序，由管理员掌握）。
+    解析不出任何条目时回落到默认词表，避免下拉变成空的。
+    """
+    items = []
+    for line in _as_text(raw_value).splitlines():
+        value = line.strip()
+        if value and value not in items:
+            items.append(value)
+    return items or list(DEFAULT_MEANING_VOCABULARY)
+
+
+def dumps_meaning_vocabulary(items):
+    """把词表列表序列化回 registry 保存的文本。"""
+    return u"\n".join(parse_meaning_vocabulary(u"\n".join(
+        [_as_text(i) for i in (items or [])])))
+
+
 def normalize_rule(rule, defaults=None):
     """将任意输入规则归一化成统一结构。"""
     defaults = defaults or {}
@@ -56,6 +108,12 @@ def normalize_rule(rule, defaults=None):
         "meaning_required": _as_bool(
             rule.get("meaning_required"),
             defaults.get("meaning_required", True),
+        ),
+        # 受控值，不是由签名人填写的自由文本。空则回落到该 transition 的建议值,
+        # 这样老规则（升级前保存的、没有这个字段）也能得到一个合理的含义。
+        "meaning": (
+            _as_text(rule.get("meaning")).strip()
+            or default_meaning_for(rule.get("transition_id"))
         ),
         "reason_required": _as_bool(
             rule.get("reason_required"),

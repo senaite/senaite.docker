@@ -79,6 +79,31 @@ class IESignatureControlPanelSettings(model.Schema):
         required=False,
     )
 
+    auth_backend = schema.TextLine(
+        title=u"Authentication backend",
+        description=(
+            u"Which identity source verifies the signer's credentials. The "
+            u"options are the registered re-authentication providers; a site "
+            u"using single sign-on selects the provider of that integration "
+            u"instead of the local accounts."
+        ),
+        default=u"pas",
+        required=False,
+    )
+
+    meaning_vocabulary = schema.Text(
+        title=u"Signature meanings",
+        description=(
+            u"One meaning per line. These are the values a rule may assign to "
+            u"a signature; the signer sees the one configured for the action "
+            u"and cannot change it. 21 CFR Part 11 requires the meaning to be "
+            u"recorded but does not fix the wording, so adjust these to your "
+            u"SOP."
+        ),
+        default=u"Approval\nReview\nResponsibility\nAuthorship",
+        required=False,
+    )
+
 
 class ISignaturePolicyResolver(Interface):
     """Resolve whether a transition requires electronic signature."""
@@ -88,11 +113,25 @@ class ISignaturePolicyResolver(Interface):
 
 
 class IReAuthenticationProvider(Interface):
-    """Authenticate the current user through the same backend chain as login."""
+    """Authenticate the current user through the same backend chain as login.
+
+    Registered as a named utility, the name being `backend_id`. The site picks
+    one through the `auth_backend` registry record.
+
+    A provider lives in whichever add-on knows that identity source. This
+    package owns the contract and ships the local one; an SSO integration
+    registers its own and imports only this interface, so the dependency runs
+    from the SSO add-on towards the signature contract and never back.
+    """
 
     backend_id = schema.TextLine(
         title=u"Provider backend id",
         required=True,
+    )
+
+    title = schema.TextLine(
+        title=u"Human readable name, shown in the control panel",
+        required=False,
     )
 
     def authenticate_current_user(user_id, credential, request_context=None):

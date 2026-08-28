@@ -224,7 +224,16 @@
                 </div>
                 <div class="maitux-esign-summary-item">
                   <span class="maitux-esign-summary-label">Target Item</span>
-                  <span class="maitux-esign-summary-value" tal:content="python:context.Title() or context.getId()">Item</span>
+                  <span class="maitux-esign-summary-value">
+                    <span tal:content="python:context.Title() or context.getId()">Item</span>
+                    <!-- One signature act may authorise a whole batch; the
+                         signer must be able to see how many items they are
+                         signing for, not just the anchor. -->
+                    <span tal:condition="python:view.target_count() &gt; 1"
+                          tal:content="python:'(+%d more, %d in total)' % (view.target_count() - 1, view.target_count())">
+                      (+7 more, 8 in total)
+                    </span>
+                  </span>
                 </div>
               </div>
 
@@ -243,6 +252,10 @@
           <input type="hidden"
                  name="skip_transition_check"
                  tal:attributes="value python:view.skip_transition_check() and '1' or ''" />
+          <!-- Carries the batch across the POST; without it the submit would
+               fall back to the anchor object alone. -->
+          <input type="hidden" name="uids"
+                 tal:attributes="value python:','.join(view.target_uids())" />
 
                 <div class="maitux-esign-grid">
                   <div class="maitux-esign-col">
@@ -283,18 +296,27 @@
                       </div>
                     </tal:block>
 
-                    <div class="maitux-esign-field">
-                      <label for="esign-meaning">
-                        Meaning
-                        <span class="maitux-esign-required" tal:condition="python:view.policy().get('meaning_required')">*</span>
-                      </label>
+                    <!-- Meaning is a controlled value, not something the signer
+                         types.  It states the role the signer takes towards
+                         this record (Approval, Authorship, Responsibility...),
+                         which follows from the transition and is configured
+                         per rule in the control panel.  Shown read-only so the
+                         signer can see what they are attesting to, but cannot
+                         reword it; the value posted back comes from the policy,
+                         never from this markup. -->
+                    <div class="maitux-esign-field"
+                         tal:condition="python:view.policy().get('meaning_required')">
+                      <label for="esign-meaning">Meaning</label>
                       <input id="esign-meaning"
                              class="maitux-esign-input"
                              type="text"
-                             name="meaning"
-                             placeholder="Enter the purpose of this signature"
-                             tal:attributes="value python:view.form_meaning()" />
-                      <span class="maitux-esign-help">Describe what this verification is authorizing.</span>
+                             readonly="readonly"
+                             tabindex="-1"
+                             tal:attributes="value python:view.policy_meaning()" />
+                      <span class="maitux-esign-help">
+                        Set by the signature policy for this action; it cannot
+                        be edited here.
+                      </span>
                     </div>
                   </div>
 

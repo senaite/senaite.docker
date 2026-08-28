@@ -4,6 +4,7 @@
 from plone import api
 
 from maitux.esignature.services.rules import build_legacy_rule
+from maitux.esignature.services.rules import default_meaning_for
 from maitux.esignature.services.rules import loads_policy_rules
 
 
@@ -13,6 +14,7 @@ DEFAULT_POLICY = {
     "signature_type": None,
     "meaning_required": False,
     "reason_required": False,
+    "meaning": u"",
     "auth_backend": "pas",
     "verified_context_ttl_seconds": 300,
     "auditlog_summary_enabled": True,
@@ -63,6 +65,10 @@ class SignaturePolicyResolver(object):
         auditlog_summary_enabled = bool(
             self._registry_value("auditlog_summary_enabled", True)
         )
+        # 站点级：由哪个身份源校验签名人凭据。SSO 上线后改这一项即可，
+        # 不需要动任何规则。
+        auth_backend = (
+            self._registry_value("auth_backend", u"pas") or u"pas")
         settings = {
             "enabled": enabled,
             "pilot_portal_type": self._registry_value("pilot_portal_type", "Analysis"),
@@ -90,6 +96,7 @@ class SignaturePolicyResolver(object):
             "verified_context_ttl_seconds": verified_context_ttl_seconds,
             "auditlog_summary_enabled": auditlog_summary_enabled,
             "workflow_id": workflow_id,
+            "auth_backend": auth_backend,
             "policy_rules_count": len(policy_rules),
         })
 
@@ -110,7 +117,8 @@ class SignaturePolicyResolver(object):
                 "require_countersign": rule.get("require_countersign", False),
                 "meaning_required": rule.get("meaning_required", meaning_required),
                 "reason_required": rule.get("reason_required", reason_required),
-                "auth_backend": "pas",
+                # 受控含义：由规则决定，签名页只读展示，签名人不能改。
+                "meaning": rule.get("meaning") or default_meaning_for(transition_id),
                 "source": "rules_table",
             })
             return policy
