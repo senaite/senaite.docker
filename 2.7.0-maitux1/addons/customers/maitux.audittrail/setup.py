@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name="maitux.audittrail",
-    version="1.0.0",
+    version="1.1.0",
     description="Maitux audit trail readability add-on for SENAITE",
     packages=find_packages("src"),
     package_dir={"": "src"},

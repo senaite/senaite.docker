@@ -58,6 +58,46 @@ class TestAuditLogSource(unittest.TestCase):
         self.assertIn("render_interim_fields_html", source)
         self.assertIn("interim_fields", source)
 
+    def test_view_adds_signature_column_in_both_places(self):
+        """加列必须同时改 self.columns 和 review_states
+
+        基类 __init__ 里是 "columns": self.columns.keys()，Python 2 的 .keys()
+        返回列表快照 —— 只改 self.columns 不会传导过去，列不会出现且不报错。
+        这个测试就是为了钉住那次静默失败。
+        """
+        with open(VIEW_SOURCE, "r") as handle:
+            source = handle.read()
+
+        self.assertIn("def add_signature_column(self, columns):", source)
+        self.assertIn("self.columns = self.add_signature_column(self.columns)",
+                      source)
+        self.assertIn('review_state["columns"] = self.columns.keys()', source)
+
+    def test_signature_column_is_visible_by_default(self):
+        """签名列不能设 toggle
+
+        21 CFR Part 11 §11.50(b)：签名 manifestation 必须是人类可读形式的
+        组成部分。像原生 Roles / Snapshot 那样默认藏起来等人勾，不算已呈现。
+        """
+        with open(VIEW_SOURCE, "r") as handle:
+            source = handle.read()
+
+        marker = "SIGNATURE_COLUMN_ID = \"esignature\""
+        self.assertIn(marker, source)
+        column_block = source.split("def add_signature_column", 1)[1]
+        column_block = column_block.split("def ", 1)[0]
+        # 只看字典键，别把说明为什么不设 toggle 的注释也当成命中
+        self.assertNotIn('"toggle"', column_block)
+
+    def test_view_renders_signature_with_comments_fallback(self):
+        """视图要能同时消费结构化字典和 comments 摘要"""
+        with open(VIEW_SOURCE, "r") as handle:
+            source = handle.read()
+
+        self.assertIn("extract_signature", source)
+        self.assertIn("render_signature_html", source)
+        self.assertIn("item[SIGNATURE_COLUMN_ID]", source)
+
     def test_template_contains_structured_interim_layout(self):
         """模板要区分普通字段和 InterimFields 的结构化展示"""
         with open(TEMPLATE_SOURCE, "r") as handle:
