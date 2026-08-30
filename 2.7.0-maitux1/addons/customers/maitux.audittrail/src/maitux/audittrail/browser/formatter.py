@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Calculation Interim Fields 审计展示格式化工具"""
 
+import json
+
 try:
     from html import escape
 except ImportError:
@@ -91,6 +93,34 @@ def item_to_dict(item):
     return {}
 
 
+def format_default_value(value):
+    """默认值可能是一段 JSON，直接显示会把中文露成 \\uXXXX 转义
+
+    多选类型（list / multiselect / multichoice）的 interim 默认值在快照里是
+    `json.dumps()` 的产物，而 `json.dumps` 默认 `ensure_ascii=True`，
+    所以 "未知杂质" 存进去就成了 "\\u672a\\u77e5\\u6742\\u8d28"。
+    数据本身没问题，是这里没解回来。
+
+    只在看起来像 JSON 容器时才尝试解析；解析失败就原样返回，
+    绝不能因为格式化把原始值弄丢 —— 这是审计记录。
+    """
+    if isinstance(value, (list, tuple)):
+        return u"、".join([safe_text(item) for item in value])
+
+    text = safe_text(value).strip()
+    if not text or text[0] not in (u"[", u"{"):
+        return text
+
+    try:
+        decoded = json.loads(text)
+    except (ValueError, TypeError):
+        return text
+
+    if isinstance(decoded, (list, tuple)):
+        return u"、".join([safe_text(item) for item in decoded])
+    return safe_text(decoded)
+
+
 def clean_no_value(value):
     """把快照中的 <NO_VALUE> 占位符转成空串，避免界面出现噪音"""
     text = safe_text(value).strip()
@@ -113,7 +143,7 @@ def normalize_rows(value):
             "keyword": safe_text(row.get("keyword")),
             "title": safe_text(row.get("title")),
             "result_type": get_result_type_title(row.get("result_type")),
-            "value": safe_text(row.get("value")),
+            "value": format_default_value(row.get("value")),
             "formula": clean_no_value(row.get("formula")),
             "unit": safe_text(row.get("unit")),
             "choices": safe_text(row.get("choices")),
@@ -175,3 +205,114 @@ def render_interim_fields_html(value):
 """.strip()
 
     return u"\n".join([header] + body + [footer])
+
+
+# --------------------------------------------------------------------------
+# 电子签名（maitux.esignature）在审计追踪页面的呈现
+#
+# 21 CFR Part 11 §11.50(b) 要求签名 manifestation 是"电子记录任何人类可读形式"
+# 的组成部分。签名数据一直写在快照的 __metadata__ 里，但原生 SENAITE 的审计
+# 列表没有任何一列去渲染它 —— 记了却从不显示，本身即不满足条款。
+#
+# 这里只读 metadata 的字典键，不 import maitux.esignature：
+# 没装 esignature 的站点取不到键，该列恒为空，不构成反向依赖。
+# --------------------------------------------------------------------------
+
+SIGNATURE_SUMMARY_PREFIX = u"Electronic signature"
+
+
+def parse_signature_summary(text):
+    """解析 esignature 写进 comments 的 "k=v; k=v" 摘要
+
+    这个回落分支是必需的，不是锦上添花：结构化的 metadata["esignature"] 受
+    签名策略的 auditlog_summary_enabled 门控，该开关关掉时字典根本不会写，
+    只剩 DCWorkflow 带过来的这条摘要字符串。
+    """
+    summary = safe_text(text).strip()
+    if not summary.startswith(SIGNATURE_SUMMARY_PREFIX):
+        return None
+
+    data = {}
+    for piece in summary.split(u";"):
+        key, sep, value = piece.strip().partition(u"=")
+        if not sep:
+            continue
+        data[key.strip()] = value.strip()
+    if not data:
+        return None
+
+    return {
+        "signer": data.get(u"first_signer", u""),
+        "countersigner": data.get(u"second_signer", u""),
+        "meaning": data.get(u"meaning", u""),
+        "reason": data.get(u"reason", u""),
+        "require_countersign": data.get(u"countersign_required") == u"yes",
+        "auth_backend": data.get(u"auth_backend", u""),
+    }
+
+
+def signature_from_metadata(esignature):
+    """从结构化的 metadata["esignature"] 取签名信息"""
+    if not isinstance(esignature, dict):
+        return None
+    if not esignature.get("enabled", True):
+        return None
+
+    return {
+        "signer": safe_text(
+            esignature.get("primary_signer_user_id")
+            or esignature.get("initiator_user_id")
+            or esignature.get("user_id")
+        ),
+        "countersigner": safe_text(esignature.get("countersigner_user_id")),
+        "meaning": safe_text(esignature.get("meaning")),
+        "reason": safe_text(esignature.get("reason")),
+        "require_countersign": bool(esignature.get("require_countersign")),
+        "auth_backend": safe_text(esignature.get("auth_backend_id")),
+    }
+
+
+def extract_signature(metadata):
+    """优先取结构化字典，回落到 comments 摘要；都没有则返回 None"""
+    if not isinstance(metadata, dict):
+        return None
+    data = signature_from_metadata(metadata.get("esignature"))
+    if data:
+        return data
+    return parse_signature_summary(metadata.get("comments"))
+
+
+def render_signature_html(data, timestamp=None):
+    """把签名渲染成人类可读的几行；无签名的行返回空串"""
+    if not data:
+        return u""
+
+    lines = []
+
+    def add(label, value):
+        value = safe_text(value).strip()
+        if value:
+            lines.append((label, value))
+
+    # §11.50(a) 要求的三要素：签名人姓名、签署日期时间、签名含义。
+    # 时间与同一行的"修改时间"列同源，这里重复一次是刻意的 ——
+    # manifestation 应当自身完整，不依赖读者去横向对齐别的列。
+    add(u"签名人", data.get("signer"))
+    add(u"签名时间", timestamp)
+    add(u"含义", data.get("meaning"))
+    add(u"原因", data.get("reason"))
+    if data.get("require_countersign"):
+        add(u"复核人", data.get("countersigner") or u"（待复核）")
+    add(u"验证方式", data.get("auth_backend"))
+
+    if not lines:
+        return u""
+
+    rows = [
+        u'<div class="audit-signature-line">'
+        u'<span class="audit-signature-label">{}：</span>'
+        u'<span class="audit-signature-value">{}</span>'
+        u'</div>'.format(safe_html(label), safe_html(value))
+        for label, value in lines
+    ]
+    return u'<div class="audit-signature">{}</div>'.format(u"".join(rows))

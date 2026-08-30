@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """审计追踪增强视图"""
 
+import collections
 import json
 
 import six
@@ -13,13 +14,48 @@ from bika.lims.api.snapshot import get_snapshot_metadata
 from bika.lims.api.snapshot import get_snapshots
 from bika.lims.browser.auditlog import AuditLogView as BaseAuditLogView
 
+from maitux.audittrail.browser.formatter import extract_signature
 from maitux.audittrail.browser.formatter import render_interim_fields_html
+from maitux.audittrail.browser.formatter import render_signature_html
+
+
+SIGNATURE_COLUMN_ID = "esignature"
 
 
 class AuditLogView(BaseAuditLogView):
-    """覆盖原审计追踪页，提升 Interim Fields 的可读性"""
+    """覆盖原审计追踪页，提升 Interim Fields 的可读性并呈现电子签名"""
 
     diff_template = ViewPageTemplateFile("templates/auditlog_diff.pt")
+
+    def __init__(self, context, request):
+        super(AuditLogView, self).__init__(context, request)
+        self.columns = self.add_signature_column(self.columns)
+        # ★ 必须两处都改。基类 __init__ 里是
+        #       "columns": self.columns.keys()
+        #   Python 2 的 .keys() 返回的是列表快照，只往 self.columns 塞新键
+        #   不会传导到这里，列不会出现 —— 静默失败。
+        for review_state in self.review_states:
+            review_state["columns"] = self.columns.keys()
+
+    def add_signature_column(self, columns):
+        """在"工作流状态"之后插入签名列
+
+        刻意不设 toggle：默认可见。21 CFR Part 11 §11.50(b) 要求签名
+        manifestation 是人类可读形式的组成部分，藏进"显示列"里等人勾选不算已呈现。
+        """
+        column = {
+            "title": u"电子签名",
+            "sortable": False,
+        }
+        new_columns = collections.OrderedDict()
+        for key, value in columns.items():
+            new_columns[key] = value
+            if key == "review_state":
+                new_columns[SIGNATURE_COLUMN_ID] = column
+        # 上游若改了列名导致锚点找不到，也要保证这一列存在，只是位置退到最后
+        if SIGNATURE_COLUMN_ID not in new_columns:
+            new_columns[SIGNATURE_COLUMN_ID] = column
+        return new_columns
 
     def is_interim_fields(self, field, value):
         """只对 Calculation/Analysis 的 InterimFields 做结构化展示
@@ -101,6 +137,11 @@ class AuditLogView(BaseAuditLogView):
 
             review_state = metadata.get("review_state")
             item["review_state"] = self.translate_state(review_state)
+
+            # 电子签名：优先取结构化的 metadata["esignature"]，
+            # 回落到 DCWorkflow 带过来的 comments 摘要；无签名的行留空。
+            item[SIGNATURE_COLUMN_ID] = render_signature_html(
+                extract_signature(metadata), timestamp=item["modified"])
 
             prev_snapshot = get_snapshot_by_version(self.context, version - 1)
             if prev_snapshot:
