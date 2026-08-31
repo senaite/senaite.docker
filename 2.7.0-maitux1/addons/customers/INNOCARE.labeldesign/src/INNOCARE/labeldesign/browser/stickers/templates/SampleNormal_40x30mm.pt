@@ -1,0 +1,33 @@
+<tal:sticker define="item python:view.current_item;
+                     sample_id python:getattr(item, 'getId', lambda: '')() or '';
+                     batch_title python:(getattr(item, 'getBatch', None) and getattr(item.getBatch(), 'Title', lambda: '')()) or '';">
+  <div class="label sample-normal">
+    <div class="label-header sample-normal">
+      <span class="label-title">样品标签</span>
+    </div>
+
+    <div class="label-content">
+      <table class="label-table" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="lbl-label">样品编号</td>
+          <td class="lbl-value" tal:content="sample_id">UR-0001</td>
+        </tr>
+        <tr>
+          <td class="lbl-label">物料名称</td>
+          <td class="lbl-value" tal:content="python:getattr(item, 'MaterialName', '') or ''">材料</td>
+        </tr>
+        <tr>
+          <td class="lbl-label">厂家批号</td>
+          <td class="lbl-value" tal:content="batch_title">BATCH-01</td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="qrcode"
+         data-size="32"
+         data-render="image"
+         data-quiet="0"
+         tal:attributes="data-text python:sample_id">
+    </div>
+  </div>
+</tal:sticker>

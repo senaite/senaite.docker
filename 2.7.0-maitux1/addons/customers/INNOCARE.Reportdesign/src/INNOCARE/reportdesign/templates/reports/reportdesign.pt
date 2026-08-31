@@ -1,0 +1,293 @@
+<tal:print
+  i18n:domain="INNOCARE.Reportdesign"
+  tal:define="S                python:lambda v,d=u'': (d if (v is None or v==u'' or v=='') else (v if isinstance(v,unicode) else (v.decode('utf-8','ignore') if isinstance(v,str) else unicode(v))));
+              T                python:lambda o,d=u'': (d if o is None else (lambda vv,dd=u'': (dd if (vv is None or vv==u'' or vv=='') else (vv if isinstance(vv,unicode) else (vv.decode('utf-8','ignore') if isinstance(vv,str) else unicode(vv)))))(((o.Title() if (hasattr(o,'Title') and callable(o.Title) and o.Title()) else getattr(o,'title',None)) if (hasattr(o,'Title') and callable(o.Title)) else getattr(o,'title',None)),d));
+              FMTDT            python:lambda d,fmt,dflt=u'': (dflt if d is None else (unicode(d.strftime(fmt)) if (hasattr(d,'strftime') and callable(d.strftime)) else (lambda vv,dd=u'': (dd if (vv is None or vv==u'' or vv=='') else (vv if isinstance(vv,unicode) else (vv.decode('utf-8','ignore') if isinstance(vv,str) else unicode(vv)))))(d,dflt)));
+              VG_NORM          python:lambda v: ([] if not v else (list(v) if isinstance(v,(list,tuple)) else ([v] if isinstance(v,(str,unicode)) and (v is not None and v!=u'' and v!='') else [])));
+CTX              python:context;
+              cmf_mod          python:__import__('Products.CMFCore.utils', fromlist=['getToolByName']);
+              dt_mod           python:__import__('DateTime');
+              is_ar            python:(True if (hasattr(CTX,'getAnalyses') and callable(CTX.getAnalyses) and hasattr(CTX,'getClientReference') and callable(CTX.getClientReference)) else False);
+              ar               python:(CTX if is_ar else None);
+              portal           python:CTX.portal_url.getPortalObject();
+              portal_url       python:portal.absolute_url();
+              pm               python:cmf_mod.getToolByName(CTX, 'portal_membership');
+
+              ar_id_raw        python:((ar.getId() if (ar is not None and hasattr(ar,'getId') and callable(ar.getId)) else getattr(ar,'id',u'')) or u'') if ar else u'';
+              ar_id            python:S(ar_id_raw, u'N/A');
+              client_ref_raw   python:(((ar.getClientReference() if (ar is not None and hasattr(ar,'getClientReference') and callable(ar.getClientReference)) else u'') or ar_id) if ar else u'');
+              client_ref       python:S(client_ref_raw, u'N/A');
+              ar_title         python:(client_ref or ar_id);
+              ar_url           python:((ar.absolute_url() if (ar is not None and hasattr(ar,'absolute_url') and callable(ar.absolute_url)) else u'') if ar else portal_url);
+              logo_url         python:portal_url + '/maitu-logo-png';
+              portal_title     python:T(portal, u'Laboratory');
+
+              creator_id_raw   python:(((ar.Creator() if (ar is not None and hasattr(ar,'Creator') and callable(ar.Creator)) else getattr(ar,'Creator',u'')) or u'') if ar else u'');
+              creator_id       python:S(creator_id_raw);
+              creator_mem      python:(pm.getMemberById(creator_id) if (creator_id and pm is not None and hasattr(pm,'getMemberById') and callable(pm.getMemberById)) else None);
+              creator_fn_raw   python:(creator_mem.getProperty('fullname') if (creator_mem is not None and hasattr(creator_mem,'getProperty') and callable(creator_mem.getProperty)) else u'');
+              creator_fn       python:(S(creator_fn_raw) or u'admin');
+              creator_em_raw   python:(creator_mem.getProperty('email') if (creator_mem is not None and hasattr(creator_mem,'getProperty') and callable(creator_mem.getProperty)) else u'');
+              creator_em       python:S(creator_em_raw);
+              created_obj      python:((ar.created() if (ar is not None and hasattr(ar,'created') and callable(ar.created)) else None) or getattr(ar,'creation_date', None) if ar else None);
+              created_str      python:FMTDT(created_obj, '%Y-%m-%d %H:%M', u'');
+
+              printedby_id_raw python:(pm.getAuthenticatedMember().getId() if (pm is not None and hasattr(pm,'getAuthenticatedMember') and callable(pm.getAuthenticatedMember)) else u'');
+              printedby_id     python:S(printedby_id_raw or u'');
+              printedby_mem    python:(pm.getMemberById(printedby_id) if (printedby_id and pm is not None and hasattr(pm,'getMemberById') and callable(pm.getMemberById)) else None);
+              printedby_fn_raw python:(printedby_mem.getProperty('fullname') if (printedby_mem is not None and hasattr(printedby_mem,'getProperty') and callable(printedby_mem.getProperty)) else u'');
+              printedby_fn     python:(S(printedby_fn_raw) or u'admin');
+              printedby_em_raw python:(printedby_mem.getProperty('email') if (printedby_mem is not None and hasattr(printedby_mem,'getProperty') and callable(printedby_mem.getProperty)) else u'');
+              printedby_em     python:S(printedby_em_raw);
+              printed_str      python:FMTDT(dt_mod.DateTime(), '%Y-%m-%d %H:%M', u'');
+
+              analyst_id_raw   python:(((ar.getAnalyst() if (ar is not None and hasattr(ar,'getAnalyst') and callable(ar.getAnalyst)) else getattr(ar,'Analyst',u'')) or u'') if ar else u'');
+              analyst_id       python:S(analyst_id_raw);
+              analyst_mem      python:(pm.getMemberById(analyst_id) if (analyst_id and pm is not None and hasattr(pm,'getMemberById') and callable(pm.getMemberById)) else None);
+              analyst_fn_raw   python:(analyst_mem.getProperty('fullname') if (analyst_mem is not None and hasattr(analyst_mem,'getProperty') and callable(analyst_mem.getProperty)) else u'');
+              analyst_fn       python:(S(analyst_fn_raw) or printedby_fn);
+              analyst_em_raw   python:(analyst_mem.getProperty('email') if (analyst_mem is not None and hasattr(analyst_mem,'getProperty') and callable(analyst_mem.getProperty)) else u'');
+              analyst_em       python:(S(analyst_em_raw) or printedby_em);
+
+              analyses_objects python:((ar.getAnalyses(full_objects=True) if (ar is not None and hasattr(ar,'getAnalyses') and callable(ar.getAnalyses)) else []) if ar else []);
+              _INSTR_TITLE     python:lambda a: T((a.getInstrument() if (hasattr(a,'getInstrument') and callable(a.getInstrument)) else None), u'');
+              INSTR_RAW        python:[S(_INSTR_TITLE(a)) for a in (analyses_objects or [])];
+              INSTR_CLEAN      python:[t for t in INSTR_RAW if t not in (u'', None, '')];
+              instruments      python:u', '.join(sorted(set(INSTR_CLEAN)));
+
+              WLIST            python:lambda a: (list(a.getBackReferences('WorksheetAnalysis')) if (hasattr(a,'getBackReferences') and callable(a.getBackReferences)) else ([a.getWorksheet()] if (hasattr(a,'getWorksheet') and callable(a.getWorksheet) and a.getWorksheet() is not None) else []));
+              WSUID            python:lambda w: ((w.UID() if (hasattr(w,'UID') and callable(w.UID)) else u'') or (w.getId() if (hasattr(w,'getId') and callable(w.getId)) else getattr(w,'id',u'')) or unicode(id(w)));
+              reviewerfull     python:u'';
+              ADICT            python:lambda a,i: {'obj':a,'position':i,'title':(S(a.Title() if (hasattr(a,'Title') and callable(a.Title)) else getattr(a,'title',u'Unnamed')) or u'Unnamed'),'keyword':S(a.getKeyword() if (hasattr(a,'getKeyword') and callable(a.getKeyword)) else getattr(a,'keyword',u'')),'formatted_result':(S(a.getFormattedResult() if (hasattr(a,'getFormattedResult') and callable(a.getFormattedResult)) else u'') or S((unicode(a.getResult()) if (hasattr(a,'getResult') and callable(a.getResult) and a.getResult() is not None) else u'')) or u''),'formatted_unit':(S(a.getFormattedUnit() if (hasattr(a,'getFormattedUnit') and callable(a.getFormattedUnit)) else u'') or S((unicode(a.getUnit()) if (hasattr(a,'getUnit') and callable(a.getUnit()) and a.getUnit() is not None) else u''))),'formatted_specs':(S(a.getFormattedSpecs() if (hasattr(a,'getFormattedSpecs') and callable(a.getFormattedSpecs)) else u'') or S((unicode(a.getSpecification()) if (hasattr(a,'getSpecification') and callable(a.getSpecification()) and a.getSpecification() is not None) else u'')) or u''),'formatted_uncertainty':S(a.getFormattedUncertainty() if (hasattr(a,'getFormattedUncertainty') and callable(a.getFormattedUncertainty)) else u''),'review_state':(S(a.getReviewState() if (hasattr(a,'getReviewState') and callable(a.getReviewState)) else getattr(a,'review_state',u'assigned')) or u'assigned'),'remarks':S(a.getRemarks() if (hasattr(a,'getRemarks') and callable(a.getRemarks)) else u''),'retested':(True if (getattr(a,'retested',False) in (True,1,'1','true','True')) else False)};
+              analyses_dicts   python:[ADICT(a, i+1) for i, a in enumerate(analyses_objects)];
+              ws_creator_fn    python:(creator_fn or printedby_fn);
+              pseudo_obj       python:{'id':ar_title,'url':ar_url,'laboratory':{'url':portal_url,'title':portal_title},'portal':{'url':portal_url},'obj':(ar if ar else CTX),'date_created':created_str,'createdby':{'email':(creator_em or printedby_em),'fullname':ws_creator_fn},'date_printed':printed_str,'printedby':{'email':printedby_em,'fullname':printedby_fn},'analyst':{'email':analyst_em,'fullname':analyst_fn},'remarks':u'','ars':[{'position':1,'id':ar_title,'obj':(ar if ar else CTX),'analyses':analyses_dicts}]};
+              ws_candidates    python:[w for a in (analyses_objects or []) for w in WLIST(a) if w is not None];
+              ws_index         python:dict([(WSUID(w), w) for w in ws_candidates if w is not None]);
+              ws_pairs         python:[(((w.created() if (hasattr(w,'created') and callable(w.created)) else None) or getattr(w,'creation_date',None)), w) for w in ws_index.values()];
+              ws_pairs2        python:[((FMTDT(p[0], '%Y%m%d%H%M%S', u'00000000000000') or u'00000000000000'), p[1]) for p in ws_pairs];
+              ws_obj           python:(sorted(ws_pairs2, reverse=True)[0][1] if ws_pairs2 else None);
+              ws_id            python:(S((ws_obj.getId() if (ws_obj is not None and hasattr(ws_obj,'getId') and callable(ws_obj.getId)) else u'')) or pseudo_obj['id']);
+              ws_url           python:(S((ws_obj.absolute_url() if (ws_obj is not None and hasattr(ws_obj,'absolute_url') and callable(ws_obj.absolute_url)) else u'')) or pseudo_obj['url']);
+              ws_lab_obj       python:((ws_obj.getLaboratory() if (ws_obj is not None and hasattr(ws_obj,'getLaboratory') and callable(ws_obj.getLaboratory)) else None) if ws_obj is not None else None);
+              ws_lab_url       python:(S((ws_lab_obj.absolute_url() if (ws_lab_obj is not None and hasattr(ws_lab_obj,'absolute_url') and callable(ws_lab_obj.absolute_url)) else u'')) or pseudo_obj['laboratory']['url']);
+              ws_lab_title     python:(T(ws_lab_obj, u'') or pseudo_obj['laboratory']['title']);
+              ws_created_obj   python:(((ws_obj.created() if (ws_obj is not None and hasattr(ws_obj,'created') and callable(ws_obj.created)) else None) or getattr(ws_obj,'creation_date',None)) if ws_obj is not None else None);
+              ws_created_str   python:(FMTDT(ws_created_obj, '%Y-%m-%d %H:%M', u'') or pseudo_obj['date_created']);
+              ws_creator_id    python:(S(((ws_obj.Creator() if (ws_obj is not None and hasattr(ws_obj,'Creator') and callable(ws_obj.Creator)) else getattr(ws_obj,'creator',u'')) if ws_obj is not None else u'')) or creator_id);
+              ws_creator_mem   python:(pm.getMemberById(ws_creator_id) if (ws_creator_id and pm is not None and hasattr(pm,'getMemberById') and callable(pm.getMemberById)) else (creator_mem or printedby_mem));
+              ws_creator_name  python:(S((ws_creator_mem.getProperty('fullname') if (ws_creator_mem is not None and hasattr(ws_creator_mem,'getProperty') and callable(ws_creator_mem.getProperty)) else u'')) or ws_creator_fn);
+              ws_creator_mail  python:(S((ws_creator_mem.getProperty('email') if (ws_creator_mem is not None and hasattr(ws_creator_mem,'getProperty') and callable(ws_creator_mem.getProperty)) else u'')) or creator_em or printedby_em);
+              ws_analyst_id    python:(S(((ws_obj.getAnalyst() if (ws_obj is not None and hasattr(ws_obj,'getAnalyst') and callable(ws_obj.getAnalyst)) else getattr(ws_obj,'Analyst',u'')) if ws_obj is not None else u'')) or analyst_id);
+              ws_analyst_mem   python:(pm.getMemberById(ws_analyst_id) if (ws_analyst_id and pm is not None and hasattr(pm,'getMemberById') and callable(pm.getMemberById)) else analyst_mem);
+              ws_analyst_name  python:(S((ws_analyst_mem.getProperty('fullname') if (ws_analyst_mem is not None and hasattr(ws_analyst_mem,'getProperty') and callable(ws_analyst_mem.getProperty)) else u'')) or analyst_fn or printedby_fn);
+              ws_analyst_mail  python:(S((ws_analyst_mem.getProperty('email') if (ws_analyst_mem is not None and hasattr(ws_analyst_mem,'getProperty') and callable(ws_analyst_mem.getProperty)) else u'')) or analyst_em or printedby_em);
+              reviewerid       python:(S(getattr((ws_obj if ws_obj is not None else (ar if ar is not None else CTX)), 'reviewer_userid', u'')) or u'');
+              reviewer_mem     python:(pm.getMemberById(reviewerid) if (reviewerid and pm is not None and hasattr(pm,'getMemberById') and callable(pm.getMemberById)) else None);
+              reviewerfull     python:((S((reviewer_mem.getProperty('fullname') if (reviewer_mem is not None and hasattr(reviewer_mem,'getProperty') and callable(reviewer_mem.getProperty)) else u'')) or reviewerid) if reviewerid else u'');
+              ws_remarks       python:(S((ws_obj.getRemarks() if (ws_obj is not None and hasattr(ws_obj,'getRemarks') and callable(ws_obj.getRemarks)) else getattr(ws_obj,'Remarks',u''))) if ws_obj is not None else pseudo_obj['remarks']);
+              ws_ar_list       python:((list(ws_obj.getAnalysisRequests()) if (ws_obj is not None and hasattr(ws_obj,'getAnalysisRequests') and callable(ws_obj.getAnalysisRequests)) else []) if ws_obj is not None else []);
+              ws_ar_ids        python:[S((x.getId() if (hasattr(x,'getId') and callable(x.getId)) else getattr(x,'id',u''))) for x in ws_ar_list];
+              ws_position      python:((ws_ar_ids.index(ar_id) + 1) if (ar_id in ws_ar_ids) else 1);
+              worksheet        python:{'id':ws_id,'url':ws_url,'laboratory':{'url':ws_lab_url,'title':ws_lab_title},'portal':{'url':portal_url},'obj':(ws_obj if ws_obj is not None else (ar if ar else CTX)),'date_created':ws_created_str,'createdby':{'email':ws_creator_mail,'fullname':ws_creator_name},'date_printed':printed_str,'printedby':{'email':printedby_em,'fullname':printedby_fn},'analyst':{'email':ws_analyst_mail,'fullname':ws_analyst_name},'remarks':ws_remarks,'ars':[{'position':ws_position,'id':ar_title,'obj':(ar if ar else CTX),'analyses':analyses_dicts}]};
+              laboratory       python:worksheet['laboratory'];
+              ars              python:worksheet['ars'];">
+  <div id="header">
+    <div class="barcode-container">
+      <div class="report-qrcode"
+           data-size="128"
+           data-render="image"
+           data-quiet="4"
+           tal:attributes="data-text python:worksheet['id']"></div>
+    </div>
+    <div class="lab-logo">
+      <a tal:attributes="href python:laboratory['url']">
+        <img height="25" tal:attributes="src python:logo_url"/>
+      </a>
+    </div>
+    <h1>
+      <a tal:attributes="href python:worksheet['url']"
+         tal:content="python:worksheet['id']"></a>
+    </h1>
+  </div>
+
+  <div class="subheader">
+    <div>
+      <span i18n:translate="">Created on</span>&nbsp;
+      <span tal:content="python:worksheet['date_created']"></span>&nbsp;
+      <span i18n:translate="">by</span>&nbsp;
+      <a tal:attributes="href python:('mailto:%s' % worksheet['createdby']['email'])"
+         tal:content="python:worksheet['createdby']['fullname']"></a>
+    </div>
+    <div>
+      <span i18n:translate="">Printed on</span>&nbsp;
+      <span tal:content="python:worksheet['date_printed']"></span>&nbsp;
+      <span i18n:translate="">by</span>&nbsp;
+      <a tal:attributes="href python:('mailto:%s' % worksheet['printedby']['email'])"
+         tal:content="python:worksheet['printedby']['fullname']"></a>
+    </div>
+    <div>
+      <span i18n:translate="">Analysed by</span>:&nbsp;
+      <a tal:attributes="href python:('mailto:%s' % worksheet['analyst']['email'])"
+         tal:content="python:worksheet['analyst']['fullname']"></a>
+    </div>
+    <div>
+      <span>审核人</span>:&nbsp;
+      <span tal:content="reviewerfull"></span>
+    </div>
+    <div>
+      <span>仪器</span>:&nbsp;
+      <span tal:content="instruments"></span>
+    </div>
+  </div>
+
+  <div class="content">
+    <tal:grp repeat="ws_ar ars">
+      <div class="ar-group">
+        <div class="ar-header">
+          <span class="badge" tal:content="python:ws_ar['position']"></span>
+          <span class="ar-id" tal:content="python:ws_ar['id']"></span>
+        </div>
+
+        <tal:anarep repeat="an python:ws_ar['analyses']">
+
+          <tal:block tal:define="aobj python:an['obj'];
+                                 raw_interims python:(aobj.getInterimFields() if (aobj is not None and hasattr(aobj,'getInterimFields') and callable(aobj.getInterimFields)) else []);
+                                 interims python:[f for f in raw_interims if not f.get('hidden')];
+                                 ipairs python:[(S(f.get('title') or f.get('keyword') or u''), f.get('value')) for f in interims];
+                                 sfields python:[(r[0], (S(r[1]) if not isinstance(r[1], list) else u', '.join([S(x) for x in r[1]]))) for r in ipairs if (r[1] is not None and r[1] not in (u'', None, '') and not isinstance(r[1], list))];
+                                 lfields python:[(r[0], r[1]) for r in ipairs if isinstance(r[1], list) and any([(S(x) if x not in (None,u'','') else u'') for x in r[1]])];
+                                 hasgrid python:len(lfields) &gt;= 1;
+                                 ncols python:len(lfields);
+                                 pcount python:(max([len(r[1]) for r in lfields]) if lfields else 0);
+                                 state python:S(an.get('review_state'));
+                                 res_class python:u'result ' + state;">
+
+            <tal:simple condition="python:not hasgrid">
+              <table class="test-block">
+                <tr class="test-head">
+                  <td class="pos" tal:content="python:an['position']"></td>
+                  <td class="title">
+                    <span tal:content="python:an['title']"></span>
+                    <span class="retested" tal:condition="python:an['retested']" i18n:translate=""> (retested)</span>
+                  </td>
+                </tr>
+                <tal:eachs repeat="s sfields">
+                  <tr class="interim-row">
+                    <td class="ilabel" tal:content="python:s[0]"></td>
+                    <td class="ivalue" tal:content="python:s[1]"></td>
+                  </tr>
+                </tal:eachs>
+                <tr class="result-row">
+                  <td class="rlabel" i18n:translate="">Result</td>
+                  <td>
+                    <span tal:attributes="class res_class">
+                      <span tal:content="python:an.get('formatted_result') or u''">&nbsp;</span>
+                    </span>
+                    <span class="rmeta">
+                      <span tal:condition="python:S(an.get('formatted_unit'))">
+                        <span i18n:translate="">Unit</span>: <span tal:content="python:an.get('formatted_unit')"></span>
+                      </span>
+                      <span tal:condition="python:S(an.get('formatted_uncertainty'))">
+                        <span i18n:translate="">+/-</span>: <span tal:content="python:an.get('formatted_uncertainty')"></span>
+                      </span>
+                      <span tal:condition="python:S(an.get('formatted_specs'))">
+                        <span i18n:translate="">Specification</span>: <span tal:content="python:an.get('formatted_specs')"></span>
+                      </span>
+                    </span>
+                  </td>
+                </tr>
+                <tr class="remarks-row" tal:condition="python:S(an.get('remarks'))">
+                  <td class="remarks" colspan="2">
+                    <span i18n:translate="">Remarks</span>: <span tal:content="python:an.get('remarks')"></span>
+                  </td>
+                </tr>
+              </table>
+            </tal:simple>
+
+            <tal:withgrid condition="python:hasgrid">
+              <table class="test-block transposed">
+                <colgroup>
+                  <col style="width:12mm"/>
+                  <col tal:repeat="c lfields" style="width:auto"/>
+                </colgroup>
+                <thead>
+                  <tr class="test-head">
+                    <td class="pos" tal:content="python:an['position']"></td>
+                    <td class="title" tal:attributes="colspan python:ncols">
+                      <span tal:content="python:an['title']"></span>
+                      <span class="retested" tal:condition="python:an['retested']" i18n:translate=""> (retested)</span>
+                    </td>
+                  </tr>
+                  <tr class="cols-head">
+                    <td class="icol"><span i18n:translate="">#</span></td>
+                    <td class="ih" tal:repeat="a lfields" tal:content="python:a[0]"></td>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tal:posloop tal:repeat="p python:range(pcount)">
+                    <tr class="interim-row">
+                      <td class="icol" tal:content="python:p + 1"></td>
+                      <td class="ivalue" tal:repeat="a lfields"
+                          tal:content="python:(a[1][p] if ((p &lt; len(a[1])) and (a[1][p] is not None)) else u'')"></td>
+                    </tr>
+                  </tal:posloop>
+                  <tal:eachs2 repeat="s sfields">
+                    <tr class="interim-row">
+                      <td class="ilabel" tal:content="python:s[0]"></td>
+                      <td class="ivalue" tal:attributes="colspan python:ncols" tal:content="python:s[1]"></td>
+                    </tr>
+                  </tal:eachs2>
+                  <tr class="result-row">
+                    <td class="rlabel" i18n:translate="">Result</td>
+                    <td tal:attributes="colspan python:ncols">
+                      <span tal:attributes="class res_class">
+                        <span tal:content="python:an.get('formatted_result') or u''">&nbsp;</span>
+                      </span>
+                      <span class="rmeta">
+                        <span tal:condition="python:S(an.get('formatted_unit'))">
+                          <span i18n:translate="">Unit</span>: <span tal:content="python:an.get('formatted_unit')"></span>
+                        </span>
+                        <span tal:condition="python:S(an.get('formatted_uncertainty'))">
+                          <span i18n:translate="">+/-</span>: <span tal:content="python:an.get('formatted_uncertainty')"></span>
+                        </span>
+                        <span tal:condition="python:S(an.get('formatted_specs'))">
+                          <span i18n:translate="">Specification</span>: <span tal:content="python:an.get('formatted_specs')"></span>
+                        </span>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr tal:condition="python:S(an.get('remarks'))" class="remarks-row">
+                    <td class="remarks" tal:attributes="colspan python:ncols + 1">
+                      <span i18n:translate="">Remarks</span>: <span tal:content="python:an.get('remarks')"></span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </tal:withgrid>
+          </tal:block>
+        </tal:anarep>
+      </div>
+    </tal:grp>
+
+    <div id="footer" tal:condition="python:S(worksheet.get('remarks'))">
+      <div>
+        <span i18n:translate="">Remarks</span>:
+        <span tal:content="python:worksheet.get('remarks')"></span>
+      </div>
+    </div>
+  </div>
+
+  <script type="text/javascript">
+    (function ($) {
+      function renderReportQR() {
+        $(".report-qrcode").each(function () {
+          var $el = $(this);
+          var text = ($el.data("text") || "no text").toString();
+          $el.empty().qrcode({render:"image", size:128, quiet:4, text:text});
+        });
+      }
+      if (window.jQuery && $.fn.qrcode) renderReportQR();
+    })(window.jQuery);
+  </script>
+</tal:print>

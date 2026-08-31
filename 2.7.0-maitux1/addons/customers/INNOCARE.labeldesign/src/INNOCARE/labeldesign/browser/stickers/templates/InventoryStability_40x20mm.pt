@@ -3,9 +3,9 @@
                      batch_id python:(getattr(item, 'getBatchID', None) and item.getBatchID()) or (getattr(item, 'getId', None) and item.getId()) or '';">
   <div class="label inv-stability">
     <div class="qrcode"
-         data-size="48"
+         data-size="32"
          data-render="image"
-         data-quiet="2"
+         data-quiet="0"
          tal:attributes="data-text python:batch_id">
     </div>
     <div class="label-header inv-stability">

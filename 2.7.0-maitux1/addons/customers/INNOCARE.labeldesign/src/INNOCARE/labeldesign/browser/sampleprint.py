@@ -51,7 +51,7 @@ class SampleLabelPrintView(BrowserView):
 
     def _get_templates_dir(self, prefix):
         templates_dir = queryResourceDirectory("stickers", prefix).directory
-        return os.path.join(templates_dir, "sample")
+        return templates_dir
 
     def get_selected_template_css(self):
         template = self.get_selected_template()
