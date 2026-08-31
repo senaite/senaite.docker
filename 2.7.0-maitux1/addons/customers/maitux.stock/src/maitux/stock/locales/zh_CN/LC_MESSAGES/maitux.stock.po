@@ -1,0 +1,531 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: maitux.stock\n"
+"POT-Creation-Date: 2026-08-20 00:00+0000\n"
+"PO-Revision-Date: 2026-08-20 00:00+0000\n"
+"Last-Translator: Admin <admin@example.com>\n"
+"Language-Team: zh_CN <admin@example.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"Language-Code: zh_CN\n"
+"Language-Name: Simplified Chinese\n"
+"Preferred-Encodings: utf-8 latin1\n"
+"Domain: maitux.stock\n"
+
+msgid "Actual Amount"
+msgstr "实际数量"
+
+msgid "Add new batch"
+msgstr "新增批次"
+
+msgid "Add row"
+msgstr "新增行"
+
+msgid "Back"
+msgstr "返回"
+
+msgid "Base Information"
+msgstr "基本信息"
+
+msgid "Batch"
+msgstr "批次"
+
+msgid "Batch Details"
+msgstr "批次详情"
+
+msgid "Batch ID"
+msgstr "批次编号"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Changes applied."
+msgstr "更改已应用。"
+
+msgid "Changes saved."
+msgstr "更改已保存。"
+
+msgid "Consume Stock Batches"
+msgstr "批次领用"
+
+msgid "Consume failed. All changes have been rolled back."
+msgstr "领用失败，所有更改已回滚。"
+
+msgid "Create to batch"
+msgstr "分装至已有批次"
+
+msgid "Created By"
+msgstr "创建人"
+
+msgid "Created Date"
+msgstr "创建时间"
+
+msgid "Current"
+msgstr "当前"
+
+msgid "Current / Target / Unit"
+msgstr "当前 / 目标 / 单位"
+
+msgid "Current Amount"
+msgstr "当前数量"
+
+msgid "Current Amount / Unit"
+msgstr "当前数量 / 单位"
+
+msgid "Description"
+msgstr "说明"
+
+msgid "Destroy"
+msgstr "销毁"
+
+msgid "Destroy Stock Batches"
+msgstr "批次销毁"
+
+msgid "Expiry Date"
+msgstr "有效期至"
+
+msgid "From Batch"
+msgstr "来源批次"
+
+msgid "Go Back"
+msgstr "返回"
+
+msgid "Item ID"
+msgstr "物料编号"
+
+msgid "Location"
+msgstr "存储位置"
+
+msgid "Location (for new batch)"
+msgstr "存储位置（新批次）"
+
+msgid "Low Quantity"
+msgstr "低库存"
+
+msgid "Low Quantity Threshold"
+msgstr "低量阈值"
+
+msgid "Max Return"
+msgstr "最大归还数量"
+
+msgid "Name"
+msgstr "名称"
+
+msgid "No active batches selected"
+msgstr "未选择有效批次"
+
+msgid "No changes made (no permission to modify selected batches)."
+msgstr "未做任何更改（没有修改所选批次的权限）。"
+
+msgid "No changes made."
+msgstr "未做任何更改。"
+
+msgid "No eligible target batch found (same stock and not expired or destroyed)."
+msgstr "未找到符合条件的目标批次（同库存且未过期或未销毁）。"
+
+msgid "No items selected"
+msgstr "未选择条目"
+
+msgid "No items selected."
+msgstr "未选择条目。"
+
+msgid "No records"
+msgstr "无记录"
+
+msgid "Not a Stock Manager."
+msgstr "不是库存管理员。"
+
+msgid "Operation Date"
+msgstr "操作时间"
+
+msgid "Operation Type"
+msgstr "操作类型"
+
+msgid "Operator"
+msgstr "操作人"
+
+msgid "Print Labels"
+msgstr "打印标签"
+
+msgid "Print PDF"
+msgstr "打印 PDF"
+
+msgid "Purchase Orders"
+msgstr "采购订单"
+
+msgid "Quantity"
+msgstr "数量"
+
+msgid "Remarks"
+msgstr "备注"
+
+msgid "Return"
+msgstr "归还"
+
+msgid "Return Stock Batches"
+msgstr "批次归还"
+
+msgid "Save"
+msgstr "保存"
+
+msgid "Selected batches do not support this action."
+msgstr "所选批次不支持此操作。"
+
+msgid "Split Stock Batch"
+msgstr "批次分装"
+
+msgid "Status"
+msgstr "状态"
+
+msgid "Stock"
+msgstr "库存"
+
+msgid "Stock Batches"
+msgstr "库存批次"
+
+msgid "Stock Item"
+msgstr "库存物品"
+
+msgid "Stock Number"
+msgstr "库存编号"
+
+msgid "Stock Type"
+msgstr "库存类型"
+
+msgid "Stock Types"
+msgstr "库存类型"
+
+msgid "Stockinventory"
+msgstr "库存管理"
+
+msgid "Stocktake Batches"
+msgstr "批次盘存"
+
+msgid "Storage Location"
+msgstr "存储位置"
+
+msgid "Supplier"
+msgstr "供应商"
+
+msgid "Target Quantity"
+msgstr "目标数量"
+
+msgid "Target batch"
+msgstr "目标批次"
+
+msgid "Template"
+msgstr "模板"
+
+msgid "Type"
+msgstr "类型"
+
+msgid "Unit"
+msgstr "单位"
+
+msgid "Units"
+msgstr "单位"
+
+msgid "Usage Records"
+msgstr "使用记录"
+
+msgid "batch_block_destroyed"
+msgstr "批次已销毁"
+
+msgid "batch_block_expired"
+msgstr "批次已过期，只能销毁"
+
+msgid "batches are low on quantity:"
+msgstr "个批次库存不足："
+
+msgid "listing_action_consume"
+msgstr "领用"
+
+msgid "listing_action_destroy"
+msgstr "销毁"
+
+msgid "listing_action_print"
+msgstr "打印标签"
+
+msgid "listing_action_return"
+msgstr "归还"
+
+msgid "listing_action_split"
+msgstr "分装"
+
+msgid "listing_action_stocktake"
+msgstr "盘存"
+
+msgid "listing_lowstock_column_below_by"
+msgstr "缺口数量"
+
+msgid "listing_lowstock_column_threshold"
+msgstr "阈值"
+
+msgid "listing_lowstock_title"
+msgstr "低库存"
+
+msgid "listing_po_column_number"
+msgstr "采购订单号"
+
+msgid "listing_po_column_order_date"
+msgstr "下单日期"
+
+msgid "listing_po_column_order_lines"
+msgstr "订单行"
+
+msgid "listing_po_column_purchaser"
+msgstr "采购人"
+
+msgid "listing_po_column_remarks"
+msgstr "备注"
+
+msgid "listing_po_column_status"
+msgstr "状态"
+
+msgid "listing_po_fieldset_base_info"
+msgstr "基本信息"
+
+msgid "listing_po_fieldset_order_details"
+msgstr "订单明细"
+
+msgid "listing_po_line_column_batch"
+msgstr "批次"
+
+msgid "listing_po_line_column_batch_number"
+msgstr "批次号"
+
+msgid "listing_po_line_column_quantity_ordered"
+msgstr "订购数量"
+
+msgid "listing_po_line_column_stock"
+msgstr "库存"
+
+msgid "listing_po_line_column_supplier"
+msgstr "供应商"
+
+msgid "listing_po_line_column_tax_rate"
+msgstr "税率"
+
+msgid "listing_po_line_column_unit"
+msgstr "单位"
+
+msgid "listing_po_line_column_unit_price"
+msgstr "单价"
+
+msgid "listing_purchaseorders_action_add"
+msgstr "新增"
+
+msgid "listing_purchaseorders_column_date"
+msgstr "下单日期"
+
+msgid "listing_purchaseorders_column_number"
+msgstr "订单号"
+
+msgid "listing_purchaseorders_column_purchaser"
+msgstr "采购人"
+
+msgid "listing_purchaseorders_column_status"
+msgstr "状态"
+
+msgid "listing_purchaseorders_title"
+msgstr "采购订单"
+
+msgid "listing_state_active"
+msgstr "启用"
+
+msgid "listing_state_all"
+msgstr "全部"
+
+msgid "listing_state_destroyed"
+msgstr "已销毁"
+
+msgid "listing_state_expired"
+msgstr "已过期"
+
+msgid "listing_state_inactive"
+msgstr "停用"
+
+msgid "listing_stockbatch_column_batch"
+msgstr "批次"
+
+msgid "listing_stockbatch_column_batch_id"
+msgstr "批次编号"
+
+msgid "listing_stockbatch_column_created_by"
+msgstr "创建人"
+
+msgid "listing_stockbatch_column_created_date"
+msgstr "创建时间"
+
+msgid "listing_stockbatch_column_current_amount"
+msgstr "当前数量"
+
+msgid "listing_stockbatch_column_description"
+msgstr "说明"
+
+msgid "listing_stockbatch_column_expiry_date"
+msgstr "有效期至"
+
+msgid "listing_stockbatch_column_location"
+msgstr "存储位置"
+
+msgid "listing_stockbatch_column_low_quantity_threshold"
+msgstr "低量阈值"
+
+msgid "listing_stockbatch_column_status"
+msgstr "状态"
+
+msgid "listing_stockbatch_column_stock"
+msgstr "库存"
+
+msgid "listing_stockbatch_column_supplier"
+msgstr "供应商"
+
+msgid "listing_stockbatch_column_target_quantity"
+msgstr "目标数量"
+
+msgid "listing_stockbatch_column_unit"
+msgstr "单位"
+
+msgid "listing_stockbatch_column_usage_records"
+msgstr "使用记录"
+
+msgid "listing_stockbatch_fieldset_batch_details"
+msgstr "批次详情"
+
+msgid "listing_stockbatch_fieldset_usage"
+msgstr "使用记录"
+
+msgid "listing_stockbatch_usage_column_from_batch"
+msgstr "来源批次"
+
+msgid "listing_stockbatch_usage_column_operation_date"
+msgstr "操作时间"
+
+msgid "listing_stockbatch_usage_column_operation_type"
+msgstr "操作类型"
+
+msgid "listing_stockbatch_usage_column_operator"
+msgstr "操作人"
+
+msgid "listing_stockbatch_usage_column_quantity"
+msgstr "数量"
+
+msgid "listing_stockbatch_usage_column_remarks"
+msgstr "备注"
+
+msgid "listing_stockbatches_action_add"
+msgstr "新增"
+
+msgid "listing_stockbatches_column_batch_id"
+msgstr "批次编号"
+
+msgid "listing_stockbatches_column_created_by"
+msgstr "创建人"
+
+msgid "listing_stockbatches_column_created_date"
+msgstr "创建时间"
+
+msgid "listing_stockbatches_column_current_amount"
+msgstr "当前数量"
+
+msgid "listing_stockbatches_column_expiry_date"
+msgstr "有效期至"
+
+msgid "listing_stockbatches_column_status"
+msgstr "状态"
+
+msgid "listing_stockbatches_column_stock"
+msgstr "库存"
+
+msgid "listing_stockbatches_column_supplier"
+msgstr "供应商"
+
+msgid "listing_stockbatches_column_target_quantity"
+msgstr "目标数量"
+
+msgid "listing_stockbatches_column_unit"
+msgstr "单位"
+
+msgid "listing_stockbatches_title"
+msgstr "库存批次"
+
+msgid "listing_stockitems_action_add"
+msgstr "新增"
+
+msgid "listing_stockitems_column_expiry"
+msgstr "有效期至"
+
+msgid "listing_stockitems_column_location"
+msgstr "存储位置"
+
+msgid "listing_stockitems_column_name"
+msgstr "名称"
+
+msgid "listing_stockitems_column_number"
+msgstr "编号"
+
+msgid "listing_stockitems_column_quantity"
+msgstr "数量"
+
+msgid "listing_stockitems_column_supplier"
+msgstr "供应商"
+
+msgid "listing_stockitems_column_type"
+msgstr "类型"
+
+msgid "listing_stockitems_column_unit"
+msgstr "单位"
+
+msgid "listing_stockitems_title"
+msgstr "库存物品"
+
+msgid "listing_stocktypes_action_add"
+msgstr "新增"
+
+msgid "listing_stocktypes_column_description"
+msgstr "说明"
+
+msgid "listing_stocktypes_column_title"
+msgstr "标题"
+
+msgid "listing_stocktypes_title"
+msgstr "库存类型"
+
+msgid "listing_stockunits_action_add"
+msgstr "新增"
+
+msgid "listing_stockunits_column_description"
+msgstr "说明"
+
+msgid "listing_stockunits_column_title"
+msgstr "标题"
+
+msgid "listing_stockunits_title"
+msgstr "库存单位"
+
+msgid "operation_adjust"
+msgstr "调整"
+
+msgid "operation_consume"
+msgstr "领用"
+
+msgid "operation_create"
+msgstr "创建"
+
+msgid "operation_destroy"
+msgstr "销毁"
+
+msgid "operation_expire"
+msgstr "过期"
+
+msgid "operation_return"
+msgstr "归还"
+
+msgid "operation_split"
+msgstr "分装"
+
+msgid "operation_stocktake"
+msgstr "盘存"

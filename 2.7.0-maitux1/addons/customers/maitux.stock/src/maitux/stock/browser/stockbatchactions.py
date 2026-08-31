@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from bika.lims import api
 
+from maitux.stock import _
 from maitux.stock.stockbatchexpiry import REVIEW_STATE_DESTROYED
 from maitux.stock.stockbatchexpiry import REVIEW_STATE_EXPIRED
 from maitux.stock.stockbatchexpiry import get_review_state
@@ -15,12 +16,12 @@ ACTION_STOCKTAKE = "stockbatch_stocktake"
 ACTION_PRINT = "stockbatch_print"
 
 ACTION_TITLES = {
-    ACTION_CONSUME: u"Consume",
-    ACTION_SPLIT: u"Split",
-    ACTION_RETURN: u"Return",
-    ACTION_DESTROY: u"Destroy",
-    ACTION_STOCKTAKE: u"Stocktake",
-    ACTION_PRINT: u"Print Labels",
+    ACTION_CONSUME: _(u"listing_action_consume", default=u"Consume"),
+    ACTION_SPLIT: _(u"listing_action_split", default=u"Split"),
+    ACTION_RETURN: _(u"listing_action_return", default=u"Return"),
+    ACTION_DESTROY: _(u"listing_action_destroy", default=u"Destroy"),
+    ACTION_STOCKTAKE: _(u"listing_action_stocktake", default=u"Stocktake"),
+    ACTION_PRINT: _(u"listing_action_print", default=u"Print Labels"),
 }
 
 ACTION_CSS_CLASSES = {

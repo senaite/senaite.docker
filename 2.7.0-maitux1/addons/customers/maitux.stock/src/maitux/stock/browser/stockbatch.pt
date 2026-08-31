@@ -2,6 +2,7 @@
       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
       xmlns:tal="http://xml.zope.org/namespaces/tal"
       xmlns:metal="http://xml.zope.org/namespaces/metal"
+      i18n:domain="maitux.stock"
       metal:use-macro="context/main_template/macros/master">
 
   <metal:content fill-slot="content-core">
@@ -11,13 +12,13 @@
 
     <ul class="nav nav-tabs" role="tablist">
       <li class="nav-item">
-        <a class="nav-link active" data-toggle="tab" href="#tab-base" role="tab">Base Information</a>
+        <a class="nav-link active" data-toggle="tab" href="#tab-base" role="tab" i18n:translate="">Base Information</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" data-toggle="tab" href="#tab-details" role="tab">Batch Details</a>
+        <a class="nav-link" data-toggle="tab" href="#tab-details" role="tab" i18n:translate="">Batch Details</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" data-toggle="tab" href="#tab-usage" role="tab">Usage Records</a>
+        <a class="nav-link" data-toggle="tab" href="#tab-usage" role="tab" i18n:translate="">Usage Records</a>
       </li>
     </ul>
 
@@ -25,12 +26,12 @@
       <div class="tab-pane fade show active" id="tab-base" role="tabpanel">
         <table class="table table-sm table-striped">
           <tbody>
-            <tr><th>Created By</th><td tal:content="context/created_by">-</td></tr>
-            <tr><th>Created Date</th><td tal:content="python:context.created_date and context.created_date.strftime('%Y-%m-%d %H:%M:%S') or ''">-</td></tr>
-            <tr><th>Stock</th><td tal:content="python:view.as_title(getattr(context, 'stock', ''))">-</td></tr>
-            <tr><th>Batch ID</th><td tal:content="context/batch_id">-</td></tr>
-            <tr><th>Description</th><td tal:content="context/description">-</td></tr>
-            <tr><th>Status</th><td tal:content="python:view.review_state()">-</td></tr>
+            <tr><th i18n:translate="">Created By</th><td tal:content="context/created_by">-</td></tr>
+            <tr><th i18n:translate="">Created Date</th><td tal:content="python:context.created_date and context.created_date.strftime('%Y-%m-%d %H:%M:%S') or ''">-</td></tr>
+            <tr><th i18n:translate="">Stock</th><td tal:content="python:view.as_title(getattr(context, 'stock', ''))">-</td></tr>
+            <tr><th i18n:translate="">Batch ID</th><td tal:content="context/batch_id">-</td></tr>
+            <tr><th i18n:translate="">Description</th><td tal:content="context/description">-</td></tr>
+            <tr><th i18n:translate="">Status</th><td tal:content="python:view.review_state()">-</td></tr>
           </tbody>
         </table>
       </div>
@@ -38,13 +39,13 @@
       <div class="tab-pane fade" id="tab-details" role="tabpanel">
         <table class="table table-sm table-striped">
           <tbody>
-            <tr><th>Supplier</th><td tal:content="python:view.as_title(getattr(context, 'supplier', ''))">-</td></tr>
-            <tr><th>Batch</th><td tal:content="context/batch">-</td></tr>
-            <tr><th>Current Amount</th><td tal:content="context/current_amount">-</td></tr>
-            <tr><th>Low Quantity Threshold</th><td tal:content="context/low_quantity_threshold">-</td></tr>
-            <tr><th>Unit</th><td tal:content="python:view.as_title(getattr(context, 'unit', ''))">-</td></tr>
-            <tr><th>Expiry Date</th><td tal:content="python:context.expiry_date and context.expiry_date.strftime('%Y-%m-%d %H:%M') or ''">-</td></tr>
-            <tr><th>Location</th><td tal:content="python:view.as_title(getattr(context, 'location', ''))">-</td></tr>
+            <tr><th i18n:translate="">Supplier</th><td tal:content="python:view.as_title(getattr(context, 'supplier', ''))">-</td></tr>
+            <tr><th i18n:translate="">Batch</th><td tal:content="context/batch">-</td></tr>
+            <tr><th i18n:translate="">Current Amount</th><td tal:content="context/current_amount">-</td></tr>
+            <tr><th i18n:translate="">Low Quantity Threshold</th><td tal:content="context/low_quantity_threshold">-</td></tr>
+            <tr><th i18n:translate="">Unit</th><td tal:content="python:view.as_title(getattr(context, 'unit', ''))">-</td></tr>
+            <tr><th i18n:translate="">Expiry Date</th><td tal:content="python:context.expiry_date and context.expiry_date.strftime('%Y-%m-%d %H:%M') or ''">-</td></tr>
+            <tr><th i18n:translate="">Location</th><td tal:content="python:view.as_title(getattr(context, 'location', ''))">-</td></tr>
           </tbody>
         </table>
       </div>
@@ -53,22 +54,22 @@
         <table class="table table-sm table-striped">
           <thead>
             <tr>
-              <th>Operation Type</th>
-              <th>Operator</th>
-              <th>Operation Date</th>
-              <th class="text-right">Quantity</th>
-              <th>Remarks</th>
-              <th>From Batch</th>
+              <th i18n:translate="">Operation Type</th>
+              <th i18n:translate="">Operator</th>
+              <th i18n:translate="">Operation Date</th>
+              <th class="text-right" i18n:translate="">Quantity</th>
+              <th i18n:translate="">Remarks</th>
+              <th i18n:translate="">From Batch</th>
             </tr>
           </thead>
           <tbody>
             <tal:block tal:define="records python:view.usage_records()">
               <tal:block tal:condition="python:not records">
-                <tr><td colspan="6">No records</td></tr>
+                <tr><td colspan="6" i18n:translate="">No records</td></tr>
               </tal:block>
               <tal:block tal:repeat="record records">
                 <tr>
-                  <td tal:content="python:record.get('operation_type', '')">-</td>
+                  <td tal:content="python:view.operation_label(record.get('operation_type', ''))">-</td>
                   <td tal:content="python:record.get('operator', '')">-</td>
                   <td tal:content="python:record.get('operation_date') and record.get('operation_date').strftime('%Y-%m-%d %H:%M:%S') or ''">-</td>
                   <td class="text-right" tal:content="python:record.get('quantity', '')">-</td>

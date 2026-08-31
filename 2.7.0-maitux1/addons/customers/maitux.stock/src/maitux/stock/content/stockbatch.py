@@ -16,6 +16,7 @@ from z3c.form.widget import FieldWidget
 from zope import schema
 from zope.interface import implementer
 
+from maitux.stock import _
 from maitux.stock.interfaces import IStockBatch
 from maitux.stock.z3cform.widgets.datetimeseconds import DatetimeSecondsWidget
 from maitux.stock.z3cform.widgets.safeuidreference import SafeUIDReferenceWidgetFactory
@@ -45,7 +46,7 @@ def StockBatchOperationDateWidgetFactory(field, request):
 
 class IStockBatchUsageSchema(model.Schema):
     operation_type = schema.Choice(
-        title=u"Operation Type",
+        title=_(u"listing_stockbatch_usage_column_operation_type", default=u"Operation Type"),
         values=(
             u"create",
             u"consume",
@@ -61,29 +62,29 @@ class IStockBatchUsageSchema(model.Schema):
     )
 
     operator = schema.TextLine(
-        title=u"Operator",
+        title=_(u"listing_stockbatch_usage_column_operator", default=u"Operator"),
         required=True,
     )
 
     directives.widget("operation_date", StockBatchOperationDateWidgetFactory)
     operation_date = DatetimeField(
-        title=u"Operation Date",
+        title=_(u"listing_stockbatch_usage_column_operation_date", default=u"Operation Date"),
         required=True,
     )
 
     quantity = schema.Decimal(
-        title=u"Quantity",
+        title=_(u"listing_stockbatch_usage_column_quantity", default=u"Quantity"),
         required=True,
         default=Decimal("0.00"),
     )
 
     remarks = schema.TextLine(
-        title=u"Remarks",
+        title=_(u"listing_stockbatch_usage_column_remarks", default=u"Remarks"),
         required=False,
     )
 
     from_batch = schema.TextLine(
-        title=u"From Batch",
+        title=_(u"listing_stockbatch_usage_column_from_batch", default=u"From Batch"),
         required=False,
     )
 
@@ -91,7 +92,7 @@ class IStockBatchUsageSchema(model.Schema):
 class IStockBatchSchema(model.Schema):
     model.fieldset(
         "batch_details",
-        label=u"Batch Details",
+        label=_(u"listing_stockbatch_fieldset_batch_details", default=u"Batch Details"),
         fields=[
             "supplier",
             "batch",
@@ -105,7 +106,7 @@ class IStockBatchSchema(model.Schema):
 
     model.fieldset(
         "usage",
-        label=u"Usage Records",
+        label=_(u"listing_stockbatch_fieldset_usage", default=u"Usage Records"),
         fields=[
             "usage_records",
         ],
@@ -114,7 +115,7 @@ class IStockBatchSchema(model.Schema):
     directives.mode(created_by="display")
     directives.mode(IAddForm, created_by="hidden")
     created_by = schema.TextLine(
-        title=u"Created By",
+        title=_(u"listing_stockbatch_column_created_by", default=u"Created By"),
         required=False,
         readonly=True,
     )
@@ -123,7 +124,7 @@ class IStockBatchSchema(model.Schema):
     directives.mode(IAddForm, created_date="hidden")
     directives.widget("created_date", StockBatchCreatedDateWidgetFactory)
     created_date = DatetimeField(
-        title=u"Created Date",
+        title=_(u"listing_stockbatch_column_created_date", default=u"Created Date"),
         required=False,
         readonly=True,
     )
@@ -141,7 +142,7 @@ class IStockBatchSchema(model.Schema):
         },
     )
     stock = UIDReferenceField(
-        title=u"Stock",
+        title=_(u"listing_stockbatch_column_stock", default=u"Stock"),
         allowed_types=("Stock",),
         multi_valued=False,
         required=True,
@@ -150,18 +151,18 @@ class IStockBatchSchema(model.Schema):
     directives.mode(batch_id="display")
     directives.mode(IAddForm, batch_id="hidden")
     batch_id = schema.TextLine(
-        title=u"Batch ID",
+        title=_(u"listing_stockbatch_column_batch_id", default=u"Batch ID"),
         required=False,
         readonly=True,
     )
 
     description = schema.Text(
-        title=u"Description",
+        title=_(u"listing_stockbatch_column_description", default=u"Description"),
         required=False,
     )
 
     status = schema.Choice(
-        title=u"Status",
+        title=_(u"listing_stockbatch_column_status", default=u"Status"),
         values=(
             u"active",
             u"expired",
@@ -174,26 +175,26 @@ class IStockBatchSchema(model.Schema):
     directives.mode(IAddForm, status="hidden")
 
     supplier = schema.Choice(
-        title=u"Supplier",
+        title=_(u"listing_stockbatch_column_supplier", default=u"Supplier"),
         vocabulary="maitux.stock.vocabularies.suppliers",
         required=False,
     )
 
     batch = schema.TextLine(
-        title=u"Batch",
+        title=_(u"listing_stockbatch_column_batch", default=u"Batch"),
         required=False,
     )
 
     directives.widget("current_amount", StockBatchAmountWidgetFactory)
     current_amount = schema.Decimal(
-        title=u"Current Amount",
+        title=_(u"listing_stockbatch_column_current_amount", default=u"Current Amount"),
         required=True,
         default=Decimal("0.00"),
         min=Decimal("0"),  # 防止创建负数库存批次
     )
 
     low_quantity_threshold = schema.Decimal(
-        title=u"Low Quantity Threshold",
+        title=_(u"listing_stockbatch_column_low_quantity_threshold", default=u"Low Quantity Threshold"),
         required=False,
     )
 
@@ -201,7 +202,7 @@ class IStockBatchSchema(model.Schema):
     directives.mode(IAddForm, target_quantity="hidden")
     directives.mode(IEditForm, target_quantity="hidden")
     target_quantity = schema.Decimal(
-        title=u"Target Quantity",
+        title=_(u"listing_stockbatch_column_target_quantity", default=u"Target Quantity"),
         required=False,
         default=Decimal("0.00"),
     )
@@ -219,7 +220,7 @@ class IStockBatchSchema(model.Schema):
         },
     )
     unit = UIDReferenceField(
-        title=u"Unit",
+        title=_(u"listing_stockbatch_column_unit", default=u"Unit"),
         allowed_types=("StockUnit",),
         multi_valued=False,
         required=False,
@@ -227,7 +228,7 @@ class IStockBatchSchema(model.Schema):
 
     directives.widget("expiry_date", StockBatchExpiryDateWidgetFactory)
     expiry_date = DatetimeField(
-        title=u"Expiry Date",
+        title=_(u"listing_stockbatch_column_expiry_date", default=u"Expiry Date"),
         required=False,
     )
 
@@ -245,7 +246,7 @@ class IStockBatchSchema(model.Schema):
         },
     )
     location = UIDReferenceField(
-        title=u"Location",
+        title=_(u"listing_stockbatch_column_location", default=u"Location"),
         allowed_types=("InstrumentLocation",),
         multi_valued=False,
         required=False,
@@ -254,7 +255,7 @@ class IStockBatchSchema(model.Schema):
     directives.mode(usage_records="display")
     directives.mode(IAddForm, usage_records="hidden")
     usage_records = DataGridField(
-        title=u"Usage Records",
+        title=_(u"listing_stockbatch_column_usage_records", default=u"Usage Records"),
         required=False,
         value_type=DataGridRow(schema=IStockBatchUsageSchema),
         default=[],

@@ -11,7 +11,6 @@ except Exception:
     from urllib.parse import urlencode
 
 from bika.lims import api
-from bika.lims import senaiteMessageFactory as _
 from bika.lims.decorators import returns_json
 from bika.lims.api.security import check_permission as has_permission
 from bika.lims.utils import get_link
@@ -41,6 +40,7 @@ from zope.component import getMultiAdapter
 from zope.interface import implements
 from zope.publisher.interfaces.browser import IBrowserPage
 
+from maitux.stability import _
 from maitux.stability.permissions import AddStabilityPlanTemplate
 
 
@@ -300,7 +300,7 @@ def _get_or_create_plans_container(request=None):
                 container=module,
                 type="StabilityPlans",
                 id=_canonical_id("stability_plans"),
-                title="Stability Plans",
+                title=_(u"listing_stabilityplans_title", default=u"Stability Plans"),
             )
     return plans
 
@@ -688,10 +688,10 @@ class StabilityTaskBoardView(BrowserView):
 
     def get_status_filter_options(self):
         return [
-            ("all", u"All"),
-            ("pending_placement", u"Pending Placement"),
-            ("active", u"In Progress"),
-            ("completed", u"Completed"),
+            ("all", _(u"listing_stability_status_all", default=u"All")),
+            ("pending_placement", _(u"listing_stability_status_pending_placement", default=u"Pending Placement")),
+            ("active", _(u"listing_stability_status_in_progress", default=u"In Progress")),
+            ("completed", _(u"listing_stability_status_completed", default=u"Completed")),
         ]
 
     def get_status_filter_buttons(self):
@@ -829,9 +829,9 @@ class StabilityTaskBoardView(BrowserView):
 
     def _status_title(self, status):
         mapping = {
-            "pending_placement": u"Pending Placement",
-            "active": u"In Progress",
-            "completed": u"Completed",
+            "pending_placement": _(u"listing_stability_status_pending_placement", default=u"Pending Placement"),
+            "active": _(u"listing_stability_status_in_progress", default=u"In Progress"),
+            "completed": _(u"listing_stability_status_completed", default=u"Completed"),
         }
         return mapping.get(status, status or u"")
 
@@ -922,7 +922,10 @@ class StabilityTaskBoardView(BrowserView):
                     "plan_uid": plan_uid,
                     "plan_url": plan_url,
                     "plan_title": plan_title,
-                    "task_title": u"TP {0} ({1} Months)".format(seq, months),
+                    "task_title": translate(_(
+                        u"task_title_tp_months",
+                        default=u"TP {0} ({1} Months)",
+                    )).format(seq, months),
                     "sample_uid": sample_uid,
                     "sample_id": sample_id,
                     "sample_url": sample_url,

@@ -2,21 +2,22 @@
       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
       xmlns:tal="http://xml.zope.org/namespaces/tal"
       xmlns:metal="http://xml.zope.org/namespaces/metal"
+      i18n:domain="maitux.stock"
       metal:use-macro="context/main_template/macros/master">
 
   <metal:content fill-slot="content-core">
     <div class="mb-3">
-      <h1>Print Labels</h1>
+      <h1 i18n:translate="">Print Labels</h1>
     </div>
 
     <div class="mb-3">
       <a tal:attributes="href context/absolute_url"
-         class="btn btn-outline-secondary">Back</a>
-      <button type="button" id="stockbatch-print-pdf" class="btn btn-primary">Print PDF</button>
+         class="btn btn-outline-secondary" i18n:translate="">Back</a>
+      <button type="button" id="stockbatch-print-pdf" class="btn btn-primary" i18n:translate="">Print PDF</button>
     </div>
 
     <div class="mb-2">
-      <label for="template" class="mr-2">Template</label>
+      <label for="template" class="mr-2" i18n:translate="">Template</label>
       <select id="template" class="form-control d-inline-block" style="width:320px;">
         <tal:formats tal:repeat="tpl python:view.get_available_templates()">
           <option tal:attributes="value tpl/id; selected tpl/selected|nothing;"

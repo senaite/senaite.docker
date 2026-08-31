@@ -1,5 +1,4 @@
-﻿# -*- coding: utf-8 -*-
-from bika.lims import senaiteMessageFactory as _
+# -*- coding: utf-8 -*-
 from bika.lims.interfaces import IDeactivable
 from plone.autoform import directives
 from plone.namedfile.field import NamedBlobFile
@@ -15,6 +14,7 @@ from z3c.form.interfaces import IAddForm
 from zope import schema
 from zope.interface import implementer
 
+from maitux.stability import _
 from maitux.stability.interfaces import IStabilityPlanTemplate
 
 

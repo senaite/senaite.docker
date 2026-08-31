@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from bika.lims import senaiteMessageFactory as _
 from plone.autoform import directives
 from plone.namedfile.field import NamedBlobFile
 from plone.supermodel import model
@@ -21,6 +20,7 @@ from zope.interface import invariant
 from zope.schema.vocabulary import SimpleTerm
 from zope.schema.vocabulary import SimpleVocabulary
 
+from maitux.stability import _
 from maitux.stability.interfaces import IStabilityPlan
 from maitux.stability.z3cform.widgets.plandetails import PlanDetailsWidgetFactory
 from maitux.stability.z3cform.widgets.plandetails import SafeUIDReferenceWidgetFactory

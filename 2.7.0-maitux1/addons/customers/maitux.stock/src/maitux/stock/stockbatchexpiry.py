@@ -68,11 +68,12 @@ def is_due_for_expiry(batch, now=None):
 
 def get_operation_block_message(batch, now=None):
     """返回当前批次是否禁止继续业务操作的提示。"""
+    from maitux.stock import _
     state = get_review_state(batch)
     if state == REVIEW_STATE_DESTROYED:
-        return u"Batch is destroyed"
+        return _(u"batch_block_destroyed", default=u"Batch is destroyed")
     if state == REVIEW_STATE_EXPIRED or is_due_for_expiry(batch, now=now):
-        return u"Batch is expired and can only be destroyed"
+        return _(u"batch_block_expired", default=u"Batch is expired and can only be destroyed")
     return u""
 
 

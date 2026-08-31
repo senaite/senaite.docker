@@ -2,6 +2,7 @@
       xmlns:tal="http://xml.zope.org/namespaces/tal"
       xmlns:metal="http://xml.zope.org/namespaces/metal"
       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      i18n:domain="maitux.stability"
       tal:omit-tag="">
 
   <table class="table table-hover table-responsive table-sm table-borderless datagridwidget-table-view"
@@ -43,7 +44,7 @@
     </tbody>
   </table>
   <input type="hidden" tal:replace="structure view/counterMarker" />
-  <button type="button" class="btn btn-sm btn-outline-secondary mb-2" id="stability-plan-details-add-row">Add row</button>
+  <button type="button" class="btn btn-sm btn-outline-secondary mb-2" id="stability-plan-details-add-row" i18n:translate="">Add row</button>
   <script type="text/javascript" src="" tal:attributes="src string:${view/portal_url}/++resource++senaite.core.z3cform.static/datagrid.js"></script>
   <link rel="stylesheet" href="" type="text/css" media="screen" tal:attributes="href string:${view/portal_url}/++resource++senaite.core.z3cform.static/datagrid.css"/>
   <script type="text/javascript">

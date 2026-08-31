@@ -1,6 +1,8 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
       xmlns:tal="http://xml.zope.org/namespaces/tal"
       xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      i18n:domain="maitux.stock"
       metal:use-macro="context/main_template/macros/master">
 <body>
 <metal:title fill-slot="content-title"></metal:title>
@@ -8,28 +10,28 @@
 <metal:main fill-slot="content-core">
   <h1 class="documentFirstHeading" tal:content="context/Title">Title</h1>
   <dl class="table">
-    <dt>Stock Number</dt>
+    <dt i18n:translate="">Stock Number</dt>
     <dd tal:content="python:getattr(context, 'number', '') or ''"></dd>
 
-    <dt>Stock Type</dt>
+    <dt i18n:translate="">Stock Type</dt>
     <dd tal:content="python:view.ref_title('stock_type')"></dd>
 
-    <dt>名称</dt>
+    <dt i18n:translate="">Name</dt>
     <dd tal:content="python:view.ref_title('sample_matrix')"></dd>
 
-    <dt>单位</dt>
+    <dt i18n:translate="">Unit</dt>
     <dd tal:content="python:view.ref_title('unit')"></dd>
 
-    <dt>存储位置</dt>
+    <dt i18n:translate="">Storage Location</dt>
     <dd tal:content="python:view.ref_title('location')"></dd>
 
-    <dt>供应商</dt>
+    <dt i18n:translate="">Supplier</dt>
     <dd tal:content="python:view.ref_title('supplier')"></dd>
 
-    <dt>Quantity</dt>
+    <dt i18n:translate="">Quantity</dt>
     <dd tal:content="python:getattr(context, 'quantity', '') or ''"></dd>
 
-    <dt>过期日期</dt>
+    <dt i18n:translate="">Expiry Date</dt>
     <dd tal:content="python:view.expiry_date()"></dd>
   </dl>
 </metal:main>

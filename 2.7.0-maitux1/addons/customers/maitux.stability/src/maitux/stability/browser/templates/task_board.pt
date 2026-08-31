@@ -5,7 +5,7 @@
       i18n:domain="maitux.stability">
 
   <metal:content-title fill-slot="content-title">
-    <h1 class="documentFirstHeading">Stability Task Board</h1>
+    <h1 class="documentFirstHeading" i18n:translate="">Stability Task Board</h1>
   </metal:content-title>
 
   <metal:content-core fill-slot="content-core">
@@ -127,15 +127,15 @@
 
     <div class="stability-board-stats">
       <div class="stability-board-card expired">
-        <div class="label">Expired</div>
+        <div class="label" i18n:translate="">Expired</div>
         <div class="value" tal:content="python:view.stats.get('expired', 0)">0</div>
       </div>
       <div class="stability-board-card pending">
-        <div class="label">Pending Placement</div>
+        <div class="label" i18n:translate="">Pending Placement</div>
         <div class="value" tal:content="python:view.stats.get('pending', 0)">0</div>
       </div>
       <div class="stability-board-card in-progress">
-        <div class="label">In Progress</div>
+        <div class="label" i18n:translate="">In Progress</div>
         <div class="value" tal:content="python:view.stats.get('in_progress', 0)">0</div>
       </div>
     </div>
@@ -156,8 +156,9 @@
                class="form-control form-control-sm"
                name="plan_query"
                placeholder="Search Plan"
+               i18n:attributes="placeholder"
                tal:attributes="value view/plan_query"/>
-        <button type="submit" class="btn btn-sm btn-outline-secondary">Search</button>
+        <button type="submit" class="btn btn-sm btn-outline-secondary" i18n:translate="">Search</button>
       </form>
     </div>
 
@@ -169,19 +170,19 @@
       <input type="hidden" name="sort_on" tal:attributes="value view/sort_on"/>
       <input type="hidden" name="sort_order" tal:attributes="value view/sort_order"/>
 
-      <h2>Timepoint Tasks</h2>
+      <h2 i18n:translate="">Timepoint Tasks</h2>
       <table class="table table-striped table-hover stability-task-table">
         <thead>
           <tr>
             <th style="width: 36px;">
               <input type="checkbox" id="select_all_tasks" onclick="toggleAllTasks(this)"/>
             </th>
-            <th>Plan</th>
-            <th>Task</th>
-            <th>Sample</th>
-            <th>Stock Batch</th>
-            <th>Timepoint (Months)</th>
-            <th>Window (Days)</th>
+            <th i18n:translate="">Plan</th>
+            <th i18n:translate="">Task</th>
+            <th i18n:translate="">Sample</th>
+            <th i18n:translate="">Stock Batch</th>
+            <th i18n:translate="">Timepoint (Months)</th>
+            <th i18n:translate="">Window (Days)</th>
             <th>
               <a class="stability-sort-link"
                  tal:attributes="href python:view.get_sort_url('target_date')"
@@ -197,7 +198,7 @@
                  tal:attributes="href python:view.get_sort_url('window_end')"
                  tal:content="python:u'Window End' + view.get_sort_indicator('window_end')">Window End</a>
             </th>
-            <th>Status</th>
+            <th i18n:translate="">Status</th>
           </tr>
         </thead>
         <tbody>
@@ -229,7 +230,7 @@
             </td>
           </tr>
           <tr tal:condition="python:not view.rows">
-            <td colspan="11">No task data available</td>
+            <td colspan="11" i18n:translate="">No task data available</td>
           </tr>
         </tbody>
       </table>
@@ -241,21 +242,24 @@
                 class="btn btn-primary btn-sm"
                 name="bulk_action"
                 value="sample_placement"
-                onclick="return validatePendingSelection();">
+                onclick="return validatePendingSelection();"
+                i18n:translate="">
           Sample Placement
         </button>
         <button type="submit"
                 class="btn btn-primary btn-sm"
                 name="bulk_action"
                 value="link_sample"
-                onclick="return validateSelectionRequired();">
+                onclick="return validateSelectionRequired();"
+                i18n:translate="">
           Link Existing Sample
         </button>
         <button type="submit"
                 class="btn btn-primary btn-sm"
                 name="bulk_action"
                 value="create_sample"
-                onclick="return validateSelectionRequired();">
+                onclick="return validateSelectionRequired();"
+                i18n:translate="">
           Create Sample
         </button>
       </div>
