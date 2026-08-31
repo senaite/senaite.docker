@@ -2,6 +2,8 @@
 from bika.lims import api
 from Products.Five.browser import BrowserView
 
+from maitux.stock import _
+
 
 class StockBatchView(BrowserView):
     def review_state(self):
@@ -25,13 +27,13 @@ class StockBatchView(BrowserView):
 
     def operation_label(self, op):
         mapping = {
-            u"create": u"创建",
-            u"consume": u"领用",
-            u"expire": u"过期",
-            u"return": u"归还",
-            u"destroy": u"销毁",
-            u"split": u"分装",
-            u"adjust": u"调整",
-            u"stocktake": u"盘存",
+            u"create": _(u"operation_create", default=u"Create"),
+            u"consume": _(u"operation_consume", default=u"Consume"),
+            u"expire": _(u"operation_expire", default=u"Expire"),
+            u"return": _(u"operation_return", default=u"Return"),
+            u"destroy": _(u"operation_destroy", default=u"Destroy"),
+            u"split": _(u"operation_split", default=u"Split"),
+            u"adjust": _(u"operation_adjust", default=u"Adjust"),
+            u"stocktake": _(u"operation_stocktake", default=u"Stocktake"),
         }
         return mapping.get(api.safe_unicode(op), api.safe_unicode(op))

@@ -13,6 +13,7 @@ from INNOCARE.arextension.defaults import DEFAULT_HAZARD_CATEGORIES
 from INNOCARE.arextension.setuphandlers import translate_with_fallback
 
 from maitux.hazardcategories import _
+from maitux.hazardcategories.config import PROJECTNAME
 
 REGISTRY_KEY = "maitux.hazardcategories.categories"
 REGISTRY_JSON_KEY = "maitux.hazardcategories.categories.json"
@@ -356,7 +357,12 @@ def format_title(category):
 
 
 def _runtime_translate(msg, fallback=None):
-    return translate_with_fallback(msg)
+    # translate_with_fallback defaults to the INNOCARE.arextension domain,
+    # which does not contain the scope-label msgids. Resolve the message's
+    # own domain (maitux.hazardcategories) so the package catalog is used
+    # and the Chinese translations are picked up at runtime.
+    domain = getattr(msg, "domain", None) or PROJECTNAME
+    return translate_with_fallback(msg, domain=domain)
 
 
 def get_scope_label(usage_scope):

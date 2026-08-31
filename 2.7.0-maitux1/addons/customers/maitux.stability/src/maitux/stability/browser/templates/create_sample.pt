@@ -1,4 +1,4 @@
-﻿<html xmlns="http://www.w3.org/1999/xhtml"
+<html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:tal="http://xml.zope.org/namespaces/tal"
       xmlns:metal="http://xml.zope.org/namespaces/metal"
       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
@@ -42,7 +42,7 @@
           </tbody>
         </table>
 
-        <!-- 绗竴姝ワ細閫夋嫨瀹㈡埛锛屽埛鏂拌仈绯讳汉涓嬫媺 -->
+        <!-- Step 1: select the client, refresh the contact list -->
         <form method="get"
               tal:attributes="action string:${context/absolute_url}/@@create_sample">
           <tal:block tal:repeat="item python:view.tasks">
@@ -53,17 +53,18 @@
             <label for="client_uid" i18n:translate="">Client</label>
             <select id="client_uid" name="client_uid" class="form-control form-control-sm"
                     tal:attributes="onchange string:this.form.submit();">
-              <option value="" i18n:translate="">Select鈥?/option>
+              <option value="" i18n:translate="">Select...</option>
               <option tal:repeat="c python:view.clients"
                       tal:attributes="value c/uid; selected python:'selected' if c.get('uid') == view.selected_client_uid else None"
                       tal:content="c/title">Client</option>
             </select>
             <small class="form-text text-muted" i18n:translate="">
-              閫夋嫨瀹㈡埛鍚庝細鑷姩鍒锋柊鑱旂郴浜哄垪琛ㄣ€?            </small>
+              Selecting a client will refresh the contact list.
+            </small>
           </div>
         </form>
 
-        <!-- 绗簩姝ワ細鍒涘缓鏍峰搧 -->
+        <!-- Step 2: create the sample -->
         <form method="post"
               tal:attributes="action string:${context/absolute_url}/@@create_sample">
           <input tal:replace="structure context/@@authenticator/authenticator"/>
@@ -76,7 +77,7 @@
           <div class="form-group">
             <label for="contact_uid" i18n:translate="">Contact</label>
             <select id="contact_uid" name="contact_uid" class="form-control form-control-sm" required="required">
-              <option value="" i18n:translate="">Select鈥?/option>
+              <option value="" i18n:translate="">Select...</option>
               <option tal:repeat="c python:view.contacts"
                       tal:attributes="value c/uid"
                       tal:content="c/title">Contact</option>
@@ -86,7 +87,7 @@
           <div class="form-group">
             <label for="sampletype_uid" i18n:translate="">Sample Type</label>
             <select id="sampletype_uid" name="sampletype_uid" class="form-control form-control-sm" required="required">
-              <option value="" i18n:translate="">Select鈥?/option>
+              <option value="" i18n:translate="">Select...</option>
               <option tal:repeat="st python:view.sampletypes"
                       tal:attributes="value st/uid"
                       tal:content="st/title">Sample Type</option>

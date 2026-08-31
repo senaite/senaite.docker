@@ -2,12 +2,13 @@
 import collections
 
 from bika.lims import api
-from bika.lims import bikaMessageFactory as _
 from bika.lims.utils import get_link
 from senaite.app.listing import ListingView
 from senaite.core.api import dtime
 from senaite.core.catalog import SETUP_CATALOG
 from senaite.core.i18n import translate
+
+from maitux.stock import _
 
 
 class StockItemsView(ListingView):

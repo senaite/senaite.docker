@@ -12,14 +12,15 @@ from senaite.core import logger
 from senaite.core.upgrade.utils import temporary_allow_type
 from zope.interface import implementer
 
+from maitux.stability import _
 from maitux.stability.permissions import AddStabilityPlanTemplate
 
 
 MODULE_ID = "stability_studies"
-MODULE_TITLE = "Stability Studies"
+MODULE_TITLE = _(u"Stability Studies", default=u"Stability Studies")
 MODULE_TYPE = "StabilityStudies"
 DEFAULT_STUDY_ID = "default_stability_study"
-DEFAULT_STUDY_TITLE = "Default Stability Study"
+DEFAULT_STUDY_TITLE = _(u"Default Stability Study", default=u"Default Stability Study")
 DEFAULT_STUDY_TYPE = "StabilityStudy"
 # sidebar 当前对子级使用 path 倒序查询，这里通过数字前缀稳定控制显示顺序。
 # 同时保留旧 ID 别名，方便历史数据在升级/卸载时统一清理。
@@ -35,6 +36,11 @@ TABLE_ID_ALIASES = dict([(item[1], item[4]) for item in TABLE_DEFINITIONS])
 STATIC_TABLES = tuple([(item[1], item[2], item[3]) for item in TABLE_DEFINITIONS])
 SIDEBAR_DEPTH = 2
 PROJECTNAME = "maitux.stability"
+
+
+def _table_title(title):
+    """把静态表标题转为 maitux.stability 域的 Message，供侧边栏等运行时翻译。"""
+    return _(title, default=title)
 
 
 @implementer(INonInstallable)
@@ -668,7 +674,8 @@ def _setup_stability_content(portal):
 
     if container is not None:
         for table_id, table_title, table_type in STATIC_TABLES:
-            table = create_or_update(container, table_type, table_id, table_title)
+            table = create_or_update(
+                container, table_type, table_id, _table_title(table_title))
             if table_type == "StabilityPlanTemplates":
                 apply_constraints(table, ("StabilityPlanTemplate",))
                 migrate_storage_time_duration(table)

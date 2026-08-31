@@ -1,0 +1,531 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: maitux.stock\n"
+"POT-Creation-Date: 2026-08-20 00:00+0000\n"
+"PO-Revision-Date: 2026-08-20 00:00+0000\n"
+"Last-Translator: Admin <admin@example.com>\n"
+"Language-Team: en <admin@example.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"Language-Code: en\n"
+"Language-Name: English\n"
+"Preferred-Encodings: utf-8 latin1\n"
+"Domain: maitux.stock\n"
+
+msgid "Actual Amount"
+msgstr "Actual Amount"
+
+msgid "Add new batch"
+msgstr "Add new batch"
+
+msgid "Add row"
+msgstr "Add row"
+
+msgid "Back"
+msgstr "Back"
+
+msgid "Base Information"
+msgstr "Base Information"
+
+msgid "Batch"
+msgstr "Batch"
+
+msgid "Batch Details"
+msgstr "Batch Details"
+
+msgid "Batch ID"
+msgstr "Batch ID"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Changes applied."
+msgstr "Changes applied."
+
+msgid "Changes saved."
+msgstr "Changes saved."
+
+msgid "Consume Stock Batches"
+msgstr "Consume Stock Batches"
+
+msgid "Consume failed. All changes have been rolled back."
+msgstr "Consume failed. All changes have been rolled back."
+
+msgid "Create to batch"
+msgstr "Create to batch"
+
+msgid "Created By"
+msgstr "Created By"
+
+msgid "Created Date"
+msgstr "Created Date"
+
+msgid "Current"
+msgstr "Current"
+
+msgid "Current / Target / Unit"
+msgstr "Current / Target / Unit"
+
+msgid "Current Amount"
+msgstr "Current Amount"
+
+msgid "Current Amount / Unit"
+msgstr "Current Amount / Unit"
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Destroy"
+msgstr "Destroy"
+
+msgid "Destroy Stock Batches"
+msgstr "Destroy Stock Batches"
+
+msgid "Expiry Date"
+msgstr "Expiry Date"
+
+msgid "From Batch"
+msgstr "From Batch"
+
+msgid "Go Back"
+msgstr "Go Back"
+
+msgid "Item ID"
+msgstr "Item ID"
+
+msgid "Location"
+msgstr "Location"
+
+msgid "Location (for new batch)"
+msgstr "Location (for new batch)"
+
+msgid "Low Quantity"
+msgstr "Low Quantity"
+
+msgid "Low Quantity Threshold"
+msgstr "Low Quantity Threshold"
+
+msgid "Max Return"
+msgstr "Max Return"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "No active batches selected"
+msgstr "No active batches selected"
+
+msgid "No changes made (no permission to modify selected batches)."
+msgstr "No changes made (no permission to modify selected batches)."
+
+msgid "No changes made."
+msgstr "No changes made."
+
+msgid "No eligible target batch found (same stock and not expired or destroyed)."
+msgstr "No eligible target batch found (same stock and not expired or destroyed)."
+
+msgid "No items selected"
+msgstr "No items selected"
+
+msgid "No items selected."
+msgstr "No items selected."
+
+msgid "No records"
+msgstr "No records"
+
+msgid "Not a Stock Manager."
+msgstr "Not a Stock Manager."
+
+msgid "Operation Date"
+msgstr "Operation Date"
+
+msgid "Operation Type"
+msgstr "Operation Type"
+
+msgid "Operator"
+msgstr "Operator"
+
+msgid "Print Labels"
+msgstr "Print Labels"
+
+msgid "Print PDF"
+msgstr "Print PDF"
+
+msgid "Purchase Orders"
+msgstr "Purchase Orders"
+
+msgid "Quantity"
+msgstr "Quantity"
+
+msgid "Remarks"
+msgstr "Remarks"
+
+msgid "Return"
+msgstr "Return"
+
+msgid "Return Stock Batches"
+msgstr "Return Stock Batches"
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Selected batches do not support this action."
+msgstr "Selected batches do not support this action."
+
+msgid "Split Stock Batch"
+msgstr "Split Stock Batch"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Stock"
+msgstr "Stock"
+
+msgid "Stock Batches"
+msgstr "Stock Batches"
+
+msgid "Stock Item"
+msgstr "Stock Item"
+
+msgid "Stock Number"
+msgstr "Stock Number"
+
+msgid "Stock Type"
+msgstr "Stock Type"
+
+msgid "Stock Types"
+msgstr "Stock Types"
+
+msgid "Stockinventory"
+msgstr "Stockinventory"
+
+msgid "Stocktake Batches"
+msgstr "Stocktake Batches"
+
+msgid "Storage Location"
+msgstr "Storage Location"
+
+msgid "Supplier"
+msgstr "Supplier"
+
+msgid "Target Quantity"
+msgstr "Target Quantity"
+
+msgid "Target batch"
+msgstr "Target batch"
+
+msgid "Template"
+msgstr "Template"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Unit"
+msgstr "Unit"
+
+msgid "Units"
+msgstr "Units"
+
+msgid "Usage Records"
+msgstr "Usage Records"
+
+msgid "batch_block_destroyed"
+msgstr "batch_block_destroyed"
+
+msgid "batch_block_expired"
+msgstr "batch_block_expired"
+
+msgid "batches are low on quantity:"
+msgstr "batches are low on quantity:"
+
+msgid "listing_action_consume"
+msgstr "listing_action_consume"
+
+msgid "listing_action_destroy"
+msgstr "listing_action_destroy"
+
+msgid "listing_action_print"
+msgstr "listing_action_print"
+
+msgid "listing_action_return"
+msgstr "listing_action_return"
+
+msgid "listing_action_split"
+msgstr "listing_action_split"
+
+msgid "listing_action_stocktake"
+msgstr "listing_action_stocktake"
+
+msgid "listing_lowstock_column_below_by"
+msgstr "listing_lowstock_column_below_by"
+
+msgid "listing_lowstock_column_threshold"
+msgstr "listing_lowstock_column_threshold"
+
+msgid "listing_lowstock_title"
+msgstr "listing_lowstock_title"
+
+msgid "listing_po_column_number"
+msgstr "listing_po_column_number"
+
+msgid "listing_po_column_order_date"
+msgstr "listing_po_column_order_date"
+
+msgid "listing_po_column_order_lines"
+msgstr "listing_po_column_order_lines"
+
+msgid "listing_po_column_purchaser"
+msgstr "listing_po_column_purchaser"
+
+msgid "listing_po_column_remarks"
+msgstr "listing_po_column_remarks"
+
+msgid "listing_po_column_status"
+msgstr "listing_po_column_status"
+
+msgid "listing_po_fieldset_base_info"
+msgstr "listing_po_fieldset_base_info"
+
+msgid "listing_po_fieldset_order_details"
+msgstr "listing_po_fieldset_order_details"
+
+msgid "listing_po_line_column_batch"
+msgstr "listing_po_line_column_batch"
+
+msgid "listing_po_line_column_batch_number"
+msgstr "listing_po_line_column_batch_number"
+
+msgid "listing_po_line_column_quantity_ordered"
+msgstr "listing_po_line_column_quantity_ordered"
+
+msgid "listing_po_line_column_stock"
+msgstr "listing_po_line_column_stock"
+
+msgid "listing_po_line_column_supplier"
+msgstr "listing_po_line_column_supplier"
+
+msgid "listing_po_line_column_tax_rate"
+msgstr "listing_po_line_column_tax_rate"
+
+msgid "listing_po_line_column_unit"
+msgstr "listing_po_line_column_unit"
+
+msgid "listing_po_line_column_unit_price"
+msgstr "listing_po_line_column_unit_price"
+
+msgid "listing_purchaseorders_action_add"
+msgstr "listing_purchaseorders_action_add"
+
+msgid "listing_purchaseorders_column_date"
+msgstr "listing_purchaseorders_column_date"
+
+msgid "listing_purchaseorders_column_number"
+msgstr "listing_purchaseorders_column_number"
+
+msgid "listing_purchaseorders_column_purchaser"
+msgstr "listing_purchaseorders_column_purchaser"
+
+msgid "listing_purchaseorders_column_status"
+msgstr "listing_purchaseorders_column_status"
+
+msgid "listing_purchaseorders_title"
+msgstr "listing_purchaseorders_title"
+
+msgid "listing_state_active"
+msgstr "listing_state_active"
+
+msgid "listing_state_all"
+msgstr "listing_state_all"
+
+msgid "listing_state_destroyed"
+msgstr "listing_state_destroyed"
+
+msgid "listing_state_expired"
+msgstr "listing_state_expired"
+
+msgid "listing_state_inactive"
+msgstr "listing_state_inactive"
+
+msgid "listing_stockbatch_column_batch"
+msgstr "listing_stockbatch_column_batch"
+
+msgid "listing_stockbatch_column_batch_id"
+msgstr "listing_stockbatch_column_batch_id"
+
+msgid "listing_stockbatch_column_created_by"
+msgstr "listing_stockbatch_column_created_by"
+
+msgid "listing_stockbatch_column_created_date"
+msgstr "listing_stockbatch_column_created_date"
+
+msgid "listing_stockbatch_column_current_amount"
+msgstr "listing_stockbatch_column_current_amount"
+
+msgid "listing_stockbatch_column_description"
+msgstr "listing_stockbatch_column_description"
+
+msgid "listing_stockbatch_column_expiry_date"
+msgstr "listing_stockbatch_column_expiry_date"
+
+msgid "listing_stockbatch_column_location"
+msgstr "listing_stockbatch_column_location"
+
+msgid "listing_stockbatch_column_low_quantity_threshold"
+msgstr "listing_stockbatch_column_low_quantity_threshold"
+
+msgid "listing_stockbatch_column_status"
+msgstr "listing_stockbatch_column_status"
+
+msgid "listing_stockbatch_column_stock"
+msgstr "listing_stockbatch_column_stock"
+
+msgid "listing_stockbatch_column_supplier"
+msgstr "listing_stockbatch_column_supplier"
+
+msgid "listing_stockbatch_column_target_quantity"
+msgstr "listing_stockbatch_column_target_quantity"
+
+msgid "listing_stockbatch_column_unit"
+msgstr "listing_stockbatch_column_unit"
+
+msgid "listing_stockbatch_column_usage_records"
+msgstr "listing_stockbatch_column_usage_records"
+
+msgid "listing_stockbatch_fieldset_batch_details"
+msgstr "listing_stockbatch_fieldset_batch_details"
+
+msgid "listing_stockbatch_fieldset_usage"
+msgstr "listing_stockbatch_fieldset_usage"
+
+msgid "listing_stockbatch_usage_column_from_batch"
+msgstr "listing_stockbatch_usage_column_from_batch"
+
+msgid "listing_stockbatch_usage_column_operation_date"
+msgstr "listing_stockbatch_usage_column_operation_date"
+
+msgid "listing_stockbatch_usage_column_operation_type"
+msgstr "listing_stockbatch_usage_column_operation_type"
+
+msgid "listing_stockbatch_usage_column_operator"
+msgstr "listing_stockbatch_usage_column_operator"
+
+msgid "listing_stockbatch_usage_column_quantity"
+msgstr "listing_stockbatch_usage_column_quantity"
+
+msgid "listing_stockbatch_usage_column_remarks"
+msgstr "listing_stockbatch_usage_column_remarks"
+
+msgid "listing_stockbatches_action_add"
+msgstr "listing_stockbatches_action_add"
+
+msgid "listing_stockbatches_column_batch_id"
+msgstr "listing_stockbatches_column_batch_id"
+
+msgid "listing_stockbatches_column_created_by"
+msgstr "listing_stockbatches_column_created_by"
+
+msgid "listing_stockbatches_column_created_date"
+msgstr "listing_stockbatches_column_created_date"
+
+msgid "listing_stockbatches_column_current_amount"
+msgstr "listing_stockbatches_column_current_amount"
+
+msgid "listing_stockbatches_column_expiry_date"
+msgstr "listing_stockbatches_column_expiry_date"
+
+msgid "listing_stockbatches_column_status"
+msgstr "listing_stockbatches_column_status"
+
+msgid "listing_stockbatches_column_stock"
+msgstr "listing_stockbatches_column_stock"
+
+msgid "listing_stockbatches_column_supplier"
+msgstr "listing_stockbatches_column_supplier"
+
+msgid "listing_stockbatches_column_target_quantity"
+msgstr "listing_stockbatches_column_target_quantity"
+
+msgid "listing_stockbatches_column_unit"
+msgstr "listing_stockbatches_column_unit"
+
+msgid "listing_stockbatches_title"
+msgstr "listing_stockbatches_title"
+
+msgid "listing_stockitems_action_add"
+msgstr "listing_stockitems_action_add"
+
+msgid "listing_stockitems_column_expiry"
+msgstr "listing_stockitems_column_expiry"
+
+msgid "listing_stockitems_column_location"
+msgstr "listing_stockitems_column_location"
+
+msgid "listing_stockitems_column_name"
+msgstr "listing_stockitems_column_name"
+
+msgid "listing_stockitems_column_number"
+msgstr "listing_stockitems_column_number"
+
+msgid "listing_stockitems_column_quantity"
+msgstr "listing_stockitems_column_quantity"
+
+msgid "listing_stockitems_column_supplier"
+msgstr "listing_stockitems_column_supplier"
+
+msgid "listing_stockitems_column_type"
+msgstr "listing_stockitems_column_type"
+
+msgid "listing_stockitems_column_unit"
+msgstr "listing_stockitems_column_unit"
+
+msgid "listing_stockitems_title"
+msgstr "listing_stockitems_title"
+
+msgid "listing_stocktypes_action_add"
+msgstr "listing_stocktypes_action_add"
+
+msgid "listing_stocktypes_column_description"
+msgstr "listing_stocktypes_column_description"
+
+msgid "listing_stocktypes_column_title"
+msgstr "listing_stocktypes_column_title"
+
+msgid "listing_stocktypes_title"
+msgstr "listing_stocktypes_title"
+
+msgid "listing_stockunits_action_add"
+msgstr "listing_stockunits_action_add"
+
+msgid "listing_stockunits_column_description"
+msgstr "listing_stockunits_column_description"
+
+msgid "listing_stockunits_column_title"
+msgstr "listing_stockunits_column_title"
+
+msgid "listing_stockunits_title"
+msgstr "listing_stockunits_title"
+
+msgid "operation_adjust"
+msgstr "operation_adjust"
+
+msgid "operation_consume"
+msgstr "operation_consume"
+
+msgid "operation_create"
+msgstr "operation_create"
+
+msgid "operation_destroy"
+msgstr "operation_destroy"
+
+msgid "operation_expire"
+msgstr "operation_expire"
+
+msgid "operation_return"
+msgstr "operation_return"
+
+msgid "operation_split"
+msgstr "operation_split"
+
+msgid "operation_stocktake"
+msgstr "operation_stocktake"

@@ -5,8 +5,10 @@ from bika.lims import api
 from bika.lims.utils import get_link
 from senaite.app.listing import ListingView
 from senaite.core.api import dtime
+from senaite.core.i18n import translate
 from decimal import Decimal
 
+from maitux.stock import _
 from maitux.stock.browser.stockbatchactions import ACTION_CONSUME
 from maitux.stock.browser.stockbatchactions import ACTION_DESTROY
 from maitux.stock.browser.stockbatchactions import ACTION_PRINT
@@ -39,7 +41,10 @@ class StockBatchesView(ListingView):
     def __init__(self, context, request):
         super(StockBatchesView, self).__init__(context, request)
 
-        self.title = u"Stock Batches"
+        self.title = translate(_(
+            u"listing_stockbatches_title",
+            default=u"Stock Batches"
+        ))
         self.catalog = "portal_catalog"
         self.show_search = True
         self.contentFilter = {
@@ -52,7 +57,7 @@ class StockBatchesView(ListingView):
             },
         }
         self.context_actions = {
-            u"Add": {
+            _(u"listing_stockbatches_action_add", default=u"Add"): {
                 "url": "++add++StockBatch",
                 "permission": "cmf.AddPortalContent",
                 "icon": "senaite_theme/icon/plus",
@@ -61,22 +66,22 @@ class StockBatchesView(ListingView):
         self.show_select_column = True
 
         self.columns = collections.OrderedDict((
-            ("batch_id", {"title": u"Batch ID", "toggle": True}),
-            ("stock", {"title": u"Stock", "toggle": True}),
-            ("supplier", {"title": u"Supplier", "toggle": True}),
-            ("current_amount", {"title": u"Current Amount", "toggle": True}),
-            ("target_quantity", {"title": u"Target Quantity", "toggle": True}),
-            ("unit", {"title": u"Unit", "toggle": True}),
-            ("expiry_date", {"title": u"Expiry Date", "toggle": True}),
-            ("created_by", {"title": u"Created By", "toggle": True, "index": "Creator"}),
-            ("created_date", {"title": u"Created Date", "toggle": True, "index": "created"}),
-            ("status", {"title": u"Status", "toggle": True}),
+            ("batch_id", {"title": _(u"listing_stockbatches_column_batch_id", default=u"Batch ID"), "toggle": True}),
+            ("stock", {"title": _(u"listing_stockbatches_column_stock", default=u"Stock"), "toggle": True}),
+            ("supplier", {"title": _(u"listing_stockbatches_column_supplier", default=u"Supplier"), "toggle": True}),
+            ("current_amount", {"title": _(u"listing_stockbatches_column_current_amount", default=u"Current Amount"), "toggle": True}),
+            ("target_quantity", {"title": _(u"listing_stockbatches_column_target_quantity", default=u"Target Quantity"), "toggle": True}),
+            ("unit", {"title": _(u"listing_stockbatches_column_unit", default=u"Unit"), "toggle": True}),
+            ("expiry_date", {"title": _(u"listing_stockbatches_column_expiry_date", default=u"Expiry Date"), "toggle": True}),
+            ("created_by", {"title": _(u"listing_stockbatches_column_created_by", default=u"Created By"), "toggle": True, "index": "Creator"}),
+            ("created_date", {"title": _(u"listing_stockbatches_column_created_date", default=u"Created Date"), "toggle": True, "index": "created"}),
+            ("status", {"title": _(u"listing_stockbatches_column_status", default=u"Status"), "toggle": True}),
         ))
 
         self.review_states = [
             {
                 "id": "default",
-                "title": u"Active",
+                "title": _(u"listing_state_active", default=u"Active"),
                 "contentFilter": {"review_state": "active"},
                 "transitions": get_transition_items_for_action_ids([
                     ACTION_CONSUME,
@@ -89,7 +94,7 @@ class StockBatchesView(ListingView):
                 "columns": list(self.columns.keys()),
             }, {
                 "id": "expired",
-                "title": u"Expired",
+                "title": _(u"listing_state_expired", default=u"Expired"),
                 "contentFilter": {"review_state": REVIEW_STATE_EXPIRED},
                 "transitions": get_transition_items_for_action_ids([
                     ACTION_DESTROY,
@@ -98,7 +103,7 @@ class StockBatchesView(ListingView):
                 "columns": list(self.columns.keys()),
             }, {
                 "id": "destroyed",
-                "title": u"Destroyed",
+                "title": _(u"listing_state_destroyed", default=u"Destroyed"),
                 "contentFilter": {"review_state": "destroyed"},
                 "transitions": get_transition_items_for_action_ids([
                     ACTION_PRINT,
@@ -106,7 +111,7 @@ class StockBatchesView(ListingView):
                 "columns": list(self.columns.keys()),
             }, {
                 "id": "all",
-                "title": u"All",
+                "title": _(u"listing_state_all", default=u"All"),
                 "contentFilter": {},
                 "transitions": [],
                 "columns": list(self.columns.keys()),

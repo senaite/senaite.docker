@@ -5,6 +5,7 @@ from Products.CMFPlone.interfaces import INonInstallable
 from senaite.core import logger
 from zope.interface import implementer
 
+from maitux.stock import _
 from maitux.stock.config import PROJECTNAME
 from maitux.stock.stockbatchexpiry import REVIEW_STATE_ACTIVE
 from maitux.stock.stockbatchexpiry import REVIEW_STATE_DESTROYED
@@ -13,23 +14,23 @@ from maitux.stock.stockbatchexpiry import is_due_for_expiry
 from maitux.stock.stockbatchexpiry import set_status_value
 
 STOCK_MANAGER_ID = "stockmanager"
-STOCK_MANAGER_TITLE = "Stockinventory"
+STOCK_MANAGER_TITLE = _(u"Stockinventory", default=u"Stockinventory")
 DYNAMIC_SECTION_ID = "stock_dynamic"
 STOCK_FOLDER_ID = "stock"
-STOCK_FOLDER_TITLE = "Stock Item"
+STOCK_FOLDER_TITLE = _(u"Stock Item", default=u"Stock Item")
 STOCK_UNITS_ID = "stock_units"
 STOCK_TYPES_ID = "stock_types"
 PURCHASE_ORDERS_ID = "purchase_orders"
 STOCK_BATCHES_ID = "stock_batches"
 LOW_STOCK_ID = "low_stock"
-LOW_STOCK_TITLE = "Low Quantity"
+LOW_STOCK_TITLE = _(u"Low Quantity", default=u"Low Quantity")
 SIDEBAR_DEPTH = 2
 
 STOCK_CHILDREN = (
-    (STOCK_UNITS_ID, "StockUnits", "Units"),
-    (STOCK_TYPES_ID, "StockTypes", "Stock Types"),
-    (PURCHASE_ORDERS_ID, "StockPurchaseOrders", "Purchase Orders"),
-    (STOCK_BATCHES_ID, "StockBatches", "Stock Batches"),
+    (STOCK_UNITS_ID, "StockUnits", _(u"Units", default=u"Units")),
+    (STOCK_TYPES_ID, "StockTypes", _(u"Stock Types", default=u"Stock Types")),
+    (PURCHASE_ORDERS_ID, "StockPurchaseOrders", _(u"Purchase Orders", default=u"Purchase Orders")),
+    (STOCK_BATCHES_ID, "StockBatches", _(u"Stock Batches", default=u"Stock Batches")),
 )
 
 

@@ -3,9 +3,9 @@ from decimal import Decimal
 
 from Products.Five.browser import BrowserView
 from bika.lims import api
-from bika.lims import senaiteMessageFactory as _
 from senaite.core.api import dtime
 
+from maitux.stock import _
 from maitux.stock.stockbatchexpiry import expire_batch
 from maitux.stock.stockbatchexpiry import get_operation_block_message
 from maitux.stock.stockbatchexpiry import is_due_for_expiry

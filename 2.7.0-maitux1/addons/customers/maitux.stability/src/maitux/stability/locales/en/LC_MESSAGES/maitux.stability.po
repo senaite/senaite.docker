@@ -1,0 +1,363 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: maitux.stability\n"
+"POT-Creation-Date: 2026-08-20 00:00+0000\n"
+"PO-Revision-Date: 2026-08-20 00:00+0000\n"
+"Last-Translator: Admin <admin@example.com>\n"
+"Language-Team: en <admin@example.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+"Language-Code: en\n"
+"Language-Name: English\n"
+"Preferred-Encodings: utf-8 latin1\n"
+"Domain: maitux.stability\n"
+
+msgid "(None)"
+msgstr "(None)"
+
+msgid "Active"
+msgstr "Active"
+
+msgid "Add row"
+msgstr "Add row"
+
+msgid "Analysis Profile"
+msgstr "Analysis Profile"
+
+msgid "Analysis Specification"
+msgstr "Analysis Specification"
+
+msgid "Article"
+msgstr "Article"
+
+msgid "Batch"
+msgstr "Batch"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Cannot create sample in this environment."
+msgstr "Cannot create sample in this environment."
+
+msgid "Client"
+msgstr "Client"
+
+msgid "Client not found."
+msgstr "Client not found."
+
+msgid "Completed"
+msgstr "Completed"
+
+msgid "Contact"
+msgstr "Contact"
+
+msgid "Create"
+msgstr "Create"
+
+msgid "Create Plan"
+msgstr "Create Plan"
+
+msgid "Create Sample"
+msgstr "Create Sample"
+
+msgid "Create a stability plan from the selected template"
+msgstr "Create a stability plan from the selected template"
+
+msgid "Created {0} sample(s)."
+msgstr "Created {0} sample(s)."
+
+msgid "Default Stability Study"
+msgstr "Default Stability Study"
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Expired"
+msgstr "Expired"
+
+msgid "Failed to update Stability Plan details."
+msgstr "Failed to update Stability Plan details."
+
+msgid "Horizontal"
+msgstr "Horizontal"
+
+msgid "In Progress"
+msgstr "In Progress"
+
+msgid "Inactive"
+msgstr "Inactive"
+
+msgid "Inspection Quantity"
+msgstr "Inspection Quantity"
+
+msgid "Inverted"
+msgstr "Inverted"
+
+msgid "Link Existing Sample"
+msgstr "Link Existing Sample"
+
+msgid "Linked sample for {0} plan detail row(s)."
+msgstr "Linked sample for {0} plan detail row(s)."
+
+msgid "Name"
+msgstr "Name"
+
+msgid "No analyses were created for this sample. Please check the selected Specification/Profile."
+msgstr "No analyses were created for this sample. Please check the selected Specification/Profile."
+
+msgid "No items selected."
+msgstr "No items selected."
+
+msgid "No pending tasks selected."
+msgstr "No pending tasks selected."
+
+msgid "No plan details selected."
+msgstr "No plan details selected."
+
+msgid "No plans found for selected tasks."
+msgstr "No plans found for selected tasks."
+
+msgid "No task data available"
+msgstr "No task data available"
+
+msgid "No template article was found. You can upload a file here if needed."
+msgstr "No template article was found. You can upload a file here if needed."
+
+msgid "Notes"
+msgstr "Notes"
+
+msgid "Only the most recent samples are listed. A search dialog can be added later."
+msgstr "Only the most recent samples are listed. A search dialog can be added later."
+
+msgid "Orientation"
+msgstr "Orientation"
+
+msgid "Packaging Specification"
+msgstr "Packaging Specification"
+
+msgid "Pending Placement"
+msgstr "Pending Placement"
+
+msgid "Plan"
+msgstr "Plan"
+
+msgid "Plan Details"
+msgstr "Plan Details"
+
+msgid "Plan Template"
+msgstr "Plan Template"
+
+msgid "Please select a Client."
+msgstr "Please select a Client."
+
+msgid "Please select a Contact."
+msgstr "Please select a Contact."
+
+msgid "Please select a Sample Type."
+msgstr "Please select a Sample Type."
+
+msgid "Please select a Stock Batch for each selected task."
+msgstr "Please select a Stock Batch for each selected task."
+
+msgid "Please select an existing sample first."
+msgstr "Please select an existing sample first."
+
+msgid "Please select at least one task."
+msgstr "Please select at least one task."
+
+msgid "Please select either an Analysis Specification or an Analysis Profile."
+msgstr "Please select either an Analysis Specification or an Analysis Profile."
+
+msgid "Please select one Analysis Specification or one Analysis Profile."
+msgstr "Please select one Analysis Specification or one Analysis Profile."
+
+msgid "Please select one template before creating a plan"
+msgstr "Please select one template before creating a plan"
+
+msgid "Please select pending tasks first."
+msgstr "Please select pending tasks first."
+
+msgid "Sample"
+msgstr "Sample"
+
+msgid "Sample Placement"
+msgstr "Sample Placement"
+
+msgid "Sample Placement can only be applied to Pending Placement tasks."
+msgstr "Sample Placement can only be applied to Pending Placement tasks."
+
+msgid "Sample Type"
+msgstr "Sample Type"
+
+msgid "Save"
+msgstr "Save"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "Select Sample"
+msgstr "Select Sample"
+
+msgid "Select a Stock Batch..."
+msgstr "Select a Stock Batch..."
+
+msgid "Select..."
+msgstr "Select..."
+
+msgid "Selected pending tasks are listed below. Choose a Stock Batch for each task and save."
+msgstr "Selected pending tasks are listed below. Choose a Stock Batch for each task and save."
+
+msgid "Selecting a client will refresh the contact list."
+msgstr "Selecting a client will refresh the contact list."
+
+msgid "Sequence"
+msgstr "Sequence"
+
+msgid "Spec/Profile"
+msgstr "Spec/Profile"
+
+msgid "Stability Studies"
+msgstr "Stability Studies"
+
+msgid "Stability Study Name"
+msgstr "Stability Study Name"
+
+msgid "Stability Study Plan ID"
+msgstr "Stability Study Plan ID"
+
+msgid "Stability Task Board"
+msgstr "Stability Task Board"
+
+msgid "StabilityPlans content type is not installed. Please reinstall/upgrade the maitux.stability add-on."
+msgstr "StabilityPlans content type is not installed. Please reinstall/upgrade the maitux.stability add-on."
+
+msgid "Start Time (T0)"
+msgstr "Start Time (T0)"
+
+msgid "Status"
+msgstr "Status"
+
+msgid "Stock Batch"
+msgstr "Stock Batch"
+
+msgid "Storage Condition"
+msgstr "Storage Condition"
+
+msgid "Storage Quantity - Reserve"
+msgstr "Storage Quantity - Reserve"
+
+msgid "Storage Quantity - Sampling"
+msgstr "Storage Quantity - Sampling"
+
+msgid "Storage Quantity - Total"
+msgstr "Storage Quantity - Total"
+
+msgid "Study Name"
+msgstr "Study Name"
+
+msgid "Sync done. Created: {0}, Updated: {1}, Deleted: {2}."
+msgstr "Sync done. Created: {0}, Updated: {1}, Deleted: {2}."
+
+msgid "Sync feature is not available."
+msgstr "Sync feature is not available."
+
+msgid "Target Date"
+msgstr "Target Date"
+
+msgid "Task"
+msgstr "Task"
+
+msgid "The selected template was not found"
+msgstr "The selected template was not found"
+
+msgid "Timepoint (Months)"
+msgstr "Timepoint (Months)"
+
+msgid "Timepoint Tasks"
+msgstr "Timepoint Tasks"
+
+msgid "Title"
+msgstr "Title"
+
+msgid "Unit"
+msgstr "Unit"
+
+msgid "Updated {0} task(s) to In Progress."
+msgstr "Updated {0} task(s) to In Progress."
+
+msgid "Upright"
+msgstr "Upright"
+
+msgid "Window (Days)"
+msgstr "Window (Days)"
+
+msgid "Window End"
+msgstr "Window End"
+
+msgid "Window Start"
+msgstr "Window Start"
+
+msgid "You do not have permission to create samples."
+msgstr "You do not have permission to create samples."
+
+msgid "You do not have permission to link samples."
+msgstr "You do not have permission to link samples."
+
+msgid "You do not have permission to place samples."
+msgstr "You do not have permission to place samples."
+
+msgid "You do not have permission to sync plan tasks."
+msgstr "You do not have permission to sync plan tasks."
+
+msgid "listing_packagingspecifications_title"
+msgstr "listing_packagingspecifications_title"
+
+msgid "listing_stability_action_add"
+msgstr "listing_stability_action_add"
+
+msgid "listing_stability_action_task_board"
+msgstr "listing_stability_action_task_board"
+
+msgid "listing_stability_column_description"
+msgstr "listing_stability_column_description"
+
+msgid "listing_stability_column_state"
+msgstr "listing_stability_column_state"
+
+msgid "listing_stability_column_title"
+msgstr "listing_stability_column_title"
+
+msgid "listing_stability_status_all"
+msgstr "listing_stability_status_all"
+
+msgid "listing_stability_status_completed"
+msgstr "listing_stability_status_completed"
+
+msgid "listing_stability_status_in_progress"
+msgstr "listing_stability_status_in_progress"
+
+msgid "listing_stability_status_pending_placement"
+msgstr "listing_stability_status_pending_placement"
+
+msgid "listing_stabilityplans_title"
+msgstr "listing_stabilityplans_title"
+
+msgid "listing_stabilityplantemplates_title"
+msgstr "listing_stabilityplantemplates_title"
+
+msgid "listing_state_active"
+msgstr "listing_state_active"
+
+msgid "listing_state_all"
+msgstr "listing_state_all"
+
+msgid "listing_state_inactive"
+msgstr "listing_state_inactive"
+
+msgid "listing_storageconditions_title"
+msgstr "listing_storageconditions_title"
+
+msgid "task_title_tp_months"
+msgstr "task_title_tp_months"
