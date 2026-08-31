@@ -1,0 +1,51 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="maitux.auditjournal">
+
+  <!--
+    R4b：豁免卸载 = 只剩升级一条路，所以这条通道必须从第一版就建起来并验证过。
+    profile 侧的变更走这里；PostgreSQL 表结构**不走这里**（站点级 step 在多库
+    形态下升不全），由 db.ensure_schema() 按 DSN 惰性补齐。
+  -->
+  <genericsetup:upgradeStep
+      title="maitux.auditjournal: profile v1 -> v2"
+      description="Re-applies rolemap. No schema change (table migrations are per-DSN)."
+      source="1"
+      destination="2"
+      handler="maitux.auditjournal.upgrades.v2.upgrade"
+      sortkey="1"
+      profile="maitux.auditjournal:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="maitux.auditjournal: profile v2 -> v3"
+      description="Adds the audit journal entry to the user (gear) menu."
+      source="2"
+      destination="3"
+      handler="maitux.auditjournal.upgrades.v3.upgrade"
+      sortkey="2"
+      profile="maitux.auditjournal:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="maitux.auditjournal: profile v3 -> v4 (fix non-ASCII action title)"
+      description="v3 shipped a Chinese action title which broke the personal bar."
+      source="3"
+      destination="4"
+      handler="maitux.auditjournal.upgrades.v4.upgrade"
+      sortkey="3"
+      profile="maitux.auditjournal:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="maitux.auditjournal: profile v4 -> v5 (i18n for the menu entry)"
+      description="Re-imports actions so the gear menu entry gets translated."
+      source="4"
+      destination="5"
+      handler="maitux.auditjournal.upgrades.v5.upgrade"
+      sortkey="4"
+      profile="maitux.auditjournal:default"
+      />
+
+</configure>

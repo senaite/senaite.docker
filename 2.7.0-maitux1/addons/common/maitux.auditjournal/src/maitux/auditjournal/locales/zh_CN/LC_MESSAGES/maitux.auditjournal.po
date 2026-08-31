@@ -1,0 +1,119 @@
+# 简体中文翻译 —— maitux.auditjournal
+#
+# ★ 改完必须重新编译：在包根目录跑 `python compile_locales.py`
+#   否则界面用的还是旧 .mo，而且**不报任何错**（静默失效）。
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: maitux.auditjournal 1.0.0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Language-Code: zh_CN\n"
+"Language-Name: Chinese (China)\n"
+"Domain: maitux.auditjournal\n"
+
+# --- 入口与标题 ---
+msgid "Audit Journal"
+msgstr "审计流水"
+
+msgid "Search all modifications by time, actor and type"
+msgstr "按时间／人／类型检索全站修改记录"
+
+msgid "Modifications, newest first. Click the object to open its Audit Log tab for the detailed diff."
+msgstr "修改记录，按时间倒序。点「对象」跳到该对象的 Audit Log 页签查看改动详情。"
+
+# --- 筛选栏 ---
+msgid "Start date"
+msgstr "起始日期"
+
+msgid "End date"
+msgstr "结束日期"
+
+msgid "(inclusive)"
+msgstr "（含当天）"
+
+msgid "Actor"
+msgstr "操作人"
+
+msgid "exact match"
+msgstr "精确匹配"
+
+msgid "Object type"
+msgstr "对象类型"
+
+msgid "Action"
+msgstr "动作"
+
+msgid "Object ID / title"
+msgstr "对象 ID ／ 标题"
+
+msgid "keyword"
+msgstr "关键字"
+
+msgid "Search"
+msgstr "查询"
+
+msgid "Reset"
+msgstr "重置"
+
+# --- 区间与错误 ---
+msgid "Cannot run this query:"
+msgstr "查不了："
+
+msgid "Current range:"
+msgstr "当前区间："
+
+msgid "Maximum range per query is ${days} days; split longer periods into several queries."
+msgstr "单次查询跨度上限 ${days} 天，超出请分段查。"
+
+msgid "Start date must be YYYY-MM-DD"
+msgstr "起始日期格式不对，应为 YYYY-MM-DD"
+
+msgid "End date must be YYYY-MM-DD"
+msgstr "结束日期格式不对，应为 YYYY-MM-DD"
+
+msgid "End date cannot be earlier than start date"
+msgstr "结束日期不能早于起始日期"
+
+msgid "Requested range is ${span} days, over the ${max} day limit (about 6 months). Please query in shorter periods - the range is NOT truncated automatically, so that you never mistake a partial result for the whole."
+msgstr "时间跨度 ${span} 天，超过上限 ${max} 天（约 6 个月）。请分段查询 —— 这里**不会**自动截断，免得你把片段当成全部。"
+
+msgid "Cannot reach the database, please contact an administrator"
+msgstr "拿不到数据库连接，请联系管理员"
+
+# --- 表格 ---
+msgid "Time"
+msgstr "时间"
+
+msgid "Type"
+msgstr "类型"
+
+msgid "Object"
+msgstr "对象"
+
+msgid "Version"
+msgstr "版本"
+
+msgid "State"
+msgstr "状态"
+
+msgid "Source IP"
+msgstr "来源 IP"
+
+msgid "No records in this range."
+msgstr "该区间没有记录。"
+
+# --- 分页与脚注 ---
+msgid "Previous"
+msgstr "上一页"
+
+msgid "Next"
+msgstr "下一页"
+
+msgid "Back to latest"
+msgstr "回到最新"
+
+msgid "Only records of the current site whose object still exists are listed. Paging uses a keyset cursor and no total is computed - COUNT(*) on a large table costs more than the query itself."
+msgstr "仅显示当前站点、且对象仍存在的记录。分页用游标（keyset），不统计总数 —— 大表上 COUNT(*) 比查询本身还慢。"

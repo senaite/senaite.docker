@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<object name="portal_actions" meta_type="Plone Actions Tool">
+  <!--
+    ★★ title / description 必须是 **纯 ASCII**，不能写中文。★★
+
+    2026-08-31 实测事故：写了中文标题 + i18n:domain 之后，整站多数页面
+    UnicodeDecodeError。根因在 CMFCore：
+
+        Products/CMFCore/ActionInformation.py:161
+            elif self.i18n_domain and id in ('title', 'description'):
+                val = Message(val, self.i18n_domain)
+
+    zope.i18nmessageid.Message 是 unicode 子类，拿它包一个含中文的**字节串**，
+    Py2 会隐式按 ASCII 解码 → 抛错。而本 action 在 user 分类，
+    personal bar 每页都渲染 → 每页都炸。
+
+    要中文界面，正确做法是：title 写 ASCII msgid + 在 locales 里给
+    zh_CN 翻译（senaite.impress 就是这么做的），不是直接把中文塞进 XML。
+
+    ★ 同样不能写 purge="True"：senaite.core 自己的 actions.xml 每个 category
+      都带 purge（7 处），跟着写会清掉原生动作。
+  -->
+  <object name="user" meta_type="CMF Action Category">
+    <object name="maitux_audit_journal" meta_type="CMF Action">
+      <!--
+        ★ 必须用 <property name="i18n_domain">，不能用 i18n:domain 属性：
+          CMFCore 的 actions 导入器**只在导出时**写 xmlns:i18n
+          （exportimport/actions.py:110），导入时根本不读那个属性。
+        ★ 不显式设的话，Action 用类默认值 'cmf_default'
+          （ActionInformation.py:80）—— 于是拿我们的 msgid 去 cmf_default
+          域里查，查不到，界面显示英文原文。
+        ★ 也正因为这个类默认值几乎总是真值，getInfoData 里的
+          Message(title, domain) 总会被调用 —— 所以**中文标题必炸**，
+          跟你设不设 domain 无关（见 R9b）。
+      -->
+      <property name="i18n_domain">maitux.auditjournal</property>
+      <property name="title">Audit Journal</property>
+      <property name="description">Search all modifications by time, actor and type</property>
+      <property name="url_expr">string:${portal_url}/@@audit-journal</property>
+      <property name="link_target"></property>
+      <property name="icon_expr"></property>
+      <property name="available_expr"></property>
+      <property name="permissions">
+        <element value="MAITUX: View Audit Journal"/>
+      </property>
+      <property name="visible">True</property>
+    </object>
+  </object>
+</object>

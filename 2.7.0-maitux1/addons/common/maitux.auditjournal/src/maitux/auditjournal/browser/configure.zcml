@@ -1,0 +1,21 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    i18n_domain="maitux.auditjournal">
+
+  <!--
+    ★ 权限必须卡在这里。本视图直接读 SQL，绕过了对象级权限过滤
+      （实施方案 §7.1 实测：同一 catalog searchResults 返回 66、
+       unrestrictedSearchResults 返回 0，差异全来自权限）。
+    ★ 用的是本包自定义权限，不是 senaite.core 的 —— 所以不需要 R1 的
+      <include package="senaite.core.permissions" />（lint E05 会盯着）。
+  -->
+  <browser:page
+      name="audit-journal"
+      for="Products.CMFPlone.interfaces.IPloneSiteRoot"
+      class=".view.AuditJournalView"
+      permission="maitux.auditjournal.ViewAuditJournal"
+      layer="zope.publisher.interfaces.browser.IDefaultBrowserLayer"
+      />
+
+</configure>

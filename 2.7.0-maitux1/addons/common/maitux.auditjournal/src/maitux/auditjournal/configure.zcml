@@ -1,0 +1,40 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="maitux.auditjournal">
+
+  <include package="Products.Five" />
+  <include package="Products.GenericSetup" file="meta.zcml" />
+  <five:registerPackage package="." />
+
+  <!-- 界面文案的翻译；msgid 一律 ASCII，中文在 locales/zh_CN（R9b / S13） -->
+  <i18n:registerTranslations directory="locales" />
+
+  <include file="permissions.zcml" />
+  <include package=".upgrades" />
+  <include package=".browser" />
+
+  <!--
+    启动即建表：记录层不依赖 GenericSetup profile（建表是库级的、profile 是站点级的，
+    实施方案 §6.6）。处理器内部全程 try/except —— 启动链路上抛异常 = 整站起不来。
+  -->
+  <subscriber
+      for="zope.processlifetime.IDatabaseOpenedWithRoot"
+      handler=".startup.on_database_opened"
+      />
+
+  <!--
+    ★ 只有 default，没有 uninstall —— R4b 合规豁免，理由见 README.rst 首段。
+    profile 只做一件事：把 ViewAuditJournal 授给 Manager / LabManager。
+  -->
+  <genericsetup:registerProfile
+      name="default"
+      title="MAITUX Audit Journal"
+      directory="profiles/default"
+      description="Grants the audit journal view permission (recording layer needs no profile)"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+</configure>
