@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<rolemap>
+  <permissions>
+    <permission name="MAITUX: View Audit Journal" acquire="False">
+      <role name="Manager"/>
+      <role name="LabManager"/>
+    </permission>
+  </permissions>
+</rolemap>

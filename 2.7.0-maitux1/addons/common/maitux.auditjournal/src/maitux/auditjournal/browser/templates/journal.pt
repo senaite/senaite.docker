@@ -1,0 +1,139 @@
+<html xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      i18n:domain="maitux.auditjournal"
+      metal:use-macro="here/main_template/macros/master">
+<body>
+<metal:content fill-slot="content">
+
+  <!--
+    ★ 所有可翻译文案必须写在**一行**：msgid 是按元素内容原样抽取的，
+      换行和缩进都会进 msgid，和 locales/*.po 里的条目对不上（静默不翻译）。
+    ★ msgid 一律 ASCII（R9b）。中文只出现在 .po 里。
+  -->
+
+  <h1 class="documentFirstHeading" i18n:translate="">Audit Journal</h1>
+
+  <p class="documentDescription">
+    <span tal:replace="view/site_path">/MaiLIMS</span>
+    <span i18n:translate="">Modifications, newest first. Click the object to open its Audit Log tab for the detailed diff.</span>
+  </p>
+
+  <form method="get" class="form-row align-items-end mb-3"
+        tal:define="flt view/filters"
+        tal:attributes="action view/first_url">
+
+    <div class="form-group col-auto">
+      <label class="small mb-1" i18n:translate="">Start date</label>
+      <input type="date" name="date_from" class="form-control form-control-sm"
+             tal:attributes="value flt/date_from" />
+    </div>
+    <div class="form-group col-auto">
+      <label class="small mb-1">
+        <span i18n:translate="">End date</span>
+        <span class="text-muted" i18n:translate="">(inclusive)</span>
+      </label>
+      <input type="date" name="date_to" class="form-control form-control-sm"
+             tal:attributes="value flt/date_to" />
+    </div>
+    <div class="form-group col-auto">
+      <label class="small mb-1" i18n:translate="">Actor</label>
+      <input type="text" name="actor" class="form-control form-control-sm"
+             placeholder="exact match" i18n:attributes="placeholder"
+             tal:attributes="value flt/actor" />
+    </div>
+    <div class="form-group col-auto">
+      <label class="small mb-1" i18n:translate="">Object type</label>
+      <input type="text" name="portal_type" class="form-control form-control-sm"
+             placeholder="AnalysisService"
+             tal:attributes="value flt/portal_type" />
+    </div>
+    <div class="form-group col-auto">
+      <label class="small mb-1" i18n:translate="">Action</label>
+      <input type="text" name="action" class="form-control form-control-sm"
+             placeholder="edit / submit"
+             tal:attributes="value flt/action" />
+    </div>
+    <div class="form-group col-auto">
+      <label class="small mb-1" i18n:translate="">Object ID / title</label>
+      <input type="text" name="q" class="form-control form-control-sm"
+             placeholder="keyword" i18n:attributes="placeholder"
+             tal:attributes="value flt/keyword" />
+    </div>
+    <div class="form-group col-auto">
+      <button type="submit" class="btn btn-primary btn-sm"
+              i18n:translate="">Search</button>
+      <a class="btn btn-outline-secondary btn-sm"
+         tal:attributes="href view/first_url" i18n:translate="">Reset</a>
+    </div>
+  </form>
+
+  <div class="alert alert-warning" tal:condition="view/has_error">
+    <strong i18n:translate="">Cannot run this query:</strong>
+    <span tal:content="view/error_message">range too wide</span>
+  </div>
+
+  <div tal:condition="not:view/has_error">
+
+    <p class="small text-muted">
+      <span i18n:translate="">Current range:</span>
+      <strong tal:content="view/range_label">2026-08-25 ~ 2026-08-31</strong>
+      &#160;<span i18n:translate="">Maximum range per query is <span i18n:name="days" tal:replace="view/max_range_days">183</span> days; split longer periods into several queries.</span>
+    </p>
+
+    <div class="table-responsive" tal:define="rows view/rows">
+      <table class="table table-sm table-hover table-bordered">
+        <thead class="thead-light">
+          <tr>
+            <th scope="col" i18n:translate="">Time</th>
+            <th scope="col" i18n:translate="">Actor</th>
+            <th scope="col" i18n:translate="">Action</th>
+            <th scope="col" i18n:translate="">Type</th>
+            <th scope="col" i18n:translate="">Object</th>
+            <th scope="col" class="text-right" i18n:translate="">Version</th>
+            <th scope="col" i18n:translate="">State</th>
+            <th scope="col" i18n:translate="">Source IP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr tal:repeat="row rows">
+            <td class="text-nowrap"
+                tal:content="python:view.format_ts(row['ts'])">2026-08-31 10:00:00</td>
+            <td tal:content="row/actor|nothing">admin</td>
+            <td><span class="badge badge-secondary"
+                      tal:content="row/action|nothing">edit</span></td>
+            <td tal:content="row/portal_type|nothing">AnalysisService</td>
+            <td>
+              <a tal:attributes="href python:view.object_url(row)"
+                 tal:content="python:view.object_label(row)">object</a>
+            </td>
+            <td class="text-right" tal:content="row/snapshot_ver|nothing">3</td>
+            <td tal:content="row/review_state|nothing">active</td>
+            <td class="text-muted small"
+                tal:content="row/remote_address|nothing">172.23.0.1</td>
+          </tr>
+          <tr tal:condition="not:rows">
+            <td colspan="8" class="text-muted text-center"
+                i18n:translate="">No records in this range.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <nav>
+      <a class="btn btn-outline-secondary btn-sm"
+         tal:condition="view/prev_url"
+         tal:attributes="href view/prev_url" i18n:translate="">Previous</a>
+      <a class="btn btn-outline-secondary btn-sm"
+         tal:condition="view/next_url"
+         tal:attributes="href view/next_url" i18n:translate="">Next</a>
+      <a class="btn btn-link btn-sm"
+         tal:attributes="href view/first_url" i18n:translate="">Back to latest</a>
+    </nav>
+
+    <p class="text-muted small mt-2" i18n:translate="">Only records of the current site whose object still exists are listed. Paging uses a keyset cursor and no total is computed - COUNT(*) on a large table costs more than the query itself.</p>
+
+  </div>
+
+</metal:content>
+</body>
+</html>

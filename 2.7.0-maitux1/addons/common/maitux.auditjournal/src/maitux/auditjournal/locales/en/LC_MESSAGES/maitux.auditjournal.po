@@ -1,0 +1,119 @@
+# 简体中文翻译 —— maitux.auditjournal
+#
+# ★ 改完必须重新编译：在包根目录跑 `python compile_locales.py`
+#   否则界面用的还是旧 .mo，而且**不报任何错**（静默失效）。
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: maitux.auditjournal 1.0.0\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Language-Code: zh_CN\n"
+"Language-Name: Chinese (China)\n"
+"Domain: maitux.auditjournal\n"
+
+# --- 入口与标题 ---
+msgid "Audit Journal"
+msgstr "Audit Journal"
+
+msgid "Search all modifications by time, actor and type"
+msgstr "Search all modifications by time, actor and type"
+
+msgid "Modifications, newest first. Click the object to open its Audit Log tab for the detailed diff."
+msgstr "Modifications, newest first. Click the object to open its Audit Log tab for the detailed diff."
+
+# --- 筛选栏 ---
+msgid "Start date"
+msgstr "Start date"
+
+msgid "End date"
+msgstr "End date"
+
+msgid "(inclusive)"
+msgstr "(inclusive)"
+
+msgid "Actor"
+msgstr "Actor"
+
+msgid "exact match"
+msgstr "exact match"
+
+msgid "Object type"
+msgstr "Object type"
+
+msgid "Action"
+msgstr "Action"
+
+msgid "Object ID / title"
+msgstr "Object ID / title"
+
+msgid "keyword"
+msgstr "keyword"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "Reset"
+msgstr "Reset"
+
+# --- 区间与错误 ---
+msgid "Cannot run this query:"
+msgstr "Cannot run this query:"
+
+msgid "Current range:"
+msgstr "Current range:"
+
+msgid "Maximum range per query is ${days} days; split longer periods into several queries."
+msgstr "Maximum range per query is ${days} days; split longer periods into several queries."
+
+msgid "Start date must be YYYY-MM-DD"
+msgstr "Start date must be YYYY-MM-DD"
+
+msgid "End date must be YYYY-MM-DD"
+msgstr "End date must be YYYY-MM-DD"
+
+msgid "End date cannot be earlier than start date"
+msgstr "End date cannot be earlier than start date"
+
+msgid "Requested range is ${span} days, over the ${max} day limit (about 6 months). Please query in shorter periods - the range is NOT truncated automatically, so that you never mistake a partial result for the whole."
+msgstr "Requested range is ${span} days, over the ${max} day limit (about 6 months). Please query in shorter periods - the range is NOT truncated automatically, so that you never mistake a partial result for the whole."
+
+msgid "Cannot reach the database, please contact an administrator"
+msgstr "Cannot reach the database, please contact an administrator"
+
+# --- 表格 ---
+msgid "Time"
+msgstr "Time"
+
+msgid "Type"
+msgstr "Type"
+
+msgid "Object"
+msgstr "Object"
+
+msgid "Version"
+msgstr "Version"
+
+msgid "State"
+msgstr "State"
+
+msgid "Source IP"
+msgstr "Source IP"
+
+msgid "No records in this range."
+msgstr "No records in this range."
+
+# --- 分页与脚注 ---
+msgid "Previous"
+msgstr "Previous"
+
+msgid "Next"
+msgstr "Next"
+
+msgid "Back to latest"
+msgstr "Back to latest"
+
+msgid "Only records of the current site whose object still exists are listed. Paging uses a keyset cursor and no total is computed - COUNT(*) on a large table costs more than the query itself."
+msgstr "Only records of the current site whose object still exists are listed. Paging uses a keyset cursor and no total is computed - COUNT(*) on a large table costs more than the query itself."
