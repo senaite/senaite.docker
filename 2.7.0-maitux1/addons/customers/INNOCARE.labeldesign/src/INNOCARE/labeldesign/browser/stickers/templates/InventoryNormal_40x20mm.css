@@ -1,0 +1,112 @@
+/* 强制锁定容器并实现预览居中 */
+.stickers {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  clear: both !important;
+  padding: 10px 0 !important;
+}
+
+.sticker {
+  display: inline-block !important;
+  width: 40mm !important;
+  height: 20mm !important;
+  margin: 2mm !important;
+  padding: 0 !important;
+  vertical-align: top !important;
+  border: none !important;
+  background: none !important;
+}
+
+.sticker .label {
+  width: 40mm !important;
+  height: 20mm !important;
+  border: 0.4pt solid #333 !important;
+  border-radius: 1.5mm !important;
+  padding: 0.8mm 1mm 0.7mm 10.8mm !important;
+  position: relative !important;
+  box-sizing: border-box !important;
+  background: #fff !important;
+  overflow: hidden !important;
+  display: block !important;
+}
+
+.sticker .label-header {
+  display: block !important;
+  border-bottom: 0.6pt solid #1f4e78 !important;
+  padding-bottom: 0.5mm !important;
+  margin-bottom: 0.8mm !important;
+  line-height: 1.2 !important;
+}
+
+.sticker .label-title {
+  display: inline-block !important;
+  font-size: 5.5pt !important;
+  font-weight: bold !important;
+  color: #fff !important;
+  background: #1f4e78 !important;
+  padding: 0.3mm 1.5mm !important;
+  border-radius: 1mm !important;
+  white-space: nowrap !important;
+}
+
+.sticker .material-name {
+  display: inline-block !important;
+  font-size: 4.8pt !important;
+  font-weight: bold !important;
+  color: #1f4e78 !important;
+  max-width: 60% !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  vertical-align: middle !important;
+  margin-left: 1mm !important;
+}
+
+.inv-normal .label-title { background: #1f4e78 !important; }
+.inv-normal .material-name { color: #1f4e78 !important; }
+
+.sticker .label-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  table-layout: fixed !important;
+}
+
+.sticker .label-table td {
+  font-size: 4.6pt !important;
+  padding: 0.2mm 0 !important;
+  vertical-align: top !important;
+  line-height: 1.1 !important;
+}
+
+.sticker .lbl-label {
+  color: #555 !important;
+  width: 10mm !important;
+  white-space: nowrap !important;
+}
+
+.sticker .lbl-value {
+  font-weight: 700 !important;
+  color: #000 !important;
+  word-break: break-all !important;
+}
+
+.sticker .qrcode {
+  position: absolute !important;
+  top: 1mm !important;
+  left: 1mm !important;
+  width: 8.5mm !important;
+  height: 8.5mm !important;
+  overflow: hidden !important;
+  border: 0.1pt solid #eee !important;
+  padding: 0 !important;
+  background: #fff !important;
+}
+
+.sticker .qrcode img,
+.sticker .qrcode canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}

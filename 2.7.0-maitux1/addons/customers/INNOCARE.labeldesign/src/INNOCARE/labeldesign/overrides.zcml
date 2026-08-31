@@ -13,4 +13,13 @@
       provides="senaite.core.interfaces.stickers.IGetStickerTemplates"
       />
 
+  <!-- 样品标签模板适配器：/lims/samples/sticker（senaite.core StickerView，
+       context 为 Samples 容器，实现 ISamples）通过该适配器枚举并默认选用
+        本 addon 的样品标签模板（见 adapters.py 注释）。 -->
+  <adapter
+      factory="INNOCARE.labeldesign.browser.stickers.adapters.SampleLabelTemplates"
+      for="senaite.core.interfaces.ISamples"
+      provides="senaite.core.interfaces.stickers.IGetStickerTemplates"
+      />
+
 </configure>

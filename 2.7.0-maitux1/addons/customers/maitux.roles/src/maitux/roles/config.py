@@ -114,4 +114,26 @@ ROLE_DEFINITIONS = [
         ],
         "inherit_labmanager": False,
     },
+    {
+        "role_id": "Verifier",
+        "title_msg": _(u"Verifier", default=u"Verifier"),
+        "username": "verifier",
+        "email": "verifier@example.com",
+        "permissions": BASE_PERMISSIONS + [
+            "senaite.core: View Results",
+            "senaite.core: Transition: Verify",
+        ],
+        "inherit_labmanager": False,
+    },
+    {
+        "role_id": "LabClerk",
+        "title_msg": _(u"Lab Clerk", default=u"Lab Clerk"),
+        "username": "labclerk",
+        "email": "labclerk@example.com",
+        "permissions": BASE_PERMISSIONS + [
+            "senaite.core: Manage Analysis Requests",
+            "senaite.core: Manage Worksheets",
+        ],
+        "inherit_labmanager": False,
+    },
 ]
