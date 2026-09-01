@@ -6,7 +6,7 @@
   <plone:static
       directory="templates"
       type="stickers"
-      name="INNOCARE.labeldesign"
+      name="INNOCARE.LabelAndReport"
       />
 
   <!-- 库存标签适配器 -->

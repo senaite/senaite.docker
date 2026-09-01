@@ -1,7 +1,6 @@
 <configure
     xmlns="http://namespaces.zope.org/zope"
     xmlns:plone="http://namespaces.plone.org/plone"
-    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
     i18n_domain="INNOCARE.Reportdesign">
 
   <include package="Products.GenericSetup" file="meta.zcml" />
@@ -35,21 +34,5 @@
       type="senaite.impress.reports"
       name="reportdesign"
   />
-
-  <genericsetup:registerProfile
-      name="default"
-      title="INNOCARE.Reportdesign"
-      directory="profiles/default"
-      description="Installs the INNOCARE.Reportdesign package"
-      provides="Products.GenericSetup.interfaces.EXTENSION"
-      />
-
-  <genericsetup:registerProfile
-      name="uninstall"
-      title="INNOCARE.Reportdesign (uninstall)"
-      directory="profiles/uninstall"
-      description="Uninstalls INNOCARE.Reportdesign"
-      provides="Products.GenericSetup.interfaces.EXTENSION"
-      />
 
 </configure>

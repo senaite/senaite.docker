@@ -1,0 +1,7 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="INNOCARE.LabelAndReport">
+
+  <include package="INNOCARE.labeldesign" file="overrides.zcml" />
+
+</configure>

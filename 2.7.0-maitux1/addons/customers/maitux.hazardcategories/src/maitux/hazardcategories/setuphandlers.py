@@ -2,6 +2,7 @@
 
 from bika.lims import api
 from plone import api as ploneapi
+from Products.CMFCore.utils import getToolByName
 from Products.CMFPlone.interfaces import INonInstallable
 from zope.interface import implementer
 
@@ -36,6 +37,7 @@ ITEM_TITLE_MSG = _hc(u"Sample Properties", default=u"Sample Properties")
 DEFAULT_LAYOUT = "hazardcategories-controlpanel"
 SIDEBAR_DEPTH = 2
 PROFILE_ID = "profile-%s:default" % PROJECTNAME
+LEGACY_CONFIGLET_ID = "maitux-hazardcategories"
 
 
 @implementer(INonInstallable)
@@ -43,6 +45,19 @@ class HiddenProfiles(object):
 
     def getNonInstallableProfiles(self):
         return ["maitux.hazardcategories:uninstall"]
+
+
+def unregister_legacy_configlet(portal):
+    tool = getToolByName(portal, "portal_controlpanel", None)
+    if tool is None:
+        logger.warn("portal_controlpanel is missing, skip legacy cleanup")
+        return
+    try:
+        tool.unregisterConfiglet(LEGACY_CONFIGLET_ID)
+        logger.info("Removed legacy control panel entry '%s'", LEGACY_CONFIGLET_ID)
+    except Exception:
+        logger.info("Legacy control panel entry '%s' not registered",
+                    LEGACY_CONFIGLET_ID)
 
 
 def post_install(context):
@@ -53,6 +68,7 @@ def post_install(context):
 
 
 def run_install_steps(portal):
+    unregister_legacy_configlet(portal)
     setup_type_constraints()
     folder = setup_site_structure(portal)
     migrate_registry_items_into_folder(folder)
@@ -342,6 +358,8 @@ def setup_sidebar():
 
 def uninstall(context):
     logger.info("maitux.hazardcategories uninstall [BEGIN]")
+    portal = api.get_portal()
+    unregister_legacy_configlet(portal)
 
     setup_tool = api.get_senaite_setup()
     if setup_tool is None:

@@ -39,13 +39,13 @@ class SampleLabelPrintView(BrowserView):
         template_id = self.request.get("template", "")
         if template_id:
             return template_id
-        return "INNOCARE.labeldesign:SampleNormal_40x30mm.pt"
+        return "INNOCARE.LabelAndReport:SampleNormal_40x30mm.pt"
 
     def get_available_templates(self):
         return [
-            {"id": "INNOCARE.labeldesign:SampleNormal_40x30mm.pt",
+            {"id": "INNOCARE.LabelAndReport:SampleNormal_40x30mm.pt",
              "title": "样品标签 (Sample Normal)", "selected": False},
-            {"id": "INNOCARE.labeldesign:SampleStability_40x30mm.pt",
+            {"id": "INNOCARE.LabelAndReport:SampleStability_40x30mm.pt",
              "title": "样品标签·稳定性 (Sample Stability)", "selected": False},
         ]
 
