@@ -1,2 +1,0 @@
-include README.md
-recursive-include src/INNOCARE/reportdesign/templates/print *.pt *.css

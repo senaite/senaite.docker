@@ -68,13 +68,20 @@ addons/customers/customer-b/customer.b.addon/
 
 ## 启用方式
 
-仅把 addon 放到目录里还不够，还需要在 buildout 配置中声明：
+当前环境下，`addons/customers/` 里的 addon **不再通过手工维护 buildout 条目启用**。
 
-- `develop +=`
-- `eggs +=`
-- `profiles +=`
+- 容器启动时会执行 `gen-custom-addon.sh`，
+  按 `/opt/addons/customers` 里实际存在的一级 addon 目录自动生成运行时
+  `custom-addon.cfg`
+- `buildout.cfg` 继续 `extends` 这份运行时配置，但**仓库里不保存、也不手工修改**
+- addon 作者需要保证：
+  - 目录位于 `addons/customers/` 下
+  - 目录中有 `setup.py`
+  - `setup.py` 的 `name=` 正确
+  - 需要显式 ZCML 时提供 `configure.zcml` / `overrides.zcml`
+- GenericSetup profile 不会自动安装，仍需在站点后台手工安装
 
-通常配合客户自己的 `custom.cfg` 使用。
+只有在项目确实另有额外 buildout 覆盖需求时，才再配合客户自己的 `custom.cfg` 使用。
 
 ## 命名建议
 

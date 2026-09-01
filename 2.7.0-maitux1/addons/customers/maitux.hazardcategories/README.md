@@ -5,7 +5,7 @@ INNOCARE 危害分类（Hazard Category / 样品性质字典）管理扩展，�
 ## 功能职责
 
 - 内容类型 `HazardCategories`（容器）/ `HazardCategory`（分类项，见 `src/maitux/hazardcategories/content/`）。
-- 控制面板（`browser/controlpanel.py`）：管理危害分类的展示表格（`hazard_categories_table.pt`）。
+- 文件夹列表页（`browser/controlpanel.py`）：管理危害分类的展示表格（`hazard_categories_table.pt`），作为 `HazardCategories` 容器默认视图使用，不在附加产品配置区注册独立 configlet。
 - 默认分类（见 `config.py` / `profiles/default/registry.xml`）：GHS01–GHS09、BIO01、RAD01、NIR01、MAG01、ELEC01、HSURF01、HOT01、STEAM01、COLD01、ASPH01，含中英文与图标路径。
 - 词汇工厂（`configure.zcml` / `utils.py`）：
   - `maitux.hazardcategories.vocabularies.UsageScope`

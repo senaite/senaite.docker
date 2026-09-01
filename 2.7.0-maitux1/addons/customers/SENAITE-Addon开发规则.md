@@ -3,8 +3,9 @@
 > 从实际踩坑中沉淀的规则，适用于本产品环境下所有自研 addon
 > （`medai.*` / `maitux.*`）。每条都注明**依据**与**违反后果**。
 >
-> 环境前提：SENAITE 2.x + Plone 5.2 + Python 2.7，addon 通过
-> `package-includes/` slug 加载（非 buildout eggs 方式）。
+> 环境前提：SENAITE 2.x + Plone 5.2 + Python 2.7。客户 addon 通过
+> 运行时自动生成的 `custom-addon.cfg` 接入 buildout；显式 ZCML 最终体现为
+> `package-includes/` slug 的加载顺序。
 
 ---
 
@@ -155,6 +156,25 @@ package-includes/
 
 ---
 
+### R5d. `custom-addon.cfg` 是运行时自动生成的，不在仓库里维护
+
+**规则**：当前产品环境仍然使用 `custom-addon.cfg`，但它是容器启动时由
+`/gen-custom-addon.sh` 按 `/opt/addons/customers` 的实际目录生成的运行时文件。
+因此：
+
+- 不要在仓库里新增或提交 `custom-addon.cfg`
+- 不要把它当作需要手工编辑的部署清单
+- addon 接入方式应落在源码目录、`setup.py`、`configure.zcml`、
+  `overrides.zcml` 本身，而不是依赖手改 cfg
+
+**依据**：`buildout.cfg` 仍然 `extends = custom-addon.cfg`，Dockerfile 在构建阶段
+只放一个占位文件，真正的配置在容器启动时整份覆盖生成。
+
+**违反后果**：手工维护的 cfg 会在下次启动时被覆盖；更严重时会让人误以为
+运行配置来源于仓库，排查方向被带偏。
+
+---
+
 ## 四、部署（8085 Docker 环境）
 
 ### R7. 同步用 `/E` 不要用 `/MIR`
@@ -223,6 +243,25 @@ robocopy "<源>" "<目标>" /E /XF *.pyc /NFL /NDL /NJH /NJS
 
 ---
 
+### R11. 静态数据维护型 addon 不要注册附加产品配置入口
+
+**规则**：如果 addon 的职责只是维护静态字典、基础资料或站点内数据容器，
+并且已有文件夹默认视图、列表页或站点侧边栏入口可完成维护，就**不要**再往
+`portal_controlpanel` / `@@overview-controlpanel` 注册独立 configlet。
+
+**理由**：这类 addon 本质上是“站点数据维护”，不是“系统参数配置”。
+把它挂到附加产品配置区会让用户误以为这是全站设置项，也会让 overview 页面
+出现与实际职责不匹配的入口。
+
+**实例**：`maitux.hazardcategories` 负责维护 Hazard categories 静态字典，
+应通过 `HazardCategories` 容器默认视图和侧边栏入口维护，而不是在
+附加产品配置区增加入口。
+
+**例外**：只有当 addon 维护的是 registry/控制参数/鉴权开关/外部系统连接等
+真正的系统级设置时，才注册 configlet。
+
+---
+
 ## 附：新建 addon 检查清单
 
 - [ ] `package-includes/` 下 configure + overrides **两个** slug 都建了
@@ -230,7 +269,9 @@ robocopy "<源>" "<目标>" /E /XF *.pyc /NFL /NDL /NJH /NJS
 - [ ] 覆盖原生同名组件的注册，写在 `overrides.zcml`
 - [ ] 跨 addon 同接口同名 adapter，全部只落在 `overrides.zcml`（R5b）
 - [ ] `setup.py` 分发名与代码目录名大小写一致；不手动 include 已配 autoinclude 入口点的包（R5c）
+- [ ] 不新增、不提交、不手工维护仓库里的 `custom-addon.cfg`（R5d）
 - [ ] `registerProfile` 声明的每个目录都真实存在且含 `metadata.xml`
 - [ ] 新增 profile 文件后，部署文档写明"需重跑 profile"
 - [ ] 部署说明区分了"重启"与"重启 + 硬刷新"
 - [ ] 每项功能给出了可观测的验证判据
+- [ ] 静态数据维护型 addon 只提供内容/列表维护入口，不往附加产品配置区注册 configlet（R11）

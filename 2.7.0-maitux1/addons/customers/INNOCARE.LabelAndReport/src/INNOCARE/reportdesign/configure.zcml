@@ -1,0 +1,38 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:plone="http://namespaces.plone.org/plone"
+    i18n_domain="INNOCARE.Reportdesign">
+
+  <include package="Products.GenericSetup" file="meta.zcml" />
+
+  <!-- Register the worksheet print template resource directory.
+       Any .pt file placed here (with a matching .css file) is
+       automatically discovered by senaite.core's
+       WSTemplatesPrintFactory and listed in the worksheet print
+       view's "Available templates" dropdown as
+       "reportdesign:<template>.pt". -->
+  <plone:static
+      directory="templates/print"
+      type="worksheets"
+      name="reportdesign"
+  />
+
+  <!-- Register the Analysis Request (AR) publish/report templates for
+       senaite.impress (AR Publish / "开报告" view).
+       Impress's core adapter registers resource directories under
+       type="senaite.impress.reports". Any .pt placed here (with a
+       matching .css file) is automatically discovered and listed in
+       the publish view's template dropdown as
+       "<name>:<template>.pt".
+       -> Templates currently provided here:
+            reportdesign.pt  = data report (AS-grouped, same visual as
+                               the worksheet print reportdesign.pt)
+            coa.pt           = COA certificate-of-analysis draft
+                               (bilingual, signature page) -->
+  <plone:static
+      directory="templates/reports"
+      type="senaite.impress.reports"
+      name="reportdesign"
+  />
+
+</configure>
