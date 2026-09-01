@@ -1,0 +1,514 @@
+<tal:coa
+  i18n:domain="INNOCARE.Reportdesign"
+  tal:define="S                python:lambda v,d=u'': (d if (v is None or v==u'' or v=='') else (v if isinstance(v,unicode) else (v.decode('utf-8','ignore') if isinstance(v,str) else unicode(v))));
+              T                python:lambda o,d=u'': S((o if isinstance(o,(str,unicode)) else (o.Title() if (hasattr(o,'Title') and callable(o.Title)) else (getattr(o,'title',None) or getattr(o,'Title',None) or u''))), d);
+              FMTDT            python:lambda d,fmt,dflt=u'': (dflt if d is None else (unicode(d.strftime(fmt)) if (hasattr(d,'strftime') and callable(d.strftime)) else (lambda vv,dd=u'': (dd if (vv is None or vv==u'' or vv=='') else (vv if isinstance(vv,unicode) else (vv.decode('utf-8','ignore') if isinstance(vv,str) else unicode(vv)))))(d,dflt)));
+              VG_NORM          python:lambda v: ([] if not v else (list(v) if isinstance(v,(list,tuple)) else ([v] if isinstance(v,(str,unicode)) and (v is not None and v!=u'' and v!='') else [])));
+CTX              python:context;
+              cmf_mod          python:__import__('Products.CMFCore.utils', fromlist=['getToolByName']);
+              dt_mod_coa       python:__import__('DateTime');
+              catalog          python:cmf_mod.getToolByName(CTX, 'portal_catalog');
+              refcat           python:cmf_mod.getToolByName(CTX, 'reference_catalog');
+              req              request|context/REQUEST|nothing;
+              V                view|nothing;
+              M                python:((V.model() if (V is not None and hasattr(V,'model') and callable(V.model)) else (getattr(V,'model',None) if V is not None else None)));
+              _MGET            python:lambda k, d=u'': (M.get(k, d) if (M is not None and hasattr(M,'get') and callable(getattr(M,'get'))) else d);
+              sample_uid       python:(S(getattr(M,'_uid',u''),u'') or S(_MGET('_uid',u''),u'') or S(_MGET('UID',u''),u'') or S(_MGET('uid',u''),u''));
+              sample_obj_ref   python:((refcat.lookupObject(sample_uid) if (refcat is not None and sample_uid and hasattr(refcat,'lookupObject') and callable(refcat.lookupObject)) else None));
+              sample_brain0    python:((catalog(UID=sample_uid) if (catalog is not None and sample_uid) else []) or []);
+              sample_obj_cat   python:((sample_brain0[0].getObject() if sample_brain0 else None));
+              sample_obj       python:(sample_obj_ref or sample_obj_cat);
+              model_is_ar      python:(True if (sample_obj is not None and hasattr(sample_obj,'getAnalyses') and callable(sample_obj.getAnalyses) and hasattr(sample_obj,'getClientReference') and callable(sample_obj.getClientReference)) else False);
+              ars_from_model   python:((list(sample_obj.getAnalysisRequests()) if (not model_is_ar and sample_obj is not None and hasattr(sample_obj,'getAnalysisRequests') and callable(sample_obj.getAnalysisRequests)) else []) or []);
+              ars_from_model_s python:(sorted(ars_from_model, key=lambda r: (r.created() if (hasattr(r,'created') and callable(r.created)) else getattr(r,'creation_date', None)), reverse=True) if ars_from_model else []);
+              ar_from_model    python:(sample_obj if model_is_ar else (ars_from_model_s[0] if ars_from_model_s else None));
+              items_val        python:((req.form.get('items') if (req is not None and hasattr(req,'form') and hasattr(req.form,'get') and callable(req.form.get)) else None) or (req.get('items') if (req is not None and hasattr(req,'get') and callable(req.get)) else None) or u'');
+              items_raw        python:((u','.join([S(x,u'') for x in items_val if S(x,u'')]) if isinstance(items_val,(list,tuple)) else S(items_val,u'')) if items_val is not None else u'');
+              is_uid           python:lambda s: (True if (S(s) and len(S(s))==32) else False);
+              item_uids        python:((list(V.get_uids()) if (V is not None and hasattr(V,'get_uids') and callable(V.get_uids)) else None) or [x.strip() for x in items_raw.split(',') if x and x.strip() and is_uid(x.strip())]);
+              obj0_ref         python:((refcat.lookupObject(item_uids[0]) if (refcat is not None and item_uids and hasattr(refcat,'lookupObject') and callable(refcat.lookupObject)) else None));
+              brain0           python:((catalog(UID=item_uids[0]) if (catalog is not None and item_uids) else []) or []);
+              obj0_cat         python:((brain0[0].getObject() if brain0 else None));
+              obj0             python:(obj0_ref or obj0_cat);
+              obj0_is_ar       python:(True if (obj0 is not None and hasattr(obj0,'getAnalyses') and callable(obj0.getAnalyses) and hasattr(obj0,'getClientReference') and callable(obj0.getClientReference)) else False);
+              ars0             python:((list(obj0.getAnalysisRequests()) if (obj0 is not None and hasattr(obj0,'getAnalysisRequests') and callable(obj0.getAnalysisRequests)) else []) or []);
+              ar_from_req      python:(obj0 if obj0_is_ar else (ars0[0] if ars0 else None));
+              is_ar            python:(True if (hasattr(CTX,'getAnalyses') and callable(CTX.getAnalyses) and hasattr(CTX,'getClientReference') and callable(CTX.getClientReference)) else False);
+              is_sample        python:(True if (not is_ar and hasattr(CTX,'getAnalysisRequests') and callable(CTX.getAnalysisRequests)) else False);
+              ars_from_sample  python:((list(CTX.getAnalysisRequests()) if is_sample else []) or []);
+              ar               python:(CTX if is_ar else (ars_from_sample[0] if ars_from_sample else ar_from_req));
+              ar               python:(CTX if is_ar else (ars_from_sample[0] if ars_from_sample else (ar_from_model if ar_from_model else ar_from_req)));
+              portal           python:CTX.portal_url.getPortalObject();
+              portal_url       python:portal.absolute_url();
+              pm               python:cmf_mod.getToolByName(CTX, 'portal_membership');
+              _empty           python:u'';
+
+              ar_id_raw        python:((ar.getId() if (ar is not None and hasattr(ar,'getId') and callable(ar.getId)) else getattr(ar,'id',u'')) or u'') if ar else u'';
+              ar_id            python:S(ar_id_raw, u'N/A');
+              client_ref_raw   python:(((ar.getClientReference() if (ar is not None and hasattr(ar,'getClientReference') and callable(ar.getClientReference)) else u'') or ar_id) if ar else u'');
+              client_ref       python:S(client_ref_raw, u'N/A');
+              report_id        python:(client_ref or ar_id);
+              schema           python:(ar.Schema() if (ar is not None and hasattr(ar,'Schema') and callable(ar.Schema)) else None);
+              FLD              python:lambda fn: (schema.getField(fn) if (schema is not None and hasattr(schema,'getField') and callable(schema.getField)) else None);
+
+              project_obj      python:((FLD('ProjectNo').getRaw(ar) if (FLD('ProjectNo') is not None and hasattr(FLD('ProjectNo'),'getRaw') and callable(FLD('ProjectNo').getRaw)) else None) if ar else None);
+              project_gen      python:(T((ar.getProject() if (ar is not None and hasattr(ar,'getProject') and callable(ar.getProject)) else None), u'') if ar else u'');
+              project_title    python:(((T(project_obj, u'') or project_gen) or u'N/A') if ar else u'N/A');
+              compound_raw     python:((FLD('MaterialCode').getAccessor(ar)() if (FLD('MaterialCode') is not None and hasattr(FLD('MaterialCode'),'getAccessor') and callable(FLD('MaterialCode').getAccessor)) else (getattr(ar,'MaterialCode',u'') if (ar is not None and hasattr(ar,'MaterialCode')) else u'')) if ar else u'');
+              compound_id      python:(S(compound_raw, u'') or ar_id);
+              qty_raw          python:((FLD('Quantity').getAccessor(ar)() if (FLD('Quantity') is not None and hasattr(FLD('Quantity'),'getAccessor') and callable(FLD('Quantity').getAccessor)) else (getattr(ar,'Quantity',u'') if (ar is not None and hasattr(ar,'Quantity')) else u'')) if ar else u'');
+              quantity         python:S(qty_raw);
+              unit_raw         python:((FLD('Unit').getAccessor(ar)() if (FLD('Unit') is not None and hasattr(FLD('Unit'),'getAccessor') and callable(FLD('Unit').getAccessor)) else (getattr(ar,'Unit',u'') if (ar is not None and hasattr(ar,'Unit')) else u'')) if ar else u'');
+              unit             python:S(unit_raw);
+              qty_nempty       python:(True if S(quantity) not in (u'', None, '') else False);
+              unit_nempty      python:(True if S(unit) not in (u'', None, '') else False);
+              sampletype_t     python:(T((ar.getSampleType() if (ar is not None and hasattr(ar,'getSampleType') and callable(ar.getSampleType)) else None), u'') if ar else u'');
+              date_recv_raw    python:((ar.getDateReceived() if (ar is not None and hasattr(ar,'getDateReceived') and callable(ar.getDateReceived)) else None) if ar else None);
+              date_samp_raw    python:((ar.getDateSampled() if (ar is not None and hasattr(ar,'getDateSampled') and callable(ar.getDateSampled)) else None) if ar else None);
+              batch_size       python:((S(quantity)+u' '+S(unit)) if (qty_nempty and unit_nempty) else (S(quantity) if qty_nempty else (S(unit) if unit_nempty else (sampletype_t or FMTDT(date_samp_raw, '%Y.%m.%d', u'N/A')))));
+              material_raw     python:((FLD('MaterialName').getAccessor(ar)() if (FLD('MaterialName') is not None and hasattr(FLD('MaterialName'),'getAccessor') and callable(FLD('MaterialName').getAccessor)) else (getattr(ar,'MaterialName',u'') if (ar is not None and hasattr(ar,'MaterialName')) else u'')) if ar else u'');
+              material_name    python:(S(material_raw, u'') or sampletype_t or u'N/A');
+              mfg_raw          python:((FLD('ManufactureDate').getAccessor(ar)() if (FLD('ManufactureDate') is not None and hasattr(FLD('ManufactureDate'),'getAccessor') and callable(FLD('ManufactureDate').getAccessor)) else (getattr(ar,'ManufactureDate',None) if (ar is not None and hasattr(ar,'ManufactureDate')) else None)) if ar else None);
+              manufacture_date python:(FMTDT(mfg_raw, '%Y.%m.%d', u'') or FMTDT(date_recv_raw, '%Y.%m.%d', u'') or FMTDT(date_samp_raw, '%Y.%m.%d', u'N/A'));
+              batch_no         python:report_id;
+              datepub_raw      python:((ar.getDatePublished() if (ar is not None and hasattr(ar,'getDatePublished') and callable(ar.getDatePublished)) else None) if ar else None);
+              date_respub_raw  python:((ar.getDateResultPublished() if (ar is not None and hasattr(ar,'getDateResultPublished') and callable(ar.getDateResultPublished)) else None) if ar else None);
+              date_published   python:(FMTDT(datepub_raw, '%Y.%m.%d', u'') or FMTDT(date_samp_raw, '%Y.%m.%d', u'') or FMTDT(date_recv_raw, '%Y.%m.%d', u'N/A'));
+              str_raw          python:((FLD('Strength').getAccessor(ar)() if (FLD('Strength') is not None and hasattr(FLD('Strength'),'getAccessor') and callable(FLD('Strength').getAccessor)) else (getattr(ar,'Strength',u'') if (ar is not None and hasattr(ar,'Strength')) else u'')) if ar else u'');
+              samplepoint_t    python:(T((ar.getSamplePoint() if (ar is not None and hasattr(ar,'getSamplePoint') and callable(ar.getSamplePoint)) else None), u'') if ar else u'');
+              strength         python:(S(str_raw, u'') or samplepoint_t or u'N/A');
+              ret_raw          python:((FLD('RetentionTime').getAccessor(ar)() if (FLD('RetentionTime') is not None and hasattr(FLD('RetentionTime'),'getAccessor') and callable(FLD('RetentionTime').getAccessor)) else (getattr(ar,'RetentionTime',u'') if (ar is not None and hasattr(ar,'RetentionTime')) else u'')) if ar else u'');
+              ret_s            python:S(ret_raw, u'');
+              ret_fmt          python:((ret_s.split(' ')[0].replace('/','.') if (ret_s and ret_s.find('/')>=0) else ret_s) if ret_s else u'');
+              retest_date      python:(ret_fmt or FMTDT(date_respub_raw, '%Y.%m.%d', u'N/A'));
+              contact_t        python:(T((ar.getContact() if (ar is not None and hasattr(ar,'getContact') and callable(ar.getContact)) else None), u'') if ar else u'');
+              manufacturer     python:(contact_t or u'N/A');
+              storage_obj      python:((FLD('StorageConditions').getRaw(ar) if (FLD('StorageConditions') is not None and hasattr(FLD('StorageConditions'),'getRaw') and callable(FLD('StorageConditions').getRaw)) else None) if ar else None);
+              client_t         python:(T((ar.getClient() if (ar is not None and hasattr(ar,'getClient') and callable(ar.getClient)) else None), u'') if ar else u'');
+              storage_cond     python:(((T(storage_obj, u'') or client_t) or u'N/A') if ar else u'N/A');
+              cmt_raw          python:(((FLD('SafetyPrecautions').getAccessor(ar)() if (FLD('SafetyPrecautions') is not None and hasattr(FLD('SafetyPrecautions'),'getAccessor') and callable(FLD('SafetyPrecautions').getAccessor)) else (getattr(ar,'SafetyPrecautions',u'') if (ar is not None and hasattr(ar,'SafetyPrecautions')) else u'')) if ar else u''));
+              remarks_raw      python:((ar.getRemarks() if (ar is not None and hasattr(ar,'getRemarks') and callable(ar.getRemarks)) else getattr(ar,'Remarks',u'')) if ar else u'');
+              resremarks_raw   python:((ar.getResultsRemarks() if (ar is not None and hasattr(ar,'getResultsRemarks') and callable(ar.getResultsRemarks)) else getattr(ar,'ResultsRemarks',u'')) if ar else u'');
+              comment          python:(u' / '.join([x for x in [S(cmt_raw, u''), S(remarks_raw, u''), S(resremarks_raw, u'')] if x]) or u'N/A');
+              coa_ver_raw      python:((ar.getCoAVersion() if (ar is not None and hasattr(ar,'getCoAVersion') and callable(ar.getCoAVersion)) else None) if ar else None);
+              coa_version      python:(S(coa_ver_raw) or u'V1.0');
+              analyses_all     python:((ar.getAnalyses(full_objects=True) if (ar is not None and hasattr(ar,'getAnalyses') and callable(ar.getAnalyses)) else []) if ar else []);
+              _ASTATE          python:lambda a: S(a.getReviewState() if (hasattr(a,'getReviewState') and callable(a.getReviewState)) else getattr(a,'review_state',u''));
+              analyses_pub     python:([a for a in (analyses_all or []) if _ASTATE(a) == u'published'] or (analyses_all or []));
+              _CATRAW          python:lambda a: (a.getCategoryTitle() if (hasattr(a,'getCategoryTitle') and callable(a.getCategoryTitle)) else (T(a.getCategory() if (hasattr(a,'getCategory') and callable(a.getCategory)) else None, u'')));
+              _CAT             python:lambda a: S(_CATRAW(a));
+              _CATS            python:[_CAT(a) for a in (analyses_pub or [])];
+              _CATSET          python:[c for c in sorted(set(_CATS)) if c];
+              _CATCNT          python:dict([(c, _CATS.count(c)) for c in _CATSET]);
+              _ISGRP           python:lambda c: (True if (c and _CATCNT.get(c,0) and _CATCNT.get(c,0) >= 2) else False);
+              it_mod           python:__import__('itertools');
+              analyses_sort    python:sorted((analyses_pub or []), key=lambda a: (_CAT(a) or u''));
+              groups           python:[(k, list(g)) for k, g in it_mod.groupby(analyses_sort, key=_CAT)];
+              rows             python:[(u'group', k, g) if (k and len(g) >= 2) else (u'single', a, []) for k, g in groups for a in ([None] if (k and len(g) >= 2) else g)];
+
+              _HAS             python:lambda s,kw: (True if (S(s).lower().find(kw) >= 0) else False);
+              is_reference_standard python:(True if (ar and (('STD' in S(ar_id_raw).upper()) or ('STD' in S(client_ref_raw).upper()) or _HAS(sampletype_t, 'standard') or _HAS(sampletype_t, 'reference') or (S(sampletype_t).find(u'对照')>=0) or (S(sampletype_t).find(u'标准')>=0))) else False);
+              _IS_ASSAY        python:lambda a: (True if (_HAS(S(a.Title() if (hasattr(a,'Title') and callable(a.Title)) else u''), 'assay') or (S(a.Title() if (hasattr(a,'Title') and callable(a.Title)) else u'').find(u'含量')>=0)) else False);
+              assay_a          python:((([a for a in (analyses_pub or []) if _IS_ASSAY(a)] or [None])[0]) if analyses_pub else None);
+              assay_res_raw    python:((assay_a.getFormattedResult() if (assay_a is not None and hasattr(assay_a,'getFormattedResult') and callable(assay_a.getFormattedResult)) else u'') if assay_a is not None else u'');
+              assay_res2       python:((unicode(assay_a.getResult()) if (assay_a is not None and hasattr(assay_a,'getResult') and callable(assay_a.getResult) and assay_a.getResult() is not None) else u'') if assay_a is not None else u'');
+              reference_value  python:(S(assay_res_raw) or S(assay_res2) or u'');
+              reference_value2 python:(reference_value if reference_value else u'N/A');
+
+              _SPLITBI         python:lambda s: [p.strip() for p in S(s,u'').split('/') if p and p.strip()];
+              _BI_ZH           python:lambda s: ((_SPLITBI(s)[0]) if len(_SPLITBI(s))>=2 else u'');
+              _BI_EN           python:lambda s: ((_SPLITBI(s)[1]) if len(_SPLITBI(s))>=2 else u'');
+              _BI_HAS          python:lambda s: (True if len(_SPLITBI(s))>=2 else False);
+              _IS_REPORT       python:lambda s: (True if (S(s,u'').strip().lower() in ('report','n/a','na','')) else False);
+
+              creator_id_raw   python:(((ar.Creator() if (ar is not None and hasattr(ar,'Creator') and callable(ar.Creator)) else getattr(ar,'Creator',u'')) or u'') if ar else u'');
+              creator_id       python:S(creator_id_raw);
+              creator_mem      python:(pm.getMemberById(creator_id) if (creator_id and pm is not None and hasattr(pm,'getMemberById') and callable(pm.getMemberById)) else None);
+              creator_fn_raw   python:(creator_mem.getProperty('fullname') if (creator_mem is not None and hasattr(creator_mem,'getProperty') and callable(creator_mem.getProperty)) else u'');
+              creator_fn       python:(S(creator_fn_raw) or u'admin');
+              created_obj      python:(((ar.created() if (ar is not None and hasattr(ar,'created') and callable(ar.created)) else None) or getattr(ar,'creation_date', None)) if ar else None);
+              created_date     python:FMTDT(created_obj, '%Y.%m.%d', u'');
+              created_date_str python:S(created_date);
+              report_suffix    python:(created_date_str.replace('.','').replace('-','')[:8] if created_date_str else u'');
+              report_no        python:(u'COA-' + S(report_id) + u'-' + report_suffix);
+
+              vids_per_a       python:[VG_NORM((a.getVerificators() if (hasattr(a,'getVerificators') and callable(a.getVerificators)) else [])) for a in (analyses_pub or [])];
+              vids_flat        python:[S(x) for sublist in vids_per_a for x in sublist if S(x)];
+              vids_uniq        python:(list(set(vids_flat)) if vids_flat else []);
+              vid0             python:(vids_uniq[0] if vids_uniq else u'');
+              verifier_mem     python:(pm.getMemberById(vid0) if (vid0 and pm is not None and hasattr(pm,'getMemberById') and callable(pm.getMemberById)) else None);
+              verifier_raw     python:(verifier_mem.getProperty('fullname') if (verifier_mem is not None and hasattr(verifier_mem,'getProperty') and callable(verifier_mem.getProperty)) else u'');
+              verifier_name    python:S(verifier_raw);
+              approver_name    python:(verifier_name or u'');">
+
+    <div id="coa-wrapper">
+
+      <!-- PAGE 1 -->
+      <div class="coa-page coa-page-1">
+
+      <div class="doc-meta">
+        <span class="doc-meta-item"><span class="dm-label">文件编号/Doc. No.</span> <span class="dm-value">FORM-0000553</span></span>
+        <span class="doc-meta-item"><span class="dm-label">版本/Version</span> <span class="dm-value">V2.0</span></span>
+      </div>
+
+      <div class="company-header">
+        <div class="company-logo">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 78"
+               class="innocare-logo" xml:space="preserve" preserveAspectRatio="xMinYMid meet"
+               width="260" height="72">
+            <g transform="translate(0 0)">
+              <circle cx="30" cy="39" r="7"  fill="#F5A623"/>
+              <circle cx="14" cy="18" r="6"  fill="#F5A623"/>
+              <circle cx="46" cy="18" r="6"  fill="#F5A623"/>
+              <circle cx="50" cy="46" r="6"  fill="#F5A623"/>
+              <circle cx="14" cy="52" r="6"  fill="#F5A623"/>
+              <circle cx="32" cy="64" r="6"  fill="#F5A623"/>
+              <circle cx="44" cy="31" r="4.5" fill="#F5A623"/>
+              <path d="M23 44 L40 40" stroke="#F5A623" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <path d="M30 24 L32 56" stroke="#F5A623" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <g font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="bold" fill="#222222">
+                <text x="70" y="50">INNOCARE</text>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div class="company-info">
+          <div class="company-name-zh">北京诺诚健华医药科技有限公司</div>
+          <div class="company-name-en">Beijing InnoCarePharma Tech Co., Ltd</div>
+          <div class="company-addr-zh">地址：中国北京市昌平区中关村生命科学园生命科学园路8号8号楼</div>
+          <div class="company-addr-en">Address: Building 8, No. 8 Life Science Park Road, Zhongguancun Life Science Park, Changping District, Beijing, China</div>
+        </div>
+      </div>
+
+      <div class="report-id-block">
+        <span class="rid-label-zh">报告编号:</span>
+        <span class="rid-label-en">Report ID</span>
+        <span class="rid-value" tal:content="report_no"></span>
+      </div>
+
+      <div class="cert-title-block">
+        <div class="cert-title-zh">分析证书</div>
+        <div class="cert-title-en">Certificate of Analysis</div>
+      </div>
+
+      <table class="meta-table" cellspacing="0" cellpadding="0">
+        <colgroup>
+          <col class="mcol-lbl-l" />
+          <col class="mcol-val-l" />
+          <col class="mcol-lbl-r" />
+          <col class="mcol-val-r" />
+        </colgroup>
+        <tbody>
+          <tr>
+            <td class="m-label"><div class="zh">项目号</div><div class="en">Project ID</div></td>
+            <td class="m-value" tal:content="project_title"></td>
+            <td class="m-label"><div class="zh">CoA版本号</div><div class="en">CoA Version</div></td>
+            <td class="m-value" tal:content="coa_version"></td>
+          </tr>
+          <tr>
+            <td class="m-label"><div class="zh">化合物编号</div><div class="en">Compound ID</div></td>
+            <td class="m-value" tal:content="compound_id"></td>
+            <td class="m-label"><div class="zh">批数量</div><div class="en">Batch Size</div></td>
+            <td class="m-value" tal:content="batch_size"></td>
+          </tr>
+          <tr>
+            <td class="m-label"><div class="zh">物料名称</div><div class="en">Material Name</div></td>
+            <td class="m-value" tal:content="material_name"></td>
+            <td class="m-label"><div class="zh">生产日期</div><div class="en">Manufacture Date</div></td>
+            <td class="m-value" tal:content="manufacture_date"></td>
+          </tr>
+          <tr>
+            <td class="m-label"><div class="zh">批号</div><div class="en">Batch Number</div></td>
+            <td class="m-value" tal:content="batch_no"></td>
+            <td class="m-label"><div class="zh">检测日期</div><div class="en">Test Date</div></td>
+            <td class="m-value" tal:content="date_published"></td>
+          </tr>
+          <tr>
+            <td class="m-label"><div class="zh">规格</div><div class="en">Strength</div></td>
+            <td class="m-value" tal:content="strength"></td>
+            <td class="m-label"><div class="zh">复检日期</div><div class="en">Retest Date</div></td>
+            <td class="m-value" tal:content="retest_date"></td>
+          </tr>
+          <tr>
+            <td class="m-label"><div class="zh">生产企业</div><div class="en">Manufacturer</div></td>
+            <td class="m-value" colspan="3" tal:content="manufacturer"></td>
+          </tr>
+          <tr>
+            <td class="m-label"><div class="zh">储存条件</div><div class="en">Storage Conditions</div></td>
+            <td class="m-value" colspan="3" tal:content="storage_cond"></td>
+          </tr>
+          <tr>
+            <td class="m-label"><div class="zh">备注</div><div class="en">Comment</div></td>
+            <td class="m-value" colspan="3" tal:content="comment"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="analyses-table" cellspacing="0" cellpadding="0">
+        <colgroup>
+          <col class="acol-item" />
+          <col class="acol-method" />
+          <col class="acol-spec" />
+          <col class="acol-result" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th><div class="zh">检测项目</div><div class="en">Testing Item</div></th>
+            <th><div class="zh">方法</div><div class="en">Method</div></th>
+            <th><div class="zh">可接受标准</div><div class="en">Accept criteria</div></th>
+            <th><div class="zh">结果</div><div class="en">Results</div></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tal:rows repeat="row rows">
+            <tal:group condition="python:row[0] == u'group'">
+              <tr class="a-group-row">
+                <td class="a-group" colspan="4">
+                  <tal:bi condition="python:_BI_HAS(row[1])">
+                    <div class="zh" tal:content="python:_BI_ZH(row[1])"></div>
+                    <div class="en" tal:content="python:_BI_EN(row[1])"></div>
+                  </tal:bi>
+                  <tal:nobi condition="python:not _BI_HAS(row[1])">
+                    <div tal:content="python:S(row[1], u'')"></div>
+                  </tal:nobi>
+                </td>
+              </tr>
+              <tal:child repeat="a python:row[2]">
+                <tr tal:define="a_title    python: S(a.Title() if (hasattr(a,'Title') and callable(a.Title)) else getattr(a,'title',u''));
+                                a_res_raw  python: (a.getFormattedResult() if (hasattr(a,'getFormattedResult') and callable(a.getFormattedResult)) else u'');
+                                a_res2     python: (unicode(a.getResult()) if (hasattr(a,'getResult') and callable(a.getResult) and a.getResult() is not None) else u'');
+                                a_res      python: (S(a_res_raw) or S(a_res2) or u'N/A');
+                                a_unit_raw python: (a.getFormattedUnit() if (hasattr(a,'getFormattedUnit') and callable(a.getFormattedUnit)) else u'');
+                                a_unit2    python: (unicode(a.getUnit()) if (hasattr(a,'getUnit') and callable(a.getUnit) and a.getUnit() is not None) else u'');
+                                a_unit     python: (S(a_unit_raw) or S(a_unit2));
+                                a_spec_raw python: (a.getFormattedSpecs() if (hasattr(a,'getFormattedSpecs') and callable(a.getFormattedSpecs)) else u'');
+                                a_spec2    python: (unicode(a.getSpecification()) if (hasattr(a,'getSpecification') and callable(a.getSpecification) and a.getSpecification() is not None) else u'');
+                                a_spec     python: (S(a_spec_raw) or S(a_spec2));
+                                a_inst     python: (a.getInstrument() if (hasattr(a,'getInstrument') and callable(a.getInstrument)) else None);
+                                a_method   python: (T(a_inst, u'\u2014') if a_inst is not None else u'\u2014');
+                                a_unc      python: S(a.getFormattedUncertainty() if (hasattr(a,'getFormattedUncertainty') and callable(a.getFormattedUncertainty)) else u'');
+                                unit_part  python: (u' ' + a_unit if S(a_unit) else u'');
+                                unc_part   python: (u' +/- ' + a_unc if S(a_unc) else u'');
+                                a_full     python: a_res + unit_part + unc_part;">
+                  <td class="a-item" tal:content="a_title"></td>
+                  <td class="a-method" tal:content="a_method"></td>
+                  <td class="a-spec">
+                    <tal:rep condition="python:_IS_REPORT(a_spec)">
+                      <div class="zh">报告</div>
+                      <div class="en">Report</div>
+                    </tal:rep>
+                    <tal:nrep condition="python:not _IS_REPORT(a_spec)">
+                      <div tal:content="python:S(a_spec, u'N/A')"></div>
+                    </tal:nrep>
+                  </td>
+                  <td class="a-result">
+                    <tal:resbi condition="python:_BI_HAS(a_full)">
+                      <div class="zh" tal:content="python:_BI_ZH(a_full)"></div>
+                      <div class="en" tal:content="python:_BI_EN(a_full)"></div>
+                    </tal:resbi>
+                    <tal:resnobi condition="python:not _BI_HAS(a_full)">
+                      <div tal:content="a_full"></div>
+                    </tal:resnobi>
+                  </td>
+                </tr>
+              </tal:child>
+            </tal:group>
+            <tal:single condition="python:row[0] == u'single'">
+              <tr tal:define="a          python: row[1];
+                              a_title    python: S(a.Title() if (hasattr(a,'Title') and callable(a.Title)) else getattr(a,'title',u''));
+                              a_res_raw  python: (a.getFormattedResult() if (hasattr(a,'getFormattedResult') and callable(a.getFormattedResult)) else u'');
+                              a_res2     python: (unicode(a.getResult()) if (hasattr(a,'getResult') and callable(a.getResult) and a.getResult() is not None) else u'');
+                              a_res      python: (S(a_res_raw) or S(a_res2) or u'N/A');
+                              a_unit_raw python: (a.getFormattedUnit() if (hasattr(a,'getFormattedUnit') and callable(a.getFormattedUnit)) else u'');
+                              a_unit2    python: (unicode(a.getUnit()) if (hasattr(a,'getUnit') and callable(a.getUnit) and a.getUnit() is not None) else u'');
+                              a_unit     python: (S(a_unit_raw) or S(a_unit2));
+                              a_spec_raw python: (a.getFormattedSpecs() if (hasattr(a,'getFormattedSpecs') and callable(a.getFormattedSpecs)) else u'');
+                              a_spec2    python: (unicode(a.getSpecification()) if (hasattr(a,'getSpecification') and callable(a.getSpecification) and a.getSpecification() is not None) else u'');
+                              a_spec     python: (S(a_spec_raw) or S(a_spec2));
+                              a_inst     python: (a.getInstrument() if (hasattr(a,'getInstrument') and callable(a.getInstrument)) else None);
+                              a_method   python: (T(a_inst, u'\u2014') if a_inst is not None else u'\u2014');
+                              a_unc      python: S(a.getFormattedUncertainty() if (hasattr(a,'getFormattedUncertainty') and callable(a.getFormattedUncertainty)) else u'');
+                              unit_part  python: (u' ' + a_unit if S(a_unit) else u'');
+                              unc_part   python: (u' +/- ' + a_unc if S(a_unc) else u'');
+                              a_full     python: a_res + unit_part + unc_part;">
+                <td class="a-item" tal:content="a_title"></td>
+                <td class="a-method" tal:content="a_method"></td>
+                <td class="a-spec">
+                  <tal:rep condition="python:_IS_REPORT(a_spec)">
+                    <div class="zh">报告</div>
+                    <div class="en">Report</div>
+                  </tal:rep>
+                  <tal:nrep condition="python:not _IS_REPORT(a_spec)">
+                    <div tal:content="python:S(a_spec, u'N/A')"></div>
+                  </tal:nrep>
+                </td>
+                <td class="a-result">
+                  <tal:resbi condition="python:_BI_HAS(a_full)">
+                    <div class="zh" tal:content="python:_BI_ZH(a_full)"></div>
+                    <div class="en" tal:content="python:_BI_EN(a_full)"></div>
+                  </tal:resbi>
+                  <tal:resnobi condition="python:not _BI_HAS(a_full)">
+                    <div tal:content="a_full"></div>
+                  </tal:resnobi>
+                </td>
+              </tr>
+            </tal:single>
+          </tal:rows>
+          <tr tal:condition="python: (not analyses_pub) or len(analyses_pub) == 0">
+            <td class="a-item" colspan="4" style="text-align:center;color:#999;padding:24px 0;">
+              <div class="zh">无已发布检测项目</div>
+              <div class="en">No analyses published</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="conclusion-block">
+        <div>
+          <span class="conclusion-label-zh">结论:</span>
+          <span class="conclusion-label-en">Conclusion:</span>
+        </div>
+        <div class="conclusion-text">
+          <tal:isref condition="is_reference_standard">
+            <div tal:content="python:u'该批次样品质量合格，可作为 ' + material_name + u' 的对照品使用。'"></div>
+            <div tal:content="python:u'The sample is qualified, can be used as standard for ' + material_name + u'.'"></div>
+          </tal:isref>
+          <tal:notref condition="python:not is_reference_standard">
+            <div>该批次样品质量合格。</div>
+            <div>The sample of this batch is qualified.</div>
+          </tal:notref>
+        </div>
+      </div>
+
+      <tal:ref condition="is_reference_standard">
+        <div class="ref-block">
+          <table class="ref-table" cellspacing="0" cellpadding="0">
+            <colgroup>
+              <col class="rcol-label" />
+              <col class="rcol-value" />
+            </colgroup>
+            <tbody>
+              <tr>
+                <td class="r-label"><div class="zh">对照品赋值（%）</div><div class="en">Reference value</div></td>
+                <td class="r-value" tal:content="reference_value2"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </tal:ref>
+
+    </div>
+    <!-- END PAGE 1 -->
+
+    <!-- PAGE 2 / PAGE 3 (Version history + signatures) -->
+    <div class="coa-page coa-page-2">
+
+      <div class="company-header company-header-mini">
+        <div class="company-logo">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 78"
+               class="innocare-logo" xml:space="preserve" preserveAspectRatio="xMinYMid meet"
+               width="220" height="60">
+            <g transform="translate(0 0)">
+              <circle cx="30" cy="39" r="7"  fill="#F5A623"/>
+              <circle cx="14" cy="18" r="6"  fill="#F5A623"/>
+              <circle cx="46" cy="18" r="6"  fill="#F5A623"/>
+              <circle cx="50" cy="46" r="6"  fill="#F5A623"/>
+              <circle cx="14" cy="52" r="6"  fill="#F5A623"/>
+              <circle cx="32" cy="64" r="6"  fill="#F5A623"/>
+              <circle cx="44" cy="31" r="4.5" fill="#F5A623"/>
+              <path d="M23 44 L40 40" stroke="#F5A623" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <path d="M30 24 L32 56" stroke="#F5A623" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <g font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="bold" fill="#222222">
+                <text x="70" y="50">INNOCARE</text>
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div class="company-info">
+          <div class="company-name-zh">北京诺诚健华医药科技有限公司</div>
+          <div class="company-name-en">Beijing InnoCarePharma Tech Co., Ltd</div>
+        </div>
+      </div>
+
+      <div class="report-id-block">
+        <span class="rid-label-zh">报告编号:</span>
+        <span class="rid-label-en">Report ID</span>
+        <span class="rid-value" tal:content="report_no"></span>
+      </div>
+
+      <table class="version-table" cellspacing="0" cellpadding="0">
+        <colgroup>
+          <col class="vcol-ver" />
+          <col class="vcol-content" />
+          <col class="vcol-date" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th colspan="3">
+              <div class="zh">版本历史</div>
+              <div class="en">Version History</div>
+            </th>
+          </tr>
+          <tr>
+            <th><div class="zh">版本号</div><div class="en">Version</div></th>
+            <th><div class="zh">修改内容</div><div class="en">Revised Content</div></th>
+            <th><div class="zh">生效日期</div><div class="en">Effective Date</div></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="v-val" tal:content="coa_version"></td>
+            <td class="v-val">
+              <div class="zh">新建</div>
+              <div class="en">Newly Establish</div>
+            </td>
+            <td class="v-val" tal:content="date_published"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="sig-block">
+        <div class="sig-row">
+          <div class="sig-label-col">
+            <div class="zh">起草人</div>
+            <div class="en">Drafted By</div>
+          </div>
+          <div class="sig-value-col" tal:content="creator_fn"></div>
+          <div class="sig-label-col">
+            <div class="zh">日期</div>
+            <div class="en">Date</div>
+          </div>
+          <div class="sig-value-col" tal:content="created_date"></div>
+        </div>
+        <div class="sig-row">
+          <div class="sig-label-col">
+            <div class="zh">审核人</div>
+            <div class="en">Reviewed By</div>
+          </div>
+          <div class="sig-value-col" tal:content="verifier_name"></div>
+          <div class="sig-label-col">
+            <div class="zh">日期</div>
+            <div class="en">Date</div>
+          </div>
+          <div class="sig-value-col" tal:content="date_published"></div>
+        </div>
+        <div class="sig-row">
+          <div class="sig-label-col">
+            <div class="zh">批准人</div>
+            <div class="en">Approved by</div>
+          </div>
+          <div class="sig-value-col" tal:content="approver_name"></div>
+          <div class="sig-label-col">
+            <div class="zh">日期</div>
+            <div class="en">Date</div>
+          </div>
+          <div class="sig-value-col">&nbsp;</div>
+        </div>
+      </div>
+
+    </div>
+    <!-- END PAGE 2/3 -->
+
+    </div>
+
+</tal:coa>

@@ -1,0 +1,25 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="INNOCARE.LabelAndReport">
+
+  <include package="INNOCARE.labeldesign" />
+  <include package="INNOCARE.reportdesign" />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="INNOCARE Label And Report"
+      directory="profiles/default"
+      description="Installs the merged INNOCARE.LabelAndReport package"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:registerProfile
+      name="uninstall"
+      title="INNOCARE Label And Report (uninstall)"
+      directory="profiles/uninstall"
+      description="Uninstalls the merged INNOCARE.LabelAndReport package"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+</configure>

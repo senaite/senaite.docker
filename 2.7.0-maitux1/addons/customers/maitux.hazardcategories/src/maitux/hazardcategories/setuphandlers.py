@@ -2,6 +2,7 @@
 
 from bika.lims import api
 from plone import api as ploneapi
+from Products.CMFCore.utils import getToolByName
 from Products.CMFPlone.interfaces import INonInstallable
 from zope.interface import implementer
 
@@ -36,6 +37,7 @@ ITEM_TITLE_MSG = _hc(u"Sample Properties", default=u"Sample Properties")
 DEFAULT_LAYOUT = "hazardcategories-controlpanel"
 SIDEBAR_DEPTH = 2
 PROFILE_ID = "profile-%s:default" % PROJECTNAME
+CONFIGLET_ID = "maitux-hazardcategories"
 
 
 @implementer(INonInstallable)
@@ -53,6 +55,7 @@ def post_install(context):
 
 
 def run_install_steps(portal):
+    unregister_legacy_configlet(portal)
     setup_type_constraints()
     folder = setup_site_structure(portal)
     migrate_registry_items_into_folder(folder)
@@ -60,6 +63,24 @@ def run_install_steps(portal):
     setup_permissions(folder)
     migrate_hazard_titles(portal)
     setup_sidebar()
+
+
+def unregister_legacy_configlet(portal):
+    """Drop the obsolete control panel entry for static dictionary data.
+
+    maitux.hazardcategories is maintained through its folder/listing view and
+    sidebar entry, not through Plone's add-on configlet area. Existing sites
+    may still have the old configlet from previous profiles, so installation
+    must actively unregister it.
+    """
+    tool = getToolByName(portal, "portal_controlpanel", None)
+    if tool is None:
+        return
+    try:
+        tool.unregisterConfiglet(CONFIGLET_ID)
+        logger.info("Removed obsolete control panel entry '%s'", CONFIGLET_ID)
+    except Exception:
+        pass
 
 
 def ensure_hazardcategory_data_synced(folder):
@@ -342,6 +363,7 @@ def setup_sidebar():
 
 def uninstall(context):
     logger.info("maitux.hazardcategories uninstall [BEGIN]")
+    unregister_legacy_configlet(api.get_portal())
 
     setup_tool = api.get_senaite_setup()
     if setup_tool is None:

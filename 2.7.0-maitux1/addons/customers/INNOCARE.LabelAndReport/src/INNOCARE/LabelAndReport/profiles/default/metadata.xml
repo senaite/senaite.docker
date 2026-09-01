@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<metadata>
+  <version>1000</version>
+  <dependencies>
+    <dependency>profile-senaite.lims:default</dependency>
+    <dependency>profile-maitux.stock:default</dependency>
+    <dependency>profile-INNOCARE.arextension:default</dependency>
+  </dependencies>
+</metadata>
