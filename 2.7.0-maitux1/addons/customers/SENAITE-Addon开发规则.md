@@ -44,6 +44,16 @@ SENAITE 的自定义权限声明分散在 `bika/lims/browser/**/configure.zcml` 
 
 ---
 
+**等价写法（推荐给已经写在 `configure.zcml` 里的注册）**：在本包的 `configure.zcml`
+顶部 `<include package="senaite.core.permissions" />`，把权限的注册顺序钉在自己前面。
+`custom-addon.cfg` 的显式 slug 和 autoinclude **都不保证**本包排在 `senaite.core`
+之后（2026-08-28 实测两种都会炸），所以这一行是 addon 自己的责任。
+`maitux.esignature` / `maitux.instrument_acquisition` 一直这么写；
+`maitux.audittrail` / `groupmanagement` / `reviewerassignment` / `worksheet`
+当天补上后启动恢复。
+
+---
+
 ### R2. 新增 `overrides.zcml` 内容时，必须同步补 package-includes slug
 
 **规则**：addon 首次往 `overrides.zcml` 写入实际内容时，
@@ -91,6 +101,52 @@ package-includes/
 `metadata.xml`，即使是空的 uninstall profile。
 
 **违反后果**：ZCML 加载报错。
+
+---
+
+### R4b. 合规类 addon 可豁免卸载能力，但**必须**换成强制可升级
+
+**背景**：`CLAUDE.md` §5 把 `profiles/uninstall/` 列为硬要求
+（「卸载能力是硬要求」）。**合规类 addon 是唯一的豁免类别。**
+
+**什么算合规类**：功能本身承担 GMP / 21 CFR Part 11 等法规义务，
+被关闭即等于违规。典型是审计追踪、电子签名。
+**判据不是「重要」，而是「按法规不允许被用户关闭」** ——
+不要拿这条给普通功能包开口子。
+
+**豁免的是什么**：可以不提供 `profiles/uninstall/`。理由通常有两条：
+
+1. 法规上该能力不得被用户关闭；
+2. 技术上 profile 卸不掉包外的状态（如自建的 PostgreSQL 表、外部文件），
+   给一个卸不干净的「卸载」按钮，比没有按钮更危险 ——
+   它让人以为卸干净了。
+
+**★ 换来的义务（这半句同样是硬要求）**：
+
+普通 addon 可以靠「Uninstall → Install」回到干净状态（见 R3）。
+豁免掉卸载，就等于**放弃了唯一的兜底逃生口**，此后只剩升级一条路。所以：
+
+- **`upgrades/` 必须从第一版就建起来并验证过一次**，
+  不能等「真要改了再说」—— 那时已经没有退路了。
+  哪怕 v1 无实际变更，也要造一个空 step，确认后台能看到、能执行。
+- **profile 的任何后续变更只能走 upgrade step**，
+  不得依赖「重装一次就好了」。
+- **若包在 ZODB 之外还有状态**（自建表、外部文件），
+  必须有**幂等的**迁移机制，且**不能只挂在站点级 upgrade step 上** ——
+  多站点 / 多数据库形态下它升不全。
+  推荐做成运行时惰性检查（用时比对版本号并补齐）。
+- 包 `README` **首段**必须写明「本包不提供卸载能力」及理由、
+  停用的正确做法、以及包外状态如何处置。
+
+**违反后果**：
+- 只豁免不补升级 → 第一次要改表 / 改 profile 时无路可走，
+  只能手工进库改，且各站点状态从此发散。
+- README 不写 → 下一个人把缺失的 `profiles/uninstall/` 当疏漏「补」回来，
+  合规豁免被静默撤销。
+
+**现有实例**：`maitux.auditjournal`（首例，详见
+`Docs/auditlog-journal-实施方案.md` §8.3 / §8.4）。
+截至该包引入前，4 个 common addon 与全部 customers addon **都有**卸载 profile。
 
 ---
 
@@ -156,22 +212,29 @@ package-includes/
 
 ---
 
-### R5d. `custom-addon.cfg` 是运行时自动生成的，不在仓库里维护
+### R5d. `custom-addon.cfg` 是自动生成的，不要手工改
 
-**规则**：当前产品环境仍然使用 `custom-addon.cfg`，但它是容器启动时由
-`/gen-custom-addon.sh` 按 `/opt/addons/customers` 的实际目录生成的运行时文件。
-因此：
+**规则**：客户 add-on 的 buildout 配置**不再手工维护**。当前产品环境仍然使用
+`custom-addon.cfg`，但它是运行时自动生成文件，不应作为仓库里的手工维护清单。
+addon 作者要做的只是把目录结构、`setup.py`、`configure.zcml` / `overrides.zcml`
+写对：
 
-- 不要在仓库里新增或提交 `custom-addon.cfg`
-- 不要把它当作需要手工编辑的部署清单
-- addon 接入方式应落在源码目录、`setup.py`、`configure.zcml`、
-  `overrides.zcml` 本身，而不是依赖手改 cfg
+| 生成项 | 来源 |
+|---|---|
+| `develop +=` | 一级子目录名（必须含 `setup.py`，否则整个目录被跳过） |
+| `eggs +=` | `setup.py` 的 `name=`（不是目录名） |
+| `[instance] zcml +=` | 每个有 `configure.zcml` 的包都写；分发名与代码目录大小写不一致的除外（R5c） |
+| `<egg>-overrides` slug | 包里存在 `overrides.zcml` 就自动补（R2 / R5b） |
 
-**依据**：`buildout.cfg` 仍然 `extends = custom-addon.cfg`，Dockerfile 在构建阶段
-只放一个占位文件，真正的配置在容器启动时整份覆盖生成。
+**依据**：`buildout.cfg` 仍然 `extends = custom-addon.cfg`，而运行时配置由容器环境
+自动生成。手工维护这份 cfg 的典型事故包括：写错包名、漏写 `-overrides` slug、
+物理删掉 add-on 目录但忘了从 cfg 剔除（→ buildout 失败 → 容器无限重启）。
 
-**违反后果**：手工维护的 cfg 会在下次启动时被覆盖；更严重时会让人误以为
-运行配置来源于仓库，排查方向被带偏。
+**违反后果**：手改的内容下次启动就被覆盖；更严重时会让人误以为运行配置来源于
+仓库，排查方向被带偏。
+
+**注意**：`[plonesite] profiles` 不会被生成，profile 一律在后台
+`prefs_install_products_form` 手工安装（原因见 `README.md`）。
 
 ---
 
@@ -230,6 +293,69 @@ robocopy "<源>" "<目标>" /E /XF *.pyc /NFL /NDL /NJH /NJS
 
 ---
 
+### R9b. `actions.xml` / `controlpanel.xml` 里的 `title` / `description` 必须 ASCII
+
+**规则**：**portal action 类**的 GenericSetup XML（`actions.xml`、
+`controlpanel.xml`）里的 `<property name="title">` / `<property name="description">`
+**不得包含中文或任何非 ASCII 字符**。要中文界面，写 ASCII msgid +
+在 `locales/` 里给 `zh_CN` 翻译（`senaite.impress` 就是这么做的）。
+
+> **范围为什么只到 action 类**：`types/*.xml` 有**活的反例** ——
+> `maitux.reviewerassignment` 的 FTI 用中文 title + `i18n:domain`，
+> 在生产里正常显示（侧边栏「审核工作表」）。`TypesTool.Title()` 同样会走
+> `Message()`，两者的差别在**导入器把值存成 unicode 还是 utf-8 字节串**，
+> 未挖到底。**所以本规则只覆盖有实测事故的这一类，不做过度概括** ——
+> 宁可范围窄一点，也不要让 lint 对着能跑的代码报警（一旦开始误报，
+> 人就会开始忽略它）。
+
+**依据**（2026-08-31 实测事故，含事后订正）：
+
+```python
+# Products/CMFCore/ActionInformation.py
+80:   i18n_domain = 'cmf_default'          # ← 类默认值，几乎总是真值
+161:  elif self.i18n_domain and id in ('title', 'description'):
+162:      val = Message(val, self.i18n_domain)
+```
+
+`zope.i18nmessageid.Message` 是 **unicode 的子类**，拿它去包一个含中文的
+**字节串**，Py2 会隐式按 ASCII 解码 → `UnicodeDecodeError`。
+
+> **★ 订正**：最初以为触发条件是"**你设了** `i18n_domain` + 非 ASCII"。
+> 实测不是 —— `Action` 的 `i18n_domain` **有类默认值 `'cmf_default'`**，
+> 所以那个 `if` 几乎恒为真，`Message()` 总会被调用。
+> **结论更强：`actions.xml` 里的中文标题必炸，没有"不设 domain 就安全"这条路。**
+
+**另一个相关的坑（同日实测）**：`i18n:domain="..."` 这个 **XML 属性设不了域** ——
+CMFCore 的 actions 导入器**只在导出时**写 `xmlns:i18n`
+（`exportimport/actions.py:110`），导入时根本不读它。
+要让标题走本包的翻译，必须显式写：
+
+```xml
+<property name="i18n_domain">你的包名</property>
+```
+
+不写就用默认的 `cmf_default` 域，于是拿你的 msgid 去别人的域里查 ——
+查不到，界面显示英文原文，**而且不报错**。
+
+**违反后果**：若该 action 落在 `user` / `site_actions` 分类，
+**personal bar 每个页面都渲染 → 整站多数页面打不开**。
+`maitux.auditjournal` 的 v3 profile 就是这么把 `/Care` 站点搞崩的。
+
+**★ 最阴的地方：它是渲染期才炸的。**
+lint 过、镜像建成、实例正常起、启动日志干净、`verify` 全绿 ——
+**只有真人打开页面才炸**。这是 R9「静默失效」的一个变体：
+不是没报错，是**报错时机晚到所有自动判据之后**。
+
+**已有防线**：`lint_addon.py` 的 `E14_NON_ASCII_GS_TITLE` 会扫
+`profiles/**/*.xml` 拦下它（2026-08-31 加，已用真实故障回放验证过）。
+
+**踩到之后怎么救**：坏 action 存在**站点的 ZODB 里**，重建镜像不会清掉它。
+Plone 页面全崩时走 ZMI（不渲染 personal bar）：
+`<site>/portal_actions/user/manage_main` → 勾选 → Delete；
+再用 upgrade step 重新导入修好的 `actions.xml`。
+
+---
+
 ### R10. 只改渲染，不碰数据与工作流
 
 **规则**：新增视图/布局时，复用原生的保存端点、计算引擎与工作流适配器，
@@ -270,7 +396,10 @@ robocopy "<源>" "<目标>" /E /XF *.pyc /NFL /NDL /NJH /NJS
 - [ ] 跨 addon 同接口同名 adapter，全部只落在 `overrides.zcml`（R5b）
 - [ ] `setup.py` 分发名与代码目录名大小写一致；不手动 include 已配 autoinclude 入口点的包（R5c）
 - [ ] 不新增、不提交、不手工维护仓库里的 `custom-addon.cfg`（R5d）
+- [ ] `setup.py` 有正确的 `name=`（egg 名由它生成，不是目录名），目录直接放在 `addons/customers/` 一级下（R5d）
 - [ ] `registerProfile` 声明的每个目录都真实存在且含 `metadata.xml`
+- [ ] 有 `profiles/uninstall/`；**若属合规类要豁免，则 `upgrades/` 已建起并验证过一次，且 README 首段写明理由（R4b）**
+- [ ] 包在 ZODB 之外若有状态（自建表 / 外部文件），迁移机制幂等且不只挂在站点级 upgrade step 上（R4b）
 - [ ] 新增 profile 文件后，部署文档写明"需重跑 profile"
 - [ ] 部署说明区分了"重启"与"重启 + 硬刷新"
 - [ ] 每项功能给出了可观测的验证判据

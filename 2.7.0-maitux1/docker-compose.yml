@@ -63,9 +63,12 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ./data:/data
       - ./blobstorage:/data/blobstorage
+      # custom-addon.cfg 不再从宿主挂载：容器启动时由 /gen-custom-addon.sh
+      # 按下面这个目录里实际存在的 add-on 自动生成
       - ./addons/customers:/opt/addons/customers
-      - ./addons/customers/custom-addon.cfg:/home/senaite/senaitelims/custom-addon.cfg
       - ./docker-entrypoint.sh:/docker-entrypoint.sh:ro
+      # 和 entrypoint 一起挂载，避免"改了仓库里的生成规则但镜像里还是旧脚本"
+      - ./gen-custom-addon.sh:/gen-custom-addon.sh:ro
     networks:
       - maitux_lims_backend
 

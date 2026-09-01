@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 from bika.lims import api
-from bika.lims import senaiteMessageFactory as _
 from bika.lims.browser.workflow import RequestContextAware
 from bika.lims.interfaces import IWorkflowActionUIDsAdapter
 from zope.interface import implements
 
+from maitux.stock import _
 from maitux.stock.browser.stockbatchactions import is_action_allowed_for_uids
 
 

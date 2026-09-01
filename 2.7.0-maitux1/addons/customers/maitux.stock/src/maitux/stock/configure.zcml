@@ -4,6 +4,8 @@
     xmlns:i18n="http://namespaces.zope.org/i18n"
     i18n_domain="maitux.stock">
 
+  <i18n:registerTranslations directory="locales" />
+
   <include package=".browser" />
   <include package=".content" />
 

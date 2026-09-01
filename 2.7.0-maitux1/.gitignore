@@ -4,3 +4,5 @@ __pycache__/
 *.egg-info/
 postgres-data/
 blobstorage/
+# 容器启动时由 /gen-custom-addon.sh 自动生成，不要提交
+addons/customers/custom-addon.cfg

@@ -1,4 +1,4 @@
-﻿<html xmlns="http://www.w3.org/1999/xhtml"
+<html xmlns="http://www.w3.org/1999/xhtml"
       xmlns:tal="http://xml.zope.org/namespaces/tal"
       xmlns:metal="http://xml.zope.org/namespaces/metal"
       xmlns:i18n="http://xml.zope.org/namespaces/i18n"
@@ -39,13 +39,14 @@
         <div class="form-group" tal:condition="python:bool(view.tasks)">
           <label for="sample_uid" i18n:translate="">Select Sample</label>
           <select id="sample_uid" name="sample_uid" class="form-control form-control-sm" required="required">
-            <option value="" i18n:translate="">Select鈥?/option>
+            <option value="" i18n:translate="">Select...</option>
             <option tal:repeat="s python:view.recent_samples"
                     tal:attributes="value s/uid"
                     tal:content="s/title">SAMPLE-1</option>
           </select>
-          <small class="form-text text-muted" i18n:translate="">
-            鍙垪鍑烘渶杩戠殑鏍峰搧锛屽悗缁彲浠ュ姞鎼滅储妗?寮圭獥閫夋嫨銆?          </small>
+                    <small class="form-text text-muted" i18n:translate="">
+            Only the most recent samples are listed. A search dialog can be added later.
+          </small>
         </div>
 
         <div class="mt-3" tal:condition="python:bool(view.tasks)">

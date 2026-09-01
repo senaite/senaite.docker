@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from Products.Five.browser import BrowserView
 from bika.lims import api
-from bika.lims import senaiteMessageFactory as _
+
+from maitux.stock import _
 
 
 class StockStructureFixView(BrowserView):

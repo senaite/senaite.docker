@@ -1,7 +1,6 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from decimal import Decimal
 
-from bika.lims import bikaMessageFactory as _
 from bika.lims.interfaces import IDeactivable
 from plone.autoform import directives
 from plone.supermodel import model
@@ -16,6 +15,7 @@ from z3c.form.widget import FieldWidget
 from zope import schema
 from zope.interface import implementer
 
+from maitux.stock import _
 from maitux.stock.interfaces import IStock
 from maitux.stock.z3cform.widgets.datetimeseconds import DatetimeSecondsWidget
 

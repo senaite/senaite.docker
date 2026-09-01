@@ -46,6 +46,8 @@ _EXTRA_TRANSLATION_DOMAINS = (
     "maitux.projects",
     "maitux.hazardcategories",
     "maitux.roles",
+    "maitux.stock",
+    "maitux.stability",
 )
 
 _original_senaite_translate = _senaite_i18n.translate

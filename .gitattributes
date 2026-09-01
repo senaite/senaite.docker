@@ -1,0 +1,4 @@
+# 这些脚本会被 docker-compose 直接挂载进容器执行，必须是 LF。
+# CRLF 会让 shebang 变成 /bin/bash\r，容器报：
+#   exec /docker-entrypoint.sh: no such file or directory
+*.sh text eol=lf

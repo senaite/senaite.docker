@@ -1,0 +1,18 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    i18n_domain="maitux.auditjournal">
+
+  <!--
+    本包自己定义权限，不引用 senaite.core.* / bika.lims.* —— 所以 R1 那条
+    <include package="senaite.core.permissions" /> 在这里不是必需的。
+    ★ 将来只要在任何 zcml 里写了一个 senaite.core.* 权限，就必须补上那一行，
+      否则 ComponentLookupError 让整站起不来（lint E05 会拦）。
+
+    rolemap.xml 里按 title 匹配（"MAITUX: View Audit Journal"），不是按 id。
+  -->
+  <permission
+      id="maitux.auditjournal.ViewAuditJournal"
+      title="MAITUX: View Audit Journal"
+      />
+
+</configure>

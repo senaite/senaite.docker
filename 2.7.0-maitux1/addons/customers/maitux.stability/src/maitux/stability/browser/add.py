@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 from bika.lims import api
-from bika.lims import senaiteMessageFactory as _
 from plone.namedfile.file import NamedBlobFile
 from senaite.core.browser.dexterity.add import DefaultAddForm
 from senaite.core.browser.dexterity.add import DefaultAddView
+
+from maitux.stability import _
 
 
 def _first(value):

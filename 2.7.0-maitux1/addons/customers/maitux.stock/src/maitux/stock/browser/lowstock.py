@@ -6,14 +6,19 @@ from bika.lims import api
 from bika.lims.utils import get_link
 from senaite.app.listing import ListingView
 from senaite.core.api import dtime
+from senaite.core.i18n import translate
 
+from maitux.stock import _
 from maitux.stock.stockbatchexpiry import REVIEW_STATE_DESTROYED
 
 class LowStockBatchesView(ListingView):
     def __init__(self, context, request):
         super(LowStockBatchesView, self).__init__(context, request)
 
-        self.title = u"Low Quantity"
+        self.title = translate(_(
+            u"listing_lowstock_title",
+            default=u"Low Quantity"
+        ))
         self.icon = api.get_icon(context, html_tag=False)
         self.catalog = "portal_catalog"
         self.show_search = True
@@ -36,22 +41,25 @@ class LowStockBatchesView(ListingView):
         self.context_actions = {}
 
         self.columns = collections.OrderedDict((
-            ("batch_id", {"title": u"Batch ID", "toggle": True}),
-            ("stock", {"title": u"Stock", "toggle": True}),
-            ("supplier", {"title": u"Supplier", "toggle": True}),
-            ("current_amount", {"title": u"Current Amount", "toggle": True}),
-            ("low_quantity_threshold", {"title": u"Threshold", "toggle": True}),
-            ("below_by", {"title": u"Below By", "toggle": True}),
-            ("unit", {"title": u"Unit", "toggle": True}),
-            ("expiry_date", {"title": u"Expiry Date", "toggle": True}),
-            ("status", {"title": u"Status", "toggle": True}),
+            ("batch_id", {"title": _(u"listing_stockbatches_column_batch_id", default=u"Batch ID"), "toggle": True}),
+            ("stock", {"title": _(u"listing_stockbatches_column_stock", default=u"Stock"), "toggle": True}),
+            ("supplier", {"title": _(u"listing_stockbatches_column_supplier", default=u"Supplier"), "toggle": True}),
+            ("current_amount", {"title": _(u"listing_stockbatches_column_current_amount", default=u"Current Amount"), "toggle": True}),
+            ("low_quantity_threshold", {"title": _(u"listing_lowstock_column_threshold", default=u"Threshold"), "toggle": True}),
+            ("below_by", {"title": _(u"listing_lowstock_column_below_by", default=u"Below By"), "toggle": True}),
+            ("unit", {"title": _(u"listing_stockbatches_column_unit", default=u"Unit"), "toggle": True}),
+            ("expiry_date", {"title": _(u"listing_stockbatches_column_expiry_date", default=u"Expiry Date"), "toggle": True}),
+            ("status", {"title": _(u"listing_stockbatches_column_status", default=u"Status"), "toggle": True}),
         ))
         columns = list(self.columns.keys())
 
         self.review_states = [
             {
                 "id": "default",
-                "title": u"Low Quantity",
+                "title": translate(_(
+                    u"listing_lowstock_title",
+                    default=u"Low Quantity"
+                )),
                 "contentFilter": {},
                 "columns": columns,
             }

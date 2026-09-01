@@ -1,5 +1,4 @@
-﻿# -*- coding: utf-8 -*-
-from bika.lims import senaiteMessageFactory as _
+# -*- coding: utf-8 -*-
 from plone.autoform import directives
 from plone.supermodel import model
 from senaite.core.catalog import SETUP_CATALOG
@@ -17,6 +16,7 @@ from zope.interface import invariant
 from zope.schema.vocabulary import SimpleTerm
 from zope.schema.vocabulary import SimpleVocabulary
 
+from maitux.stability import _
 from maitux.stability.interfaces import IStabilityTimepointTask
 
 

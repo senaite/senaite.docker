@@ -26,6 +26,12 @@
       />
 
   <!-- Upgrade steps -->
+  <!-- 显式 include：本包 ZCML 引用了 senaite.core 的权限，而 senaite.core 的
+       configure.zcml 不保证先于本包加载；缺这一行启动时会报
+       ComponentLookupError: (IPermission, 'senaite.core.permissions...')，整站起不来。
+       同目录的 maitux.esignature / maitux.instrument_acquisition 早就这么写了。 -->
+  <include package="senaite.core.permissions" />
+
   <include package=".upgrades" />
 
   <!-- Browser views/widgets -->
