@@ -20,8 +20,12 @@ Standalone instances are best suited for testing SENAITE and development.
 
 Pull and start the latest SENAITE container, based on [Debian](https://www.debian.org/).
 
+The `2.x` tag follows the 2.x branch of senaite.core. For a fixed release,
+use a version tag such as `v2.6.0-docker2` instead. All tags are listed on
+[Docker Hub](https://hub.docker.com/r/senaite/senaite/tags).
+
 ```console
-docker run --rm --name senaite -p 8080:8080 senaite/senaite:latest
+docker run --rm --name senaite -p 8080:8080 senaite/senaite:2.x
 ```
 
 The `-p 8080:8080` parameter maps port `8080` of the container to the host.
@@ -38,28 +42,28 @@ Create a shared network and start the ZEO server:
 
 ```console
 docker network create senaite
-docker run -d --name=zeo --network=senaite senaite/senaite:latest zeo
+docker run -d --name=zeo --network=senaite senaite/senaite:2.x zeo
 ```
 
 Start 2 SENAITE clients:
 
 ```console
 docker run -d --name=instance1 --network=senaite \
-    -e ZEO_ADDRESS=zeo:8080 -p 8081:8080 senaite/senaite:latest
+    -e ZEO_ADDRESS=zeo:8080 -p 8081:8080 senaite/senaite:2.x
 docker run -d --name=instance2 --network=senaite \
-    -e ZEO_ADDRESS=zeo:8080 -p 8082:8080 senaite/senaite:latest
+    -e ZEO_ADDRESS=zeo:8080 -p 8082:8080 senaite/senaite:2.x
 ```
 
 ### Start SENAITE In Debug Mode
 
 ```console
-docker run -p 8080:8080 senaite/senaite:latest fg
+docker run -p 8080:8080 senaite/senaite:2.x fg
 ```
 
 Debug mode may also be used with ZEO:
 
 ```console
-docker run --network=senaite -e ZEO_ADDRESS=zeo:8080 -p 8080:8080 senaite/senaite:latest fg
+docker run --network=senaite -e ZEO_ADDRESS=zeo:8080 -p 8080:8080 senaite/senaite:2.x fg
 ```
 
 
@@ -78,7 +82,7 @@ Run SENAITE with ZEO and install the addon [senaite.storage](https://github.com/
 ```console
 docker run --name=instance1 --network=senaite \
     -e ZEO_ADDRESS=zeo:8080 -p 8080:8080 \
-    -e ADDONS="senaite.storage" senaite/senaite:latest
+    -e ADDONS="senaite.storage" senaite/senaite:2.x
 ```
 
 To use a specific add-on version:
